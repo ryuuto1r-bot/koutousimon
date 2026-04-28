@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
@@ -6,378 +7,1308 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="口頭試問対策">
-  <title>九大経済工学 口頭試問対策</title>
+  <title>九大経済工学 面接対策</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    :root {
-      color-scheme: light;
-      --bg: #f8fafc;
-      --paper: #ffffff;
-      --ink: #0f172a;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --brand: #e11d48;
-      --brand-soft: #fff1f2;
-      --indigo: #4f46e5;
-      --indigo-soft: #eef2ff;
-      --amber: #d97706;
-      --amber-soft: #fffbeb;
-      --green: #059669;
-      --green-soft: #ecfdf5;
-      --blue: #2563eb;
-      --blue-soft: #eff6ff;
-      --shadow: 0 14px 36px rgba(15, 23, 42, .10);
-      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "YuGothic", "Noto Sans JP", "Segoe UI", sans-serif;
-    }
-    * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
-    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.6; }
-    button, input { font: inherit; }
+    body { margin: 0; background: #f8fafc; }
+    button, input, textarea, select { font: inherit; }
     button { touch-action: manipulation; }
-    .app { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
-    header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); backdrop-filter: blur(10px); }
-    .wrap { width: min(100%, 980px); margin: 0 auto; padding: 16px; }
-    .top { display: grid; gap: 14px; }
-    .brand-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; color: #fff; background: #0f172a; font-weight: 900; flex: 0 0 auto; }
-    h1 { margin: 0; font-size: clamp(1.25rem, 5vw, 2rem); line-height: 1.25; letter-spacing: 0; }
-    .subtitle { margin: 2px 0 0; color: var(--muted); font-size: .86rem; }
-    .head-tools { display: grid; gap: 10px; }
-    .date-box, .progress-box { background: #f1f5f9; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
-    .date-box { display: flex; gap: 8px; align-items: center; justify-content: center; color: #3730a3; background: var(--indigo-soft); border-color: #c7d2fe; font-weight: 800; }
-    input[type="date"] { border: 0; outline: 0; background: transparent; color: #312e81; font-weight: 800; min-width: 0; }
-    .progress-line { display: flex; justify-content: space-between; gap: 12px; align-items: center; font-size: .82rem; font-weight: 800; color: #475569; }
-    .progress-line strong { color: var(--brand); }
-    .meter { height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 8px 0 4px; }
-    .bar { height: 100%; width: 0; background: var(--brand); border-radius: inherit; transition: width .25s ease; }
-    .count { text-align: right; color: var(--muted); font-size: .76rem; }
-    main.wrap { padding-top: 22px; }
-    .controls { display: grid; gap: 12px; margin-bottom: 18px; }
-    .scroll-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-    .scroll-row::-webkit-scrollbar { display: none; }
-    .chip { border: 1px solid var(--line); background: #fff; color: #475569; border-radius: 999px; padding: 9px 13px; font-size: .9rem; font-weight: 800; white-space: nowrap; min-height: 42px; }
-    .chip.active { color: #fff; background: #0f172a; border-color: #0f172a; box-shadow: 0 8px 18px rgba(15, 23, 42, .16); }
-    .chip.important.active { color: #be123c; background: var(--brand-soft); border-color: #fda4af; }
-    .chip.untouched.active { color: #1d4ed8; background: var(--blue-soft); border-color: #93c5fd; }
-    .summary { color: var(--muted); font-size: .86rem; margin: -4px 0 14px; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    .card { width: 100%; text-align: left; border: 2px solid var(--line); background: var(--paper); color: inherit; border-radius: 8px; padding: 14px; box-shadow: none; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-    .card:active { transform: scale(.99); }
-    .card.mastered { border-color: #34d399; background: var(--green-soft); }
-    .card.review { border-color: #f59e0b; background: var(--amber-soft); }
-    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
-    .badges { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
-    .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; padding: 4px 8px; background: #f1f5f9; color: #475569; font-size: .72rem; font-weight: 800; }
-    .badge.hot { color: #be123c; background: var(--brand-soft); }
-    .status { display: flex; gap: 4px; flex: 0 0 auto; }
-    .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #cbd5e1; font-weight: 900; font-size: 1.1rem; }
-    .icon-btn.review.on { color: var(--amber); background: #fef3c7; }
-    .icon-btn.mastered.on { color: var(--green); background: #d1fae5; }
-    .card h2 { margin: 0 0 6px; font-size: 1.04rem; line-height: 1.45; letter-spacing: 0; }
-    .def { margin: 0; color: var(--muted); font-size: .9rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .empty { padding: 48px 12px; text-align: center; color: var(--muted); }
-    .modal-backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(15,23,42,.62); padding: 14px; display: grid; place-items: center; }
-    .modal { width: min(100%, 720px); max-height: min(88dvh, 820px); background: #fff; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; }
-    .modal-head, .modal-foot { flex: 0 0 auto; padding: 12px 14px; border-color: var(--line); background: #f8fafc; display: flex; align-items: center; gap: 10px; }
-    .modal-head { border-bottom: 1px solid var(--line); justify-content: space-between; }
-    .modal-foot { border-top: 1px solid var(--line); justify-content: space-between; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
-    .close { border: 0; background: #e2e8f0; color: #334155; width: 40px; height: 40px; border-radius: 999px; font-size: 1.2rem; font-weight: 900; }
-    .modal-body { overflow-y: auto; padding: 18px 16px 22px; -webkit-overflow-scrolling: touch; }
-    .modal h2 { margin: 0 0 18px; font-size: clamp(1.28rem, 6vw, 2rem); line-height: 1.35; letter-spacing: 0; }
-    .section { margin-top: 16px; }
-    .box { background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 14px; }
-    .label { margin: 0 0 7px; font-size: .78rem; color: var(--muted); font-weight: 900; }
-    .label.rose { color: var(--brand); }
-    .label.indigo { color: var(--indigo); }
-    .label.amber { color: #b45309; }
-    .answer { margin: 0; font-weight: 800; font-size: 1.05rem; }
-    .quote { margin: 0; padding-left: 12px; border-left: 4px solid #fecdd3; color: #334155; font-weight: 700; }
-    .quote.indigo { border-left-color: #c7d2fe; font-weight: 500; }
-    .deep { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 18px; }
-    .dash { width: 100%; min-height: 54px; border: 2px dashed #cbd5e1; background: #fff; border-radius: 8px; color: #475569; font-weight: 900; padding: 12px; }
-    .tsukkomi { background: var(--amber-soft); border: 1px solid #fde68a; border-radius: 8px; padding: 14px; }
-    .note { color: #92400e; font-size: .84rem; margin: 10px 0 0; }
-    .footer-actions { display: flex; gap: 8px; flex: 1; justify-content: flex-end; }
-    .action { min-height: 44px; border-radius: 8px; padding: 9px 12px; border: 2px solid transparent; font-weight: 900; }
-    .action.secondary { color: #475569; background: transparent; border: 0; }
-    .action.review { color: #b45309; border-color: #fde68a; background: #fff; }
-    .action.review.on { color: #92400e; background: #fef3c7; border-color: #f59e0b; }
-    .action.mastered { color: #fff; background: #0f172a; }
-    .action.mastered.on { color: #047857; background: #d1fae5; border-color: #34d399; }
-    .hidden { display: none !important; }
-    @media (min-width: 720px) {
-      .wrap { padding-left: 24px; padding-right: 24px; }
-      .top { grid-template-columns: 1fr auto; align-items: center; }
-      .head-tools { grid-template-columns: auto 260px; align-items: center; }
-      .controls { grid-template-columns: 1fr auto; align-items: start; }
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-      .card:hover { border-color: #cbd5e1; box-shadow: 0 10px 28px rgba(15, 23, 42, .08); }
-      .modal-backdrop { padding: 24px; }
-      .modal-body { padding: 24px 28px 28px; }
-      .modal-head, .modal-foot { padding-left: 22px; padding-right: 22px; }
-    }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="wrap top">
-        <div class="brand-row">
-          <div class="mark" aria-hidden="true">Q</div>
-          <div>
-            <h1>九大経済工学 口頭試問対策</h1>
-            <p class="subtitle">編入面接に向けた定義・説明・深掘り質問</p>
-          </div>
-        </div>
-        <div class="head-tools">
-          <label class="date-box">日付 <input id="dateInput" type="date"></label>
-          <div class="progress-box">
-            <div class="progress-line"><span>累計 習得度</span><strong id="progressPct">0%</strong></div>
-            <div class="meter"><div class="bar" id="progressBar"></div></div>
-            <div class="count" id="progressCount">0 / 0 問</div>
-          </div>
-        </div>
-      </div>
-    </header>
-    <main class="wrap">
-      <div class="controls">
-        <div class="scroll-row" id="categoryTabs" aria-label="カテゴリ"></div>
-        <div class="scroll-row" aria-label="絞り込み">
-          <button class="chip important" id="importantBtn" type="button">頻出最重要のみ</button>
-          <button class="chip untouched" id="untouchedBtn" type="button">未着手のみ</button>
-        </div>
-      </div>
-      <p class="summary" id="summary"></p>
-      <div class="grid" id="cardGrid"></div>
-      <div class="empty hidden" id="empty">該当する問題がありません。カテゴリや条件を変更してください。</div>
-    </main>
-  </div>
-  <div id="modalRoot"></div>
-  <script>
-    const quizData = [{"id":101,"category":"1. 一変数微積","title":"関数とは何ですか","definition":"1つの入力に対して、必ず1つの出力を返す規則。","explanation":"自販機のように、ある値（入力）を入れると、決まった結果（出力）が1つだけ返ってくる仕組みのことです。","application":"価格から需要量が決まるなど、経済変数の関係を数式化する大前提となります。","tsukkomi":"現実の経済データはピッタリ1つの結果にならないことが多いですが、関数でモデル化する意味は何ですか？","isImportant":false},{"id":102,"category":"1. 一変数微積","title":"1つの入力に2つの出力があるものは関数ですか","definition":"いいえ。関数としては定義されません。","explanation":"関数は『入力に対して結果がただ1つに定まる』必要があります。2つ以上の出力があるものは単なる『関係』や『対応』と呼びます。","application":"一意に結果が決まらないと予測モデルとして使えないため、システムを設計する際は関数になるよう変数を調整します。","tsukkomi":"円の方程式（x^2+y^2=1）はyについて解くと±が出ますが、これは関数ではない？","isImportant":false},{"id":103,"category":"1. 一変数微積","title":"極限とは何ですか","definition":"変数をある値に限りなく近づけたときに、関数が近づく目標値。","explanation":"実際にその値にならなくても、『限りなく近づくと、結果はどこに向かっていくか』という着地点を予測する概念です。","application":"連続複利の計算など、時間を限りなく細かく分割した際の変化を捉える金融工学の基礎になります。","tsukkomi":"lim(x→0) (1/x) は極限が存在しますか？","isImportant":false},{"id":104,"category":"1. 一変数微積","title":"微分とは何ですか","definition":"関数の変化の割合、つまりある点での『接線の傾き』を求める操作。","explanation":"ある変数をほんの少し（限界的に）増やしたときに、結果がどれくらい変化するかという『瞬間の変化率』を求める操作です。","application":"経済学における『限界（Marginal）』の概念そのもので、限界費用や限界効用の計算に直結します。","tsukkomi":"離散的なデータしかない場合、微分の考え方をどう応用しますか？","isImportant":true},{"id":105,"category":"1. 一変数微積","title":"導関数とは何ですか","definition":"各点での微分の値（傾き）を返す新しい関数。","explanation":"微分して出てきた式のことです。xを入れると、その場所の傾きがポンと出てくる便利な計算機のようなものです。","application":"時間によって変動する変化率を関数として持っておくことで、システム全体の動的なシミュレーションが可能になります。","tsukkomi":"元の関数が連続でも、導関数が連続にならないことはありますか？","isImportant":false},{"id":106,"category":"1. 一変数微積","title":"微分は何を表していますか","definition":"限界的な変化。1単位追加した時の影響。","explanation":"『今の状態から、あと1歩だけ進んだらどうなるか』という未来予測の指標を表しています。","application":"『あと1人生産者を増やしたら利益はどうなるか』という限界分析の根本的な指標になります。","tsukkomi":"傾きが急な状態と緩やかな状態では、経済的にどんな違いがありますか？","isImportant":false},{"id":107,"category":"1. 一変数微積","title":"接線とは何ですか","definition":"ある点で曲線に最もよく似た（触れるだけの）直線。","explanation":"複雑な曲線を、その一瞬だけ『まっすぐな線』だと見なして近似したものと言えます。","application":"非線形な複雑な経済モデルを、扱いやすい線形（一次関数）に落とし込んで解析するために使います。","tsukkomi":"グラフが尖っている点（絶対値のグラフの原点など）で接線は引けますか？","isImportant":false},{"id":108,"category":"1. 一変数微積","title":"最大値と最小値はどう判断しますか","definition":"微分が0になる点（停留点）を探し、その前後の傾きの変化を見る。","explanation":"まず傾きが0で平らになる点を探し、さらにそれが『山』なのか『谷』なのかを前後の微分の符号や二階微分で確かめます。","application":"利益関数の最大化や、コスト関数の最小化という、最適化問題の最も基本的なアプローチです。","tsukkomi":"微分が0でも、最大でも最小でもない点は存在しますか？","isImportant":false},{"id":109,"category":"1. 一変数微積","title":"なぜ微分の符号で増減が分かるのですか","definition":"微分＝傾きだから。プラスなら右上がり、マイナスなら右下がり。","explanation":"微分がプラスということは、xが増えればyも増える（右肩上がり）。マイナスならxが増えるとyが減る（右肩下がり）からです。","application":"価格を上げた時に需要が増えるか減るかなど、直感的な方向性を数学的に証明する根拠になります。","tsukkomi":"微分が常にプラスの関数を経済の言葉で何と言いますか？（ヒント：単調〜）","isImportant":false},{"id":110,"category":"1. 一変数微積","title":"なぜ微分の符号を見ると最大・最小が分かるのですか","definition":"増加から減少へ変われば山（最大）、減少から増加へ変われば谷（最小）だから。","explanation":"坂道を登って（プラス）から下る（マイナス）と頂上ですよね。逆に下ってから登ると谷底になります。その切り替わりを見るからです。","application":"企業の利益が伸び悩んで下落に転じるポイント（最大利益点）を見つけるロジックです。","tsukkomi":"グラフの端っこ（境界）にある最大・最小値は微分で見つけられますか？","isImportant":false},{"id":111,"category":"1. 一変数微積","title":"二階微分は何を意味しますか","definition":"傾きの変化の割合。曲線の曲がり方（凸性）。","explanation":"速度に対する加速度のようなものです。増え方が『加速している』のか『減速している』のかという曲がり具合を表します。","application":"限界効用逓減の法則（満足度が増えにくくなる）など、増加率の鈍化を数学的に証明する際に使います。","tsukkomi":"二階微分が0の点を図形的に何と呼びますか？","isImportant":false},{"id":112,"category":"1. 一変数微積","title":"なぜ下に凸だと最小になるのですか","definition":"傾きがマイナスからプラスへ変化するから（谷底の形）。","explanation":"下に凸（U字型）ということは、傾きがどんどん増えていく（マイナス→0→プラス）ので、傾き0の場所が一番低い谷底になるからです。","application":"コスト最小化問題を解く際、求めた解が本当に一番コストが低いか（谷底か）の確認に使います。","tsukkomi":"下に凸の関数を二階微分の符号で言うとどうなりますか？","isImportant":false},{"id":113,"category":"1. 一変数微積","title":"なぜ上に凸だと最大になるのですか","definition":"傾きがプラスからマイナスへ変化するから（山の形）。","explanation":"上に凸（逆U字型）ということは、傾きがどんどん減っていく（プラス→0→マイナス）ので、傾き0の場所が一番高い山の頂上になります。","application":"利益の最大化や効用の最大化など、頂点を見つける問題が正しく解けているかの条件になります。","tsukkomi":"限界効用逓減の法則が成り立つ関数は、上に凸ですか、下に凸ですか？","isImportant":false},{"id":114,"category":"1. 一変数微積","title":"合成関数の微分（チェインルール）とは何ですか","definition":"関数の中に別の関数が入っている（y = f(g(x))）ものを微分する連鎖律の法則。","explanation":"「xが動けばuが動き、uが動けばyが動く」という連鎖的な変化を、それぞれの微分の掛け算として求める計算ルールです。","application":"「原油価格が上がると物流コストが上がり、最終的な物価が上がる」といった、連鎖的影響を数式で追う時に使います。","tsukkomi":"これを多変数の全微分に拡張するとどうなりますか？","isImportant":false},{"id":201,"category":"2. 多変数・最適化","title":"偏微分とは何ですか","definition":"多変数関数のうち、1つの変数だけを動かし、他は定数として扱う微分。","explanation":"結果に影響を与える要因が複数あるとき、『他の要因はすべて固定して、ある1つの要因だけをいじったらどうなるか』を見る操作です。","application":"経済学の基本である『他の条件を一定とした場合（Ceteris Paribus）』の分析そのものです。","tsukkomi":"労働と資本で生産量が決まる時、労働で偏微分したものは何と呼ばれますか？","isImportant":false},{"id":202,"category":"2. 多変数・最適化","title":"なぜ他の変数を固定するのですか","definition":"特定の要因が与える『純粋な影響』を知りたいから。","explanation":"全部が同時に動いてしまうと、どの要因が原因で結果が変わったのか分からなくなるため、影響を切り分けるためです。","application":"マーケティングで、気温の影響を排除して、割引キャンペーンだけの効果を測定するようなイメージです。","tsukkomi":"全部が同時に変化した時の総変化量を知りたい時は何を使いますか？","isImportant":false},{"id":203,"category":"2. 多変数・最適化","title":"勾配とは何ですか","definition":"各変数での偏微分を並べたベクトル（∇f）。","explanation":"すべての方向に対する『傾き』の情報をまとめたものです。山の斜面で『どの方向にどれくらいキツいか』を示す矢印です。","application":"機械学習のパラメータ更新など、関数を最も効率よく最大化（または最小化）する方向を決定するナビとして機能します。","tsukkomi":"勾配ベクトルは、関数の等高線に対してどのような角度を持ちますか？","isImportant":true},{"id":204,"category":"2. 多変数・最適化","title":"なぜ勾配は最も増加する方向なのですか","definition":"各変数の変化率のベクトル和であり、数学的に最大傾斜を向くから。","explanation":"偏微分した各成分を組み合わせたベクトルは、方向微分の公式から、最も傾斜が急になる方向（等高線と直交する方向）を向く性質があるからです。","application":"最急降下法など、アルゴリズムが『最短ルートで最適解に向かう』ための方向指示器になります。","tsukkomi":"逆に、最も急激に減少する方向を見つけるにはどうすればいい？","isImportant":false},{"id":205,"category":"2. 多変数・最適化","title":"勾配が0とは何を意味しますか","definition":"どの方向に動いても変化しない平坦な場所（停留点）。","explanation":"山の頂上か、谷底か、あるいは峠のような平らな場所のいずれかにいる状態です。","application":"多変数の最適化問題において、最大・最小の『候補地』を見つけたことを意味します。","tsukkomi":"勾配がゼロなら、必ずそこが最大値または最小値だと言い切れますか？","isImportant":false},{"id":206,"category":"2. 多変数・最適化","title":"なぜ勾配=0だけでは十分でないのですか","definition":"鞍点（馬の鞍のような形）の可能性があるため。","explanation":"ある方向からは頂上に見えても、別の方向からは谷底に見える『ねじれた平坦な場所』があるからです。極大か極小かの確定には二階偏微分が必要です。","application":"システムが誤った最適化（偽のゴール）で止まってしまわないよう、ヘッセ行列によるチェックが不可欠です。","tsukkomi":"鞍点を判定するために使う行列の名前は何ですか？","isImportant":false},{"id":207,"category":"2. 多変数・最適化","title":"制約なし最適化とは何ですか","definition":"条件に縛られず、関数そのものの純粋な最大・最小を探すこと。","explanation":"予算や資源の限界を気にせず、『もし何でもできるならどこがベストか』を見つける問題です。","application":"データ分析で、誤差を最小化するパラメータを自由空間の中から探し出す（最小二乗法など）際に使われます。","tsukkomi":"現実の経済問題で、制約なし最適化がそのまま使えるケースは多いですか？","isImportant":false},{"id":208,"category":"2. 多変数・最適化","title":"制約付き最適化とは何ですか","definition":"予算や資源などの制限ルールの下で、目的関数を最大化・最小化すること。","explanation":"『お小遣い1万円以内で、一番満足度が高くなる買い物の組み合わせは？』のように、現実の縛りの中でベストを探すことです。","application":"経済学の意思決定（効用最大化、費用最小化）は、ほぼすべてこの制約付き最適化でモデル化されます。","tsukkomi":"制約付き最適化を解くための代表的な数学の手法は何ですか？","isImportant":false},{"id":209,"category":"2. 多変数・最適化","title":"全微分とは何ですか。（偏微分との違いは？）","definition":"すべての変数が同時に微小変化したときの、関数全体の総変化量。","explanation":"偏微分が「他の変数を止めて1つだけ動かす」のに対し、全微分は「全部の変数がちょっとずつ同時に動いたら結果はどうなるか」を足し合わせて計算したものです。","application":"複数の経済的ショック（例：金利上昇と円安）が同時に起きた時の、全体としての市場への影響を計算するのに使います。","tsukkomi":"全微分の式は、各変数の「偏微分」と「微小変化(dx, dyなど)」を使ってどう表されますか？","isImportant":false},{"id":210,"category":"2. 多変数・最適化","title":"ヘッセ行列とは何ですか","definition":"多変数関数のすべての2階偏微分を成分として並べた正方行列。","explanation":"1変数の「二階微分（曲がり具合）」を、多変数の空間に拡張したものです。各方向に対して関数がどう反っているかの情報が詰まっています。","application":"最適化問題を解いたときに、そこが本当に山の頂上（利益最大化）なのか、単なる峠道（鞍点）なのかを判定するために必須のツールです。","tsukkomi":"ヘッセ行列は通常、ある特別な性質（形）を持った行列になりますが、何行列になりますか？（ヒント：対角線を挟んで対称）","isImportant":true},{"id":211,"category":"2. 多変数・最適化","title":"多変数関数で、そこが最大（または最小）だとどうやって判定しますか","definition":"勾配が0の停留点を見つけ、その点でのヘッセ行列の符号（正定値など）を調べる。","explanation":"まず1階偏微分が全て0になる平らな場所を探します。次に、その場所のヘッセ行列の行列式や固有値を調べて、全方向に凹んでいれば最大（山）、全方向に反っていれば最小（谷）と判定します。","application":"複数の制約がない状況での利益最大化・費用最小化問題の、最終的な「答え合わせ」の基準として機能します。","tsukkomi":"ヘッセ行列の行列式がマイナスのとき、その点は最大でも最小でもない「何」と呼ばれますか？","isImportant":false},{"id":301,"category":"3. ラグランジュ","title":"ラグランジュ未定乗数法とは何ですか","definition":"制約条件のもとで、目的関数の極値を求めるための数学的手法。","explanation":"新しい変数λ（ラグランジュ乗数）を使って、制約付きの問題を『制約なしの最適化問題』にすり替えて解くテクニックです。","application":"限られた予算で効用を最大化する消費者行動や、限られたコストで生産を最大化する企業行動の分析に必須の手法です。","tsukkomi":"目的関数が f(x,y)、制約が g(x,y)=0 のとき、ラグランジュ関数 L をどう立てますか？","isImportant":true},{"id":302,"category":"3. ラグランジュ","title":"なぜ λg(x,y) を足す（引く）のですか","definition":"制約を目的関数に『ペナルティ』として組み込むため。","explanation":"制約から外れると関数全体の値が悪化するように仕向けることで、自然と制約を満たす場所が極値になるように設計されているからです。","application":"工学の制御理論でも、ルールを破ったときのペナルティコストを関数に組み込む同じ考え方をします。","tsukkomi":"g(x,y)=0 という制約を満たしているとき、追加した項 λg(x,y) の値はいくつになりますか？","isImportant":false},{"id":303,"category":"3. ラグランジュ","title":"なぜ勾配が一致するのですか","definition":"最適点では、目的関数の等高線と制約条件の線が接するから。","explanation":"制約の線上を歩いているとき、これ以上目的関数の値を上げられない（等高線を越えられない）限界のポイントだからです。このとき、2つの線の法線（勾配）は平行になります。","application":"無差別曲線と予算制約線が接する点が最適消費点である、という経済学の図形的な説明の数学的裏付けです。","tsukkomi":"勾配が一致するということを、数式（∇f と ∇g を使って）で表すとどうなりますか？","isImportant":false},{"id":304,"category":"3. ラグランジュ","title":"λ は何を意味しますか","definition":"制約を1単位緩めたときに、目的関数の最大値がどれだけ増えるか。","explanation":"数学的なただの係数ではなく、『予算が1円増えたら、満足度はあとどれくらい増えるか』という限界的な価値を表しています。","application":"リソースを追加投入したときの費用対効果（限界効用）を示すため、経営判断に直接使える数値です。","tsukkomi":"λ=0 になった場合、その制約条件はどういう状態だと言えますか？","isImportant":false},{"id":305,"category":"3. ラグランジュ","title":"影の価格とは何ですか","definition":"経済学における、ラグランジュ乗数 λ の呼び名（潜在価格）。","explanation":"市場で取引される実際の価格ではなく、その制約（資源など）が関数にとって内部的にどれだけの価値・利益を持っているかを表す隠れた価格です。","application":"環境問題などで、市場価格のない資源（きれいな空気など）の価値をモデル内で評価する際に使われます。","tsukkomi":"ある工場の生産制約の影の価格が非常に高い場合、経営者としてどう判断すべきですか？","isImportant":false},{"id":306,"category":"3. ラグランジュ","title":"効用最大化とどう関係しますか","definition":"予算制約のもとで満足度を最大にする組み合わせを求める計算そのもの。","explanation":"目的関数を『効用関数』、制約を『予算』と置き換えれば、ラグランジュ未定乗数法の手順がそのまま消費者の意思決定モデルになります。","application":"需要関数を導出するためのスタート地点となるため、ミクロ経済学を数理的に扱う上で避けて通れません。","tsukkomi":"効用最大化を解いて出てきた最適解の条件（限界代替率＝価格比）を説明できますか？","isImportant":false},{"id":401,"category":"4. テイラー展開","title":"テイラー展開とは何ですか","definition":"複雑な関数を、ある点の周りで多項式の足し算（無限級数）に展開して近似する手法。","explanation":"そのままでは計算できない複雑な曲線を、xの1乗、2乗、3乗…といった扱いやすい計算の足し合わせに置き換える操作です。","application":"コンピュータやプログラムの裏側で、sinやexpなどの関数を四則演算だけで計算するアルゴリズムの根幹です。","tsukkomi":"展開する中心の点を x=0 とした特別なテイラー展開を何と呼びますか？","isImportant":true},{"id":402,"category":"4. テイラー展開","title":"一次近似とは何ですか","definition":"関数の曲線を、ある点の付近で『接線（直線）』とみなして近似すること。","explanation":"テイラー展開の最初の2項（定数項とxの1乗の項）だけで打ち切る近似です。一番シンプルに傾向を捉える方法です。","application":"複雑な経済モデルを線形化し、行列計算や連立方程式として扱いやすくするために多用されます。","tsukkomi":"一次近似の式を、f(a)と微分f'(a)を使って言ってみてください。","isImportant":false},{"id":403,"category":"4. テイラー展開","title":"なぜ接線で近似できるのですか","definition":"ごく狭い範囲で見れば、どんな滑らかな曲線も直線に限りなく近くなるから。","explanation":"地球は丸いですが、人間が立っている狭い範囲では平ら（直線）に感じるのと同じ理屈です。","application":"微小な変化（限界分析）を前提とする経済学において、局所的な分析であれば直線近似で十分実用に耐えるからです。","tsukkomi":"では、近似する基準点から大きく離れた場所の値を予測したい場合はどうなりますか？","isImportant":false},{"id":404,"category":"4. テイラー展開","title":"なぜ一次近似だけでは不十分なのですか","definition":"基準点から離れると、直線と実際の曲線のズレ（誤差）が大きくなるから。","explanation":"曲線は曲がっているのに、直線はまっすぐ進んでしまうため、遠くに行けば行くほど予測と現実のギャップが広がるからです。","application":"市場の小さな変動なら一次近似で予測可能ですが、リーマンショックのような大きな変動には対応できなくなります。","tsukkomi":"誤差を小さくするためには、近似のレベルをどうすればいいですか？","isImportant":false},{"id":405,"category":"4. テイラー展開","title":"二次近似とは何ですか","definition":"直線だけでなく、曲がり具合も考慮して『放物線』で近似すること。","explanation":"テイラー展開をxの2乗の項まで取る近似です。傾きに加えて『曲がりのクセ』まで合わせるので、より広範囲で正確になります。","application":"最適化問題において、目的関数の極値付近の形状（山か谷か）を捉えるために必須の近似レベルです。","tsukkomi":"二次近似で追加される項には、何階の微分が使われていますか？","isImportant":false},{"id":406,"category":"4. テイラー展開","title":"二次項は何を表していますか","definition":"関数の曲がり具合（二階微分の情報）。","explanation":"速度に対する『加速度』のようなもので、グラフがどちらにカーブしているか（凸か凹か）という性質を表しています。","application":"投資の文脈で言うと、債券価格の金利に対する感応度のうち、曲がり具合を示す『コンベクシティ』の概念そのものです。","tsukkomi":"多変数関数の場合、この二次項の情報をまとめた行列を何と呼びますか？","isImportant":false},{"id":407,"category":"4. テイラー展開","title":"テイラー展開は何に役立ちますか","definition":"解析が困難な関数を、扱いやすい多項式に落とし込めること。","explanation":"どんなに複雑な現象でも、四則演算（足し算と掛け算）だけで処理できるようになるため、計算機との相性が抜群に良いです。","application":"金融工学におけるオプション価格の計算など、解析的に解けないモデルを数値計算でシミュレーションする際に不可欠です。","tsukkomi":"近似の精度を上げたい時は、展開する項数をどうすればいい？","isImportant":false},{"id":408,"category":"4. テイラー展開","title":"テイラー展開と最適化はどう関係しますか","definition":"極値付近を二次近似することで、最大・最小の判定条件が導かれる。","explanation":"停留点（一次微分が0）の周りを二次近似すると、二次項（ヘッセ行列）の符号だけで関数の形状（山か谷か）が判定できるからです。","application":"ニュートン法など、コンピュータが自動で最適解を探し出すアルゴリズムの理論的な基盤になっています。","tsukkomi":"一次微分が0のとき、テイラー展開の式の中で一番影響力を持つのはどの項になりますか？","isImportant":false},{"id":409,"category":"4. テイラー展開","title":"テイラー展開と経済工学はどうつながりますか","definition":"非線形の複雑な経済現象を、数理的に処理可能な形へ変換する橋渡し。","explanation":"現実の経済は複雑な曲線ですが、テイラー展開で近似することで、線形代数や微積分などの強力な数学ツールが適用できるようになります。","application":"リスク管理ツール（デルタ・ガンマヘッジ）などは、価格変動をテイラー展開の一次・二次項として捉えた実例です。","tsukkomi":"あなたが作った分析ツールの中で、複雑なデータを近似して処理した経験はありますか？","isImportant":false},{"id":410,"category":"4. テイラー展開","title":"一次近似はなぜ限界分析とつながるのですか","definition":"限界分析の『1単位の追加的変化』は、微小変化の一次近似そのものだから。","explanation":"限界分析は『労働をちょっと増やしたらどうなるか』を見ますが、これは曲線をその点での接線（一次近似）に沿ってちょっと進むのと同じ計算です。","application":"限界効用や限界費用を求めることは、関数を一次近似してその傾きを取り出していることに他なりません。","tsukkomi":"変化量が『1単位』ではなくもっと大きな変化になった場合、限界分析（一次近似）の信頼性はどうなりますか？","isImportant":false},{"id":501,"category":"5. 線形代数","title":"ベクトルとは何ですか","definition":"大きさと向きを持つ量。また、複数のデータを一列に並べたもの。","explanation":"矢印として空間上の位置や動きを表すだけでなく、経済学では『価格と数量のセット』のように複数の要素をまとめたデータとして扱います。","application":"顧客の購買履歴などを特徴ベクトルとして並べ、機械学習で類似度を分析するベースになります。","tsukkomi":"ベクトルの『次元』が増えるというのは、データ的にどういうことですか？","isImportant":false},{"id":502,"category":"5. 線形代数","title":"単位ベクトルとは何ですか","definition":"大きさ（長さ・ノルム）がちょうど 1 のベクトル。","explanation":"向きだけの情報を純粋に取り出したベクトルです。他のベクトルを測るための『1メモリ分の基準』になります。","application":"データ分析において、スケールの違うデータを比較するために正規化（長さを1に揃える）する際によく使います。","tsukkomi":"任意のベクトルを単位ベクトルに変換する操作を何と呼びますか？","isImportant":false},{"id":503,"category":"5. 線形代数","title":"基底とは何ですか","definition":"ある空間のすべての場所を表現するために必要な、独立なベクトルのセット。","explanation":"XYZ座標系のx軸、y軸、z軸にあたる『座標の骨組み』のことです。これらを伸縮・足し合わせることで空間内のどこへでも行けます。","application":"主成分分析などで、データを最も見やすく説明できる『新しい軸（基底）』を見つける操作に直結します。","tsukkomi":"2次元平面を表現するための基底は、最低何本必要ですか？","isImportant":false},{"id":504,"category":"5. 線形代数","title":"単位ベクトルと基底の違いは何ですか","definition":"単位ベクトルは『長さが1』という状態。基底は空間を張る『役割』のこと。","explanation":"基底ベクトルは空間の骨組みであれば長さが1である必要はありません。逆に、長さ1の単位ベクトルでも、同じ方向を向いていれば基底にはなれません。","application":"ただし、計算を楽にするために、お互いに直交していて長さが1の『正規直交基底』がデータ処理では最も重宝されます。","tsukkomi":"基底のベクトル同士が線形従属（平行など）であってはいけないのはなぜ？","isImportant":false},{"id":505,"category":"5. 線形代数","title":"次元とは何ですか","definition":"その空間を表現するために必要な、独立な情報（基底ベクトル）の数。","explanation":"点を特定するために、いくつの変数（座標）が必要かという数です。平面なら2つ（2次元）、立体なら3つ（3次元）です。","application":"データ分析における『変数の数』です。高次元の複雑なデータを、本質を損なわずに低次元に落とす（次元削減）技術が重要になります。","tsukkomi":"ランク（階数）と次元の関係を説明できますか？","isImportant":false},{"id":506,"category":"5. 線形代数","title":"行列とは何ですか","definition":"数を長方形に並べたもの。ベクトルを別のベクトルへ変換する『写像（ルール）』。","explanation":"ある時点の状態を入力すると、別の状態を出力するシステムの動きそのものをパッケージ化したものです。","application":"産業連関表のように、各部門間の波及効果をまとめて計算するシステムとして機能します。","tsukkomi":"正方行列（行と列が同じ）の変換は、空間の次元を変えますか？","isImportant":false},{"id":507,"category":"5. 線形代数","title":"行列の掛け算とは何ですか","definition":"2つの変換を連続して行う操作（合成写像）。","explanation":"ある変換（A）をしたあとに、さらに別の変換（B）を行うという『ルールの連続適用』を意味します。","application":"マルコフ連鎖のように、時間ごとに状態が変化する確率モデルを何ステップも先まで予測する際に使います。","tsukkomi":"内積も行列の掛け算の一種とみなすことができますが、どうやって書きますか？","isImportant":false},{"id":508,"category":"5. 線形代数","title":"なぜ行列の掛け算は順番を変えるとダメなのですか","definition":"変換の順番が変わると、結果の行き先が変わってしまう（非可換）から。","explanation":"『右を向いてから前に進む』と『前に進んでから右を向く』では行き止まる場所が違うように、変換は順番が命だからです。","application":"複数の経済政策やショックを与える順番によって、最終的な市場への影響が変わることを数理的に示しています。","tsukkomi":"順番を変えても結果が同じになる（可換な）特別な行列の組み合わせはありますか？","isImportant":false},{"id":509,"category":"5. 線形代数","title":"連立方程式と Ax=b の関係は何ですか","definition":"複数の式を、行列Aによる変数xの変換結果がbになる、と1つにまとめたもの。","explanation":"バラバラの連立方程式を、行列Aというシステムに未知の状態xを入れたら、観測された結果bが出てきた、という視点で捉え直したものです。","application":"複雑な需要・供給の均衡モデルを解く際、逆行列を使って一発で全体最適な変数を求めるベースになります。","tsukkomi":"この形式のメリットは、未知数xが何百個に増えてもどうなることですか？","isImportant":true},{"id":510,"category":"5. 線形代数","title":"解がないとはどういうことですか","definition":"変換先の空間に目標のベクトルbが存在しない（矛盾している）状態。","explanation":"行列Aの変換で作れる範囲（平面など）の外側に、目標とするbが浮いてしまっている状態です。","application":"全ての制約（条件）を同時に満たすような経済的な均衡点は存在しない、ということを意味します。","tsukkomi":"解がない場合、実務のデータ分析ではどうやって妥協点を探しますか？（ヒント：最小二乗法）","isImportant":false},{"id":511,"category":"5. 線形代数","title":"解が無数にあるとはどういうことですか","definition":"変換によって情報が潰れ、同じbに行く元のベクトルxが無限にある状態。","explanation":"立体を平面に影として落とすように、奥行きの情報が失われたため、影の形から元の立体を1つに特定できない状態です。","application":"方程式の数より変数の数が多い場合など、条件が不足していて最適解が絞りきれない状態を意味します。","tsukkomi":"この状態のとき、行列Aの行列式はどうなっていますか？","isImportant":false},{"id":512,"category":"5. 線形代数","title":"行列式とは何ですか","definition":"行列変換によって空間のボリューム（面積・体積）が何倍になるかを示すスカラー。","explanation":"行列というシステムを通したときに、空間全体がビヨーンとどれくらい拡大・縮小されるかの倍率です。","application":"確率変数を変換したときの確率の濃さ（密度）を補正するヤコビアンとして、統計分析の裏側で機能します。","tsukkomi":"行列式がマイナスの値になった場合、空間はどう変化したと言えますか？","isImportant":false},{"id":513,"category":"5. 線形代数","title":"行列式が0とは何ですか","definition":"空間がペチャンコに潰れてボリュームが0になり、次元が下がること。","explanation":"3次元の立体が平面や線に押し潰されてしまう状態です。","application":"データの中に重複（マルチコ）があり、実質的な情報量が不足しているサインとしてデータ分析で警戒すべき状態です。","tsukkomi":"行列式が0の行列のことを、専門用語で何と呼びますか？","isImportant":false},{"id":514,"category":"5. 線形代数","title":"逆行列とは何ですか","definition":"行列の変換を完全に元に戻す（巻き戻す）行列。","explanation":"掛け合わせると何もしない行列（単位行列）になる存在です。結果bから、原因xを逆算するためのツールです。","application":"産業連関分析（レオンチェフ逆行列）など、最終需要から必要な総生産量を逆算するような経済モデルで威力を発揮します。","tsukkomi":"すべての行列に逆行列は存在しますか？","isImportant":false},{"id":515,"category":"5. 線形代数","title":"なぜ逆行列で元に戻せるのですか","definition":"Aと逆行列A^(-1)を掛けると、何もしない変換（単位行列I）になるから。","explanation":"Ax=b の両辺に左から逆行列を掛けると、左辺のAが相殺されて x=A^(-1)b となり、直接xの中身を取り出せるからです。","application":"連立方程式をガリガリ手計算しなくても、行列の操作だけでシステム全体の解を一括で求められるからです。","tsukkomi":"逆行列を掛ける順番（右からか、左からか）は重要ですか？","isImportant":false},{"id":516,"category":"5. 線形代数","title":"逆行列が存在しないとはどういうことですか","definition":"情報が潰れてしまい、元の状態を一意に復元できない状態。","explanation":"行列式が0（空間がペチャンコ）になり、違う場所から来た点が同じ場所に重なってしまったため、巻き戻しが不可能な状態です。","application":"回帰分析で変数が多重共線性を起こしていると、逆行列が計算できずパラメータが求まらないというエラーに直結します。","tsukkomi":"逆行列が存在する行列のことを何と呼びますか？","isImportant":false},{"id":517,"category":"5. 線形代数","title":"固有値とは何ですか","definition":"行列変換をかけたときに、向きが変わらず長さだけが何倍になるかを示す倍率。","explanation":"そのシステム（行列）が持つ固有の『伸縮のパワー』を表すスカラー値です。","application":"主成分分析において、どの新しい軸（特徴）がデータの情報を一番多く持っているか（重要度）を表す指標になります。","tsukkomi":"固有値を求めるための方程式（det(A - λI) = 0）を何と呼びますか？","isImportant":true},{"id":518,"category":"5. 線形代数","title":"固有ベクトルとは何ですか","definition":"行列による変換を受けても、自分の向きが変わらない特殊なベクトル。","explanation":"変換の前後で、伸び縮みはするけれど、向いているライン（軸）が一切ブレない強靭なベクトルのことです。","application":"複雑なデータの散らばりの中から、データの変動が最も大きい『主成分の方向』を見つけ出す軸になります。","tsukkomi":"固有ベクトルは長さを変えても（スカラー倍しても）固有ベクトルですか？","isImportant":false},{"id":519,"category":"5. 線形代数","title":"固有値と固有ベクトルの違いは何ですか","definition":"固有値は『倍率（スカラー）』、固有ベクトルはその『方向（ベクトル）』。","explanation":"固有ベクトルという『ブレない軸』に沿って、固有値という『パワー』でビヨーンと伸び縮みする、とセットで捉えています。","application":"マルコフ過程（状態遷移）において、長期的に安定する状態（定常分布）は固有値1に対応する固有ベクトルとして求まります。","tsukkomi":"固有値・固有ベクトルを調べることで、行列を対角化するメリットは何ですか？","isImportant":false},{"id":520,"category":"5. 線形代数","title":"固有値0とは何ですか","definition":"その固有ベクトルの方向の情報が完全に潰されてゼロになること。","explanation":"倍率が0ということは、その軸に沿った情報が完全に押し潰されて消滅してしまうことを意味します。","application":"行列式は固有値の掛け算なので、固有値に1つでも0があると行列式も0になり、逆行列を持たない（エラーになる）と判定できます。","tsukkomi":"固有値が0のとき、方程式 Ax=0 は自明な解（x=0）以外の解を持ちますか？","isImportant":false},{"id":521,"category":"5. 線形代数","title":"線形独立とは何ですか","definition":"ベクトル同士が互いに違う方向を向いていて、使い回しがきかない状態。","explanation":"あるベクトルを、他のベクトルの組み合わせ（足し算や定数倍）で作ることができない、無駄のない独立した状態です。","application":"分析に使うデータ群の中に、全く新しい独自の要素がしっかり含まれている（情報がフルにある）状態を指します。","tsukkomi":"2つのベクトルが線形独立でない（平行な）場合、それらのなす角は何度ですか？","isImportant":false},{"id":522,"category":"5. 線形代数","title":"線形従属とは何ですか","definition":"あるベクトルが他のベクトルの組み合わせで作れてしまう（無駄がある）状態。","explanation":"『右に2歩、上に2歩』という動きが、『右斜め上に進む』という別のベクトルで代用できてしまうような、情報が重複している状態です。","application":"経済データで『体重』と『身長』と『BMI』を同時に分析に入れるようなものです。BMIは他の2つから作れるため、情報として冗長になります。","tsukkomi":"線形従属なベクトルを行列の列に並べたとき、その行列の行列式はどうなりますか？","isImportant":false},{"id":523,"category":"5. 線形代数","title":"射影とは何ですか","definition":"あるベクトルに光を当てて、別の空間やベクトル上に落とした『影』。","explanation":"手持ちの情報を、特定の視点（軸）から見たときにどれくらいの大きさになるか、都合よく抽出する操作です。","application":"複雑な高次元データを2次元のグラフに分かりやすく表示する際など、情報を落として視覚化するのに使います。","tsukkomi":"落とした影と元のベクトルのズレ（誤差）を最小にする射影を何と呼びますか？","isImportant":false},{"id":524,"category":"5. 線形代数","title":"直交とは何ですか","definition":"ベクトルのなす角が90度で、互いに影響を与え合わない独立した関係。","explanation":"内積が0になる状態です。一方がどれだけ増減しても、もう一方の成分には一切干渉しないという強固な独立性を持ちます。","application":"無相関な（完全に別の動きをする）投資資産のペアを見つけるなど、リスク分散の極意を幾何学的に表したものです。","tsukkomi":"直交するベクトル同士は、必ず線形独立ですか？","isImportant":false},{"id":525,"category":"5. 線形代数","title":"行列のランク（階数）とは何ですか","definition":"行列の中に含まれる、互いに線形独立な（無駄のない）列ベクトルまたは行ベクトルの最大数。","explanation":"その行列が持っている「本当に有効な情報の次元数」のことです。重複した情報を削ぎ落とした後に残る本質的な情報量とも言えます。","application":"データセットの中に「体重」と「身長」と「BMI」のような重複情報（多重共線性）が含まれていないかを確認する指標になります。","tsukkomi":"3x3の正方行列でランクが2の場合、行列式はいくつになりますか？","isImportant":false},{"id":526,"category":"5. 線形代数","title":"ランクと連立方程式の解（Ax=b）にはどんな関係がありますか","definition":"係数行列Aと、拡大係数行列(A|b)のランクを比較することで解の有無を判定できる（ルーシェ・カペリの定理）。","explanation":"行列Aのランクと、目標bを付け足した行列のランクが等しければ解が存在します。さらに、そのランクが変数の数と同じなら解はただ1つに決まります。","application":"複雑な経済モデルの方程式を組んだ時に、計算を始める前に「そもそも答えが1つに決まるシステムなのか」を判定できます。","tsukkomi":"ランクが変数の数より少ない場合、方程式の解はどうなりますか？","isImportant":false},{"id":527,"category":"5. 線形代数","title":"内積とは何ですか","definition":"2つのベクトルが「どれくらい同じ方向を向いているか」を表すスカラー値。a・b = |a||b|cosθ","explanation":"片方のベクトルに光を当てて、もう片方のベクトルに落とした「影の長さ」を掛け合わせたものです。方向の類似度を示します。","application":"統計学の「共分散」や「相関係数」は、データをベクトルと見なした時の内積（とcosθ）そのものです。","tsukkomi":"内積が0のとき、2つのベクトルは幾何学的にどういう関係にありますか？","isImportant":true},{"id":601,"category":"6. 最小二乗・回帰","title":"最小二乗法とは何ですか","definition":"データと予測値のズレ（誤差）の二乗の合計を最も小さくする直線を引く手法。","explanation":"バラバラのデータ点の真ん中を通る、一番しっくりくる『トレンドライン』を引くための数学的な方法です。","application":"過去の売上データから将来の売上予測線を引くなど、経済予測モデルを構築する際の最も標準的な手法です。","tsukkomi":"なぜ『誤差の絶対値の和』ではなく『二乗和』を使うのですか？","isImportant":true},{"id":602,"category":"6. 最小二乗・回帰","title":"なぜ誤差を二乗するのですか","definition":"プラスとマイナスの相殺を防ぎ、大きなズレに重いペナルティを与えるため。","explanation":"二乗することで全てプラスになり、かつ、遠く外れた外れ値ほど二乗効果で数値が跳ね上がるため、大きな予測外しを厳しく防ぐ設計になっています。","application":"また、二乗すると綺麗な二次関数（下に凸）になるため、微分して最小値を求めるのが非常に簡単だからです。","tsukkomi":"外れ値（極端におかしなデータ）がある場合、最小二乗法の結果はどうなりやすいですか？","isImportant":false},{"id":603,"category":"6. 最小二乗・回帰","title":"なぜ微分して0にすると最小値になるのですか","definition":"誤差の二乗和が下に凸の二次関数（放物線）になるため。","explanation":"誤差を二乗して足し合わせた関数は、お椀のような形になります。なので、傾き（微分）が0の場所が確実に一番底（最小値）になるからです。","application":"目的関数が凸関数であるという性質を利用して、最適解を一発で求める解析的アプローチです。","tsukkomi":"パラメータが複数ある場合（重回帰など）は、どうやって微分しますか？","isImportant":false},{"id":604,"category":"6. 最小二乗・回帰","title":"微分で最小二乗法をどう解きますか","definition":"誤差関数を各パラメータ（傾きや切片）で偏微分し、=0の連立方程式を解く。","explanation":"傾きと切片、それぞれについて『ここを動かしても誤差が減らなくなった』という底のポイント（偏微分=0）を同時に満たす値を連立方程式で探します。","application":"機械学習のモデル学習において、最適な重み（パラメータ）を更新していく根本的な計算プロセスです。","tsukkomi":"この偏微分=0から導き出される連立方程式のことを何と呼びますか？","isImportant":false},{"id":605,"category":"6. 最小二乗・回帰","title":"射影と最小二乗法はどう関係しますか","definition":"最小二乗法は、目標データを説明変数の空間へ『直交射影』する操作そのもの。","explanation":"目標ベクトルに届かないときに、作れる範囲（平面）の中で『一番近い点（影）』を探す幾何学的な操作と同じ意味になります。","application":"統計的な予測を、空間上のベクトルと影の距離という視覚的なイメージで捉え直すことで、多変量解析の理解が深まります。","tsukkomi":"射影した予測値と、実際のデータとのズレのベクトルのことを統計で何と呼びますか？","isImportant":false},{"id":606,"category":"6. 最小二乗・回帰","title":"なぜ誤差が直交するのですか","definition":"平面内の点で目標に一番近い（最短距離）のは、垂直に下ろした点だから。","explanation":"ある点から床までの最短距離が、斜めではなく『真下（垂直）』に線を引いた長さになるのと同じ幾何学的な理由です。","application":"『残差（誤差）は説明変数と無相関（直交）になる』という回帰分析の重要な性質を証明しています。","tsukkomi":"残差ベクトルと、予測値ベクトルを内積するとどうなりますか？","isImportant":false},{"id":607,"category":"6. 最小二乗・回帰","title":"正規方程式とは何ですか","definition":"最小二乗法の最適パラメータを一発で求めるための、行列の連立方程式。","explanation":"偏微分=0 の条件を行列の形に整理した X^T X β = X^T y という式のことです。これを解けば最適な係数が求まります。","application":"複雑なループ計算をしなくても、逆行列の計算さえできれば一瞬で予測モデルが完成するため、実装上非常に強力です。","tsukkomi":"正規方程式を解くために、X^T X の逆行列を計算しますが、これが計算できないのはどんな時ですか？","isImportant":false},{"id":608,"category":"6. 最小二乗・回帰","title":"回帰分析とは何ですか","definition":"変数間の関係性を数式モデルに当てはめ、予測や要因分析を行う手法。","explanation":"『広告費をいくらかけたら、売上がいくら増えるか』という関係を一本の線や式で表し、見えない要因の強さを測る分析です。","application":"計量経済学の中心的なツールであり、経済理論が現実のデータに合致しているかを検証する際に不可欠です。","tsukkomi":"説明変数が1つの場合を単回帰分析と呼びますが、2つ以上ある場合は何と呼びますか？","isImportant":false},{"id":609,"category":"6. 最小二乗・回帰","title":"回帰分析と最小二乗法の違いは何ですか","definition":"回帰分析は『目的・分析手法』、最小二乗法はそのための『計算手段』。","explanation":"回帰分析という『関係性を調べたい』という目的を達成するために、直線を引く『計算テクニック』として最小二乗法を使っているという関係です。","application":"実務では、回帰分析の計算手段として、最小二乗法以外にも最尤法など別の数学アプローチをとることもあります。","tsukkomi":"誤差が正規分布に従うという前提を置いた場合、最小二乗法は別のどんな推定法と結果が一致しますか？","isImportant":false},{"id":610,"category":"6. 最小二乗・回帰","title":"相関とは何ですか","definition":"2つのデータがどれくらい連動して動くかを表す関係性の強さ。","explanation":"一方が増えた時にもう一方も増える（正の相関）、あるいは減る（負の相関）という、一緒に動く傾向のことです。","application":"ポートフォリオ理論において、相関の低い資産を組み合わせてリスクを打ち消し合う分散投資の基本概念です。","tsukkomi":"相関係数は、どの範囲の数値をとりますか？","isImportant":false},{"id":611,"category":"6. 最小二乗・回帰","title":"相関と因果はどう違いますか","definition":"相関は『一緒に動くこと』、因果は『Aが原因でBが起こること』。","explanation":"夏に『アイスの売上』と『水難事故』は同時に増えます（相関あり）が、アイスを食べたから事故が起きた（因果関係）わけではありません。","application":"データ分析で『見せかけの相関』に騙されて間違った経済政策や投資判断を下さないために、最も警戒すべき概念です。","tsukkomi":"このアイスと水難事故の例のように、両方に影響を与えている背後の要因（気温）のことを統計で何と呼びますか？","isImportant":true},{"id":701,"category":"7. 確率・統計","title":"確率とは何ですか","definition":"ある事象が起こる『期待される割合』や『不確実性の度合い』。","explanation":"サイコロの目のように、何度も繰り返したときに落ち着く割合（客観的確率）や、明日の株価が上がるという信念の強さ（主観的確率）を表します。","application":"不確実な未来に対して、リスク（確率分布）を数値化し、合理的な意思決定を行うための基礎言語です。","tsukkomi":"確率の合計は必ずいくつになりますか？","isImportant":false},{"id":709,"category":"7. 確率・統計","title":"信頼区間とは何ですか","definition":"『真の値はこの範囲に高確率で収まっているだろう』という幅を持たせた推定。","explanation":"『平均はズバリ50です』と言うのではなく、『95%の確率で45〜55の間にあります』と、バッファ（幅）を持たせて伝える方法です。","application":"経済成長率の予測などで、予測のブレ幅を提示することで、最悪のシナリオも想定した政策決定が可能になります。","tsukkomi":"『95%信頼区間』の95%という数字は、正確には何を意味していますか？","isImportant":false},{"id":710,"category":"7. 確率・統計","title":"確率変数とは何ですか","definition":"結果が出るまでどんな値をとるか分からないが、値ごとの「確率」が決まっている変数。","explanation":"代数の x や y は「決まった数字の代わり」ですが、確率変数は「サイコロの目」のように、振るたびに変わり、背後に確率のルール（確率分布）を背負っている変数です。","application":"株価や為替レートなど、明日の確実な値は分からないが、変動の確率分布は想定できるものをモデル化するのに不可欠です。","tsukkomi":"確率変数がとる値を全て足し合わせて、それぞれの確率を掛けたものを何と呼びますか？","isImportant":false},{"id":711,"category":"7. 確率・統計","title":"正規分布とはどんな分布ですか。なぜ重要なんですか。","definition":"平均を中心に左右対称な釣鐘型を描く確率分布。自然界や社会で最も頻繁に現れる。","explanation":"平均付近のデータが一番多く、そこから離れるほど極端に減っていく分布です。どんなデータでも数多く集めれば最終的にこの形に近づく（中心極限定理）ため、統計学の主役になります。","application":"データ分析や検定、金融工学のほとんどが、「誤差や変動は正規分布に従う」という前提で計算式が組まれています。","tsukkomi":"正規分布の形は、いくつのパラメータ（変数）だけで完全に決定されますか？","isImportant":true},{"id":712,"category":"7. 確率・統計","title":"仮説検定における「帰無仮説」と「対立仮説」とは何ですか","definition":"帰無仮説は「差がない」とする仮定。対立仮説は「差がある」と主張したい仮説。","explanation":"自分が見つけた「新しい薬の効果」などを証明したい時、あえて「効果なんてない（帰無仮説）」と仮定して、それが『確率的にあり得ない！』と矛盾を突くことで、自分の主張（対立仮説）を通すためのアプローチです。","application":"新しいマーケティング施策を打った時に、売上の増加が「単なる偶然」なのか「本当に施策の効果」なのかを白黒つけるのに使います。","tsukkomi":"本当は効果がない（帰無仮説が正しい）のに、間違って「効果がある！」と判断してしまうエラーを何エラーと呼びますか？","isImportant":false},{"id":713,"category":"7. 確率・統計","title":"有意水準（やp値）とは何ですか","definition":"有意水準は「帰無仮説を捨てる基準の確率」。p値は「帰無仮説が正しいと仮定した時に、今のデータが偶然得られる確率」。","explanation":"p値は「単なるまぐれでこんな結果になる確率」です。これが有意水準（例えば5%）より小さければ、「こんなまぐれは滅多に起きない。つまり仮説が間違っていたんだ！」と判定します。","application":"データ分析の結果をレポートする際、その結果が統計的に信頼できる（有意である）かどうかを客観的な数値で示すエビデンスになります。","tsukkomi":"p値が0.01だった場合、帰無仮説は棄却されますか、それとも採択されますか？（有意水準は5%とする）","isImportant":false},{"id":801,"category":"8. 微分方程式","title":"微分方程式とは何ですか","definition":"未知の「関数」と、その「導関数（微分）」が含まれている方程式。","explanation":"普通の方程式は x=3 のように「特定の数字」を当てるクイズですが、微分方程式は y=e^x のように、変化のルールから「元の関数の形そのもの」を当てるクイズです。","application":"経済成長モデル（ソロー・モデルなど）において、資本や人口が時間とともにどう変化し、最終的に定常状態に落ち着くのかという動学的なシミュレーションに使われます。","tsukkomi":"微分方程式を解く際に、初期の条件（t=0の時の値など）を与えないと、答えには何が含まれたままになりますか？","isImportant":true}];
-    const categories = ["すべて","1. 一変数微積","2. 多変数・最適化","3. ラグランジュ","4. テイラー展開","5. 線形代数","6. 最小二乗・回帰","7. 確率・統計","8. 微分方程式"];
-    const storageKey = 'koutousimon-progress-v1';
-    const state = {
-      activeCategory: 'すべて',
-      selectedDate: today(),
-      showOnlyImportant: false,
-      showUntouchedOnly: false,
-      selectedId: null,
-      showTsukkomi: false,
-      dailyHistory: loadProgress()
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+
+const { useState, useEffect, useMemo } = React;
+
+function makeIcon(symbol) {
+  return function Icon({ className = '', ...props }) {
+    return <span className={className} aria-hidden="true" style={{display:'inline-flex',alignItems:'center',justifyContent:'center',lineHeight:1,flexShrink:0}} {...props}>{symbol}</span>;
+  };
+}
+const CheckCircle = makeIcon('✓');
+const Circle = makeIcon('○');
+const BookOpen = makeIcon('本');
+const Target = makeIcon('◎');
+const MessageSquare = makeIcon('吹');
+const ChevronRight = makeIcon('›');
+const X = makeIcon('×');
+const Sparkles = makeIcon('✦');
+const BrainCircuit = makeIcon('脳');
+const Flame = makeIcon('火');
+const Calendar = makeIcon('日');
+const BarChart2 = makeIcon('▥');
+const Loader2 = makeIcon('↻');
+const AlertTriangle = makeIcon('△');
+const CircleDashed = makeIcon('◌');
+const Shuffle = makeIcon('⇄');
+const Clock = makeIcon('時');
+const Edit3 = makeIcon('✎');
+const Sigma = makeIcon('Σ');
+const Skull = makeIcon('!');
+const Mic = makeIcon('声');
+const Timer = makeIcon('秒');
+const CheckSquare = makeIcon('☑');
+const Square = makeIcon('□');
+const Eye = makeIcon('見');
+const EyeOff = makeIcon('隠');
+const User = makeIcon('人');
+const Plus = makeIcon('+');
+
+const LOCAL_KEY = 'koutousimon2-progress-v1';
+function readLocalData() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); } catch (e) { return {}; }
+}
+function writeLocalData(next) {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(next || {}));
+}
+function initializeApp() { return {}; }
+function getAuth() { return {}; }
+function getFirestore() { return {}; }
+async function signInWithCustomToken() { return {}; }
+async function signInAnonymously() { return {}; }
+function onAuthStateChanged(auth, cb) { setTimeout(() => cb({ uid: 'local-user' }), 0); return () => {}; }
+function doc() { return {}; }
+async function setDoc(ref, data, options) { writeLocalData({ ...readLocalData(), ...(data || {}) }); }
+function onSnapshot(ref, cb) {
+  setTimeout(() => {
+    const data = readLocalData();
+    cb({ exists: () => Object.keys(data).length > 0, data: () => data });
+  }, 0);
+  return () => {};
+}
+
+
+
+
+
+
+
+// Firebase Setup
+let app, auth, db, appId;
+try {
+  const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+} catch (e) {
+  console.error("Firebase init failed", e);
+}
+
+// === データセット ===
+const quizData = [
+  // --- 第0群 志望理由・面接（超重要） ---
+  { id: 1, category: "0. 志望理由・面接", title: "なぜ九州大学の経済工学科なのか", formula: "", definition: "大学・学科選びの確固たる理由を問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "「なぜ他大ではなく九大か」「なぜ他学部ではなく経済工学か」の2つの軸を満たす回答を考えよう。ツール開発の経験などをフックにすると強いよ。", application: "面接の冒頭で必ず聞かれる。ここがブレるとその後の数学の出来が良くても落とされる可能性あり。", followups: [{q: "他の大学の経済学部じゃダメな理由は？", a: "（他大のカリキュラムとの違いを説明できるようメモ欄に用意しておきましょう）"}, {q: "高専の機械工学から編入する上で、これまでの学びはどう活きる？", a: "（プログラミングやデータ処理、システムの最適化といった工学的アプローチを経済分析に活かせる点を強調しましょう）"}], isImportant: true, level: "core" },
+  { id: 2, category: "0. 志望理由・面接", title: "なぜ機械工学から経済学へ転換したのか", formula: "", definition: "分野変更の明確な動機を問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "機械工学を否定せず、「学んだからこそ次に行きたい場所が見えた」というポジティブなシフトを強調できると説得力が出るよ。", application: "「機械工学じゃダメだったの？」という少し意地悪な質問に対する完璧なカウンターになる。", followups: [{q: "具体的に、いつ、どんなきっかけでそう思ったの？", a: "（仮想通貨ツールを作った時など、具体的なエピソードを用意しましょう）"}, {q: "機械工学と経済工学で、一番似ていると感じるアプローチは何？", a: "（制約条件下での最適化や、システム全体を俯瞰する視点などを挙げると効果的です）"}], isImportant: true, level: "core" },
+  { id: 3, category: "0. 志望理由・面接", title: "入学後に研究したいテーマは？", formula: "", definition: "未来の学習・研究計画を問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "「理論とデータ（実装）」の両輪を回せるのが高専生の強み。自分の興味（アルゴリズムトレードなど）に合わせて研究テーマを仮決めしておこう。", application: "研究室の配属先や、卒業研究のビジョンが見えているかを確認される。", followups: [{q: "その研究が社会にどう役立つと考えていますか？", a: "（市場の安定化、リスクの低減、資源の最適配分など、大義名分を用意しましょう）"}, {q: "今の自分に足りない知識は何だと認識していますか？", a: "（経済学の基礎理論や、高度な統計推論など、入学後に学びたいことを素直に伝えましょう）"}], isImportant: true, level: "core" },
+  { id: 4, category: "0. 志望理由・面接", title: "メカニズムデザインとは何ですか", formula: "", definition: "経済制度を設計する逆問題。", oral30: "人々が自分の利益を追求して行動した結果、社会全体にとって望ましい状態が達成されるように、最初から「ルール（仕組み）」を逆算して設計する経済学の分野です。", explanation: "九大経済工学のキーワードの一つ。通常の経済学が「ルールが与えられた時に人々がどう動くか」を予測するのに対し、メカニズムデザインは「望ましい結果を得るために、どうルールを作るか」という工学的なアプローチを取ります。", application: "制度設計への興味や、工学的なアプローチとの親和性を示すのに使える。", followups: [{q: "身近な例で、メカニズムデザインが使われている仕組みを一つ挙げてください。", a: "「オークションの制度設計や、研修医の病院配属（マッチング理論）、学校の入学選抜などです。」"}, {q: "これを工学の視点で言うと、何に近いですか？", a: "「制御工学における『システム設計』そのものだと認識しています。」"}], isImportant: true, level: "core" },
+  { id: 5, category: "0. 志望理由・面接", title: "ゲーム理論とは何ですか", formula: "", definition: "利害が対立する主体の意思決定を数理的に分析する理論。", oral30: "相手の出方によって自分の利益が変わる状況において、お互いがどのような戦略を選ぶかを数学的にモデル化し、予測・分析する理論です。", explanation: "メカニズムデザインの基礎となる考え方。自分一人の最適化だけでなく、「相手がこう動くなら自分はこうする」という相互依存関係を解き明かします。", application: "企業の価格競争や、国家間の交渉など、複数人が絡む戦略的な意思決定を分析する土台となる。", followups: [{q: "ナッシュ均衡とは一言で言うとどんな状態ですか？", a: "「全員が『これ以上自分の戦略を単独で変えても得をしない』という、お互いに牽制し合って動けない安定状態のことです。」"}, {q: "囚人のジレンマは、ビジネスの現場でどのように発生しますか？", a: "「価格競争です。お互いに高い価格を維持すれば儲かるのに、抜け駆けして値下げする誘惑があるため、結果的に共倒れになる現象です。」"}], isImportant: true, level: "core" },
+  { id: 6, category: "0. 志望理由・面接", title: "最近気になっているニュースは？", formula: "", definition: "社会への関心と、それを経済工学の視点でどう捉えているかを問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "単にニュースを紹介するのではなく、「なぜ気になったのか」「経済や技術の視点からどう分析しているか」を語れるようにしよう。仮想通貨やAI、金融政策に関するニュースだと繋げやすいよ。", application: "アンテナの高さと、事象を論理的に考察する力を確認される。", followups: [{q: "そのニュースが今後の市場に与える影響はどう考えていますか？", a: "（需要と供給の変化や、新たなルールの必要性など、経済学的な視点で語りましょう）"}, {q: "あなたの開発経験や研究テーマと、そのニュースは関連しますか？", a: "（自分が開発したツールがそのニュースの課題解決にどう役立つかなどを繋げると強力です）"}], isImportant: true, level: "core" },
+  { id: 7, category: "0. 志望理由・面接", title: "1分程度で自己PRをお願いします。", formula: "", definition: "自分自身の強みと、それが大学でどう活きるかをアピールする質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "「強み」＋「裏付けるエピソード（ツール開発やロボコンなど）」＋「入学後どう活かすか」の3段構成で話すと綺麗にまとまるよ。", application: "面接官に「この学生を入学させたい」と思わせるための最重要項目。", followups: [{q: "その強みを発揮した具体的なエピソードをもう一つ教えてください。", a: "（メモ欄に別のアプローチでのエピソードも準備しておきましょう）"}, {q: "逆に、その強みが裏目に出た経験はありますか？", a: "（行動力が強すぎて周りを置いていった等、短所に繋がる話をリカバリー含めて用意しましょう）"}], isImportant: true, level: "core" },
+  { id: 8, category: "0. 志望理由・面接", title: "高専時代に最も打ち込んだこと（ガクチカ）は何ですか？", formula: "", definition: "これまでの取り組み姿勢や熱意、問題解決能力を問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "結果の凄さよりも、「なぜそれに取り組んだのか」「どんな困難があり、どう工夫して乗り越えたのか」という『過程』を語ることが大事だよ。", application: "課題直面時のあなたのスタンス（行動力や思考力）を評価される。", followups: [{q: "その活動の中で、一番意見が対立したこと（あるいは困難だったこと）は何ですか？", a: "（どうやって折り合いをつけたか、論理的に解決したプロセスを話しましょう）"}, {q: "もう一度やり直せるとしたら、どこを改善しますか？", a: "（客観的に自分の行動を振り返る能力が見られています）"}], isImportant: true, level: "core" },
+  { id: 9, category: "0. 志望理由・面接", title: "卒業後のキャリアプラン（将来の夢）を教えてください。", formula: "", definition: "九大での学びをどう社会に還元するか、ビジョンの明確さを問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "「大学院に進学して研究を深めたい」「データサイエンティストとして〇〇業界の課題を解決したい」など、九大で学ぶことがゴールではなく、その先を見据えていることを伝えよう。", application: "志望度の高さと、入学後のモチベーションの持続性を図られる。", followups: [{q: "その目標を達成するために、九大で具体的にどの教授の下で、どんな研究をしたいですか？", a: "（教授の名前や研究室の論文など、事前に調べておくと説得力が跳ね上がります）"}], isImportant: true, level: "core" },
+  { id: 10, category: "0. 志望理由・面接", title: "あなたの長所と短所を教えてください。", formula: "", definition: "客観的な自己分析ができているかを確認する質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "長所は自己PRと同じくエピソードを交えて。短所は「致命的すぎないもの」を選び、「それをどうカバー（改善）しようとしているか」まで必ずセットで話そう。", application: "人間性や、チーム（研究室）に入った時のバランスを見られる。", followups: [{q: "その短所が原因で失敗した経験と、その後の対策を教えてください。", a: "（短所を認識し、現在進行形で改善に努めている姿勢を見せましょう）"}], isImportant: false, level: "core" },
+  { id: 11, category: "0. 志望理由・面接", title: "5分間で志望理由、大学で学びたいこと、将来の展望を教えてください", formula: "", definition: "志望動機と将来設計を論理的につなげて長く話す総合力が問われる。", oral30: "※解答なし。下のメモ欄を使って、5分（約1500文字）で話せる台本を作ってみよう！", explanation: "5分という長丁場なので、構成が命。「①自分のこれまでの強み・経験」「②なぜ分野転換して九大経済工学なのか」「③入学後に学びたい具体的な研究テーマ」「④将来それを社会にどう還元するか」の4ブロックでしっかり繋げよう。", application: "プレゼン能力や、全体としての志望度の本気度を測られる。", followups: [{q: "その将来の展望を叶えるために、他大学ではなく『九大』でなければならない一番の理由は何ですか？", a: "（特定の教授や、数理・データ分析に強いカリキュラムなど、九大ならではの理由をぶつけましょう）"}], isImportant: true, level: "core" },
+  { id: 12, category: "0. 志望理由・面接", title: "経済学部のアドミッションポリシーについて説明してください", formula: "", definition: "大学が求める学生像を理解し、自分がそれに合致しているかを示す質問。", oral30: "1つ目は基礎的な『知識・技能』、2つ目は多面的に考え自分の言葉で伝える『思考力・判断力・表現力』、3つ目は多様性を尊重し向上心を持って学ぶ『主体性・協働性』です。", explanation: "ただ暗記して言うだけでなく、「自分がこれまでの高専での活動（ツール開発など）を通じて、どのポリシーに合致する資質を磨いてきたか」をセットで語れるようにしておくと完璧。", application: "大学側とのマッチング度合い、事前準備の周到さを測られる。", followups: [{q: "この3つの中で、あなた自身が最も自信を持っているものはどれですか？", a: "（自分のガクチカや自己PRと一番つながるものを1つ選び、理由を説明しましょう）"}, {q: "逆に、今自分に一番足りないと思うポリシーはどれですか？", a: "（足りない点を素直に認めつつ、入学後にどう伸ばしたいかを語りましょう）"}], isImportant: true, level: "core" },
+  { id: 13, category: "0. 志望理由・面接", title: "経済工学科で学ぶ上で、あなたのどんなスキルが活かせますか？", formula: "", definition: "プログラミングや工学知識のアピールにつなげる質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "高専生最大の強みは「実装力」と「システムの最適化思考」。経済の理論を学ぶだけでなく、それをデータやプログラムに落とし込んで実証・シミュレーションできる強みを押し出そう。", application: "高専からの編入生ならではの価値（バリュー）をどう捉えているかを見られる。", followups: [{q: "そのスキルを使って、入学後に具体的にどんなデータを分析してみたいですか？", a: "（仮想通貨の市場データ、オークションの入札データなど、興味のある対象を答えましょう）"}], isImportant: false, level: "core" },
+  { id: 14, category: "0. 志望理由・面接", title: "これまでに挫折した経験と、そこから学んだことは何ですか？", formula: "", definition: "ストレス耐性や、失敗からのリカバリー能力を問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "「失敗して辛かった」で終わらせず、「そこから何を分析し、どう行動を変えたか（PDCAサイクル）」に焦点を当てて話すと、論理的な思考力のアピールになるよ。", application: "研究などで壁にぶつかった時に、折れずに乗り越えられる人物かを見極められる。", followups: [{q: "その挫折を乗り越える中で、周囲の人に助けられたことはありましたか？", a: "（自分一人で抱え込まず、適切にSOSを出せるかどうかも評価対象になります）"}], isImportant: false, level: "core" },
+  { id: 15, category: "0. 志望理由・面接", title: "チームで何かを成し遂げた経験と、あなたの役割を教えてください", formula: "", definition: "協調性やリーダーシップ、チーム内での立ち回りを問う質問。", oral30: "※解答なし。下のメモ欄を使って、自分だけの回答を作ってみよう！", explanation: "アドミッションポリシーの「主体性を持って多様な人々と協働して学ぶ態度」に直結する質問。自分がリーダーだったかサポート役だったかに関わらず、「チームの課題に対して自分がどう動いたか」を具体的に語ろう。", application: "ゼミや研究室というコミュニティで上手くやっていける人物かを見られる。", followups: [{q: "チーム内で意見が対立したとき、あなたはどのように間を取り持ちましたか？", a: "（論理的・客観的なデータを用いて説得した、あるいは双方の意見を統合したなどのエピソードを用意しましょう）"}], isImportant: false, level: "core" },
+
+  // --- 第1群 微分・一変数関数 ---
+  { id: 104, category: "1. 一変数微積", title: "微分とは何ですか", formula: "f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}", formulaMust: true, definition: "関数の変化の割合、接線の傾き。", oral30: "微分とは、関数の瞬間的な変化率であり、ある点での接線の傾きを表します。経済では限界費用や限界効用の分析に使われます。", explanation: "ある変数をほんの少しだけ増やしたときに、結果がどれくらい変化するかという「瞬間の変化率」を求める操作です。", application: "経済学における『限界（Marginal）』の概念そのものです。", followups: [{q: "離散的なデータしかない場合、微分の考え方をどう応用しますか？", a: "「データ同士の『差分』を取ります。例えば今日の価格から昨日の価格を引いて変化量を見ることで、微分と同じように瞬間のトレンドを捉えることができます」"}], isImportant: true, level: "core", trap: true },
+  { id: 108, category: "1. 一変数微積", title: "最大値と最小値はどう判断しますか", formula: "f'(x) = 0, \\quad f''(x) > 0 \\text{ (Min)}", definition: "微分が0になる点とその前後の変化。", oral30: "まず1階微分が0になる点（停留点）を探します。その上で、2階微分がプラスなら下に凸なので最小値（谷）、マイナスなら上に凸なので最大値（山）と判定します。", explanation: "傾きが0で平らになる点を探し、それが山か谷かを二階微分の符号で確かめます。", application: "利益関数の最大化やコスト関数の最小化という最適化問題の基本アプローチです。", followups: [{q: "微分が0でも、最大でも最小でもない点は存在しますか？", a: "「はい、$y=x^3$ の原点のように、傾きは一瞬0になりますが、そのままさらに上がっていくような点（変曲点）が存在します」"}, {q: "グラフの端っこにある最大・最小値は微分で見つけられますか？", a: "「見つけられません。微分で探せるのはあくまで曲線の『山と谷』なので、定義域の境界（端っこ）の値は直接代入して計算・比較する必要があります」"}], isImportant: false, level: "core" },
+  { id: 114, category: "1. 一変数微積", title: "合成関数の微分（チェインルール）", formula: "\\frac{dy}{dx} = \\frac{dy}{du} \\cdot \\frac{du}{dx}", definition: "関数の中に関数が入っている場合の微分ルール。", oral30: "「xが動けばuが動き、uが動けばyが動く」といった連鎖的な変化を、それぞれの微分の掛け算として求める計算ルールです。", explanation: "マトリョーシカのような関数の変化率を、外側から順に微分して掛け合わせることで求めます。", application: "「原油価格が上がると物流コストが上がり、最終的な物価が上がる」といった連鎖的影響を追う時に使います。", followups: [{q: "経済のデータ分析で、連鎖的な影響を計算した経験はありますか？", a: "（自分が開発した仮想通貨分析ツールで、複数の指標がどう価格に影響するかを計算した経験などを語りましょう）"}, {q: "多変数の場合にこれを拡張するとどうなりますか？", a: "「全微分の考え方を使って、各変数ルートの偏微分と連鎖律を掛け合わせたものをすべて足し合わせる形になります」"}], isImportant: false, level: "core" },
+  { id: 115, category: "1. 一変数微積", title: "ロピタルの定理とは何ですか", formula: "\\lim_{x \\to a} \\frac{f(x)}{g(x)} = \\lim_{x \\to a} \\frac{f'(x)}{g'(x)}", definition: "不定形の極限を、微分を用いて求める定理。", oral30: "「0分の0」や「無限大分の無限大」といった不定形の極限を求める際に、分母と分子をそれぞれ微分してから極限をとっても、元の極限値と一致するという定理です。", explanation: "計算が難しい極限を、微分の力を使って簡単に解くための強力なツールです。ただし、適用条件（不定形であることなど）をしっかり確認する必要があります。", application: "複雑な経済モデルにおいて、パラメータが極端な値をとった場合の漸近的な挙動を調べる際に使われます。", followups: [{q: "ロピタルの定理を使ってはいけないのはどんな時ですか？", a: "「分母と分子の極限が『不定形（0/0や∞/∞）』になっていない時に使うと、全く違う間違った値になってしまいます。」"}], isImportant: false, level: "core" },
+
+  // --- 第2群 多変数・最適化 ---
+  { id: 201, category: "2. 多変数・最適化", title: "偏微分とは何ですか", formula: "f_x = \\frac{\\partial f}{\\partial x}", formulaMust: true, definition: "1つの変数だけを動かす微分。", oral30: "複数の要因がある関数において、他のすべての要因を一定に固定し、ある1つの要因だけを微小に動かした際の変化率を求める操作です。", explanation: "特定の要因が結果に与える『純粋な影響』を切り分けて知りたい時に使います。", application: "経済学の基本である『他の条件を一定とした場合（Ceteris Paribus）』の分析そのものです。", followups: [{q: "労働と資本で生産量が決まる時、労働で偏微分したものは何と呼ばれますか？", a: "「『限界労働生産力』です。資本を固定して、労働を1単位増やした時にどれくらい生産量が増えるかを表します」"}], isImportant: true, level: "core" },
+  { id: 203, category: "2. 多変数・最適化", title: "勾配とは何ですか", formula: "\\nabla f = \\left( \\frac{\\partial f}{\\partial x_1}, \\dots, \\frac{\\partial f}{\\partial x_n} \\right)", formulaMust: true, definition: "各変数での偏微分を並べたベクトル。", oral30: "各変数での偏微分を並べたベクトルであり、関数が『最も急激に増加する方向』を示すベクトルです。", explanation: "すべての方向に対する傾きの情報をまとめたものです。山の斜面で『どの方向にどれくらいキツいか』を示す矢印です。", application: "機械学習などにおいて、関数を最も効率よく最大化（または最小化）する方向を決定するナビとして機能します。", followups: [{q: "逆に、最も急激に減少する方向を見つけるにはどうすればいい？", a: "「勾配ベクトルの逆向き、つまりマイナスをつけた方向へ進めば、最も急に下ることができます」"}, {q: "勾配ベクトルは、関数の等高線に対してどのような角度を持ちますか？", a: "「等高線に対して常に『垂直（90度）』になります。等高線に沿って動いても高さは変わらないので、一番早く高さを変えるには直角に進むのが最短だからです」"}], isImportant: true, level: "core", trap: true },
+  { id: 209, category: "2. 多変数・最適化", title: "全微分とは何ですか", formula: "df = \\frac{\\partial f}{\\partial x} dx + \\frac{\\partial f}{\\partial y} dy", definition: "すべての変数が同時に微小変化したときの総変化量。", oral30: "偏微分が「1つだけ動かす」のに対し、全微分は「すべての変数が同時にほんの少しずつ動いた時の、結果全体の総変化量」を足し合わせたものです。", explanation: "各方向の偏微分（傾き）に、それぞれの実際の微小変化量（dx, dy）を掛けて足し合わせたものになります。", application: "複数の経済的ショックが同時に起きた時の、全体としての市場への影響を計算するのに使います。", followups: [{q: "全微分が0になる方程式（全微分方程式）を見たことはありますか？", a: "「はい、完全微分方程式のことですね。ポテンシャルが存在する物理や経済のシステムを解く際に使われます」"}], isImportant: false, level: "core" },
+  { id: 210, category: "2. 多変数・最適化", title: "ヘッセ行列とは何ですか", formula: "H = \\begin{pmatrix} f_{xx} & f_{xy} \\\\ f_{yx} & f_{yy} \\end{pmatrix}", formulaMust: true, definition: "多変数関数のすべての2階偏微分を並べた行列。", oral30: "多変数関数のすべての2階偏微分を成分として並べた正方行列です。その地点が山の頂上なのか、谷底なのか、あるいは鞍点なのかという「関数の形状」を判定するために使います。", explanation: "1変数の「二階微分（曲がり具合）」を多変数の空間に拡張したもので、最適化の仕上げの判定に必須です。", application: "最適化問題を解いたときに、そこが本当に利益最大化（またはコスト最小化）の点なのかを判定します。", followups: [{q: "ヘッセ行列の行列式がプラスで、f_xxもプラスなら、そこは最大値？最小値？", a: "「最小値（谷底）になります。」"}, {q: "ヘッセ行列は通常、何行列になりますか？", a: "「対称行列です。微分する順番を入れ替えても結果が同じになる（$f_{xy} = f_{yx}$）ため、対角線を挟んで対象な形になります」"}], isImportant: true, level: "core" },
+  { id: 212, category: "2. 多変数・最適化", title: "凸最適化とは何ですか", formula: "f(tx + (1-t)y) \\le t f(x) + (1-t) f(y)", definition: "凸関数を最小化する、確実に解が求まる問題。", oral30: "目的関数がお椀のような形（凸関数）をしていて、極小値が必ず全体の最小値（大域的最小値）に一致するという、数学的に非常に解きやすい最適化問題のことです。", explanation: "どんな場所からスタートしても、坂を下っていけば確実に一番底にたどり着けるため、機械学習などで好まれる性質です。", application: "ポートフォリオ最適化や最小二乗法など、実用的なデータ分析のモデルの多くが凸最適化に帰着するように設計されています。", followups: [{q: "逆に、凸ではない（凹凸が入り組んだ）関数の場合、どんな問題が起きますか？", a: "「局所的最小値（小さな谷底）にハマってしまい、全体での本当の最小値（大域的最小値）が見つけられないという問題が起きます」"}, {q: "局所的最小値と大域的最小値の違いは何ですか？", a: "「局所的はその周辺での一番の底、大域的は定義域全体での本当の一番の底のことです。」"}], isImportant: false, level: "advanced" },
+  { id: 213, category: "2. 多変数・最適化", title: "ヤコビアン（ヤコビ行列式）とは何ですか", formula: "J = \\det \\begin{pmatrix} \\frac{\\partial x}{\\partial u} & \\frac{\\partial x}{\\partial v} \\\\ \\frac{\\partial y}{\\partial u} & \\frac{\\partial y}{\\partial v} \\end{pmatrix}", definition: "変数変換に伴う、面積や体積の「拡大・縮小の倍率」。", oral30: "複数の変数を別の座標系に変換する際、元の微小な面積や体積が、新しい座標系で「どれくらい拡大・縮小されるか」という歪みの倍率を表す行列式のことです。", explanation: "重積分などで変数を置き換えるとき、面積のつじつまを合わせるために掛け合わせる補正値です。", application: "統計学において、複雑な確率分布を変数変換して扱いやすくする際（正規分布の証明など）に必須の処理となります。", followups: [{q: "直交座標 (x,y) から極座標 (r,θ) に変換する際のヤコビアンはどうなりますか？", a: "「計算すると r になります。そのため重積分の dxdy は r dr dθ に変わります。」"}], isImportant: false, level: "advanced" },
+  { id: 214, category: "2. 多変数・最適化", title: "陰関数定理とは何ですか", formula: "\\frac{dy}{dx} = - \\frac{F_x}{F_y}", formulaMust: true, definition: "方程式をyについて解かずに、微分の値（傾き）を求める定理。", oral30: "F(x,y)=0 という方程式をわざわざ y=... の形（陽関数）に解き直さなくても、元の関数Fをxとyでそれぞれ偏微分した値の比から、直接 dy/dx（傾き）を求められるという強力な定理です。", explanation: "経済学では「効用関数を一定（U=定数）」としたまま、x財とy財の交換比率（限界代替率）を求める際などに、この定理が無意識に使われています。", application: "比較静学（あるパラメータが変化した時に均衡がどう動くか）の分析において、複雑な連立方程式の微小変化を追うための必須ツールです。", followups: [{q: "この定理を使うための条件（分母に関する条件）は何ですか？", a: "「分母にくる yでの偏微分 F_y が、その点で 0 でないことです（0割りを防ぐため）。」"}], isImportant: true, level: "core", trap: true },
+
+  // --- 第3群 ラグランジュ未定乗数法 ---
+  { id: 301, category: "3. ラグランジュ", title: "ラグランジュ未定乗数法", formula: "L(x, y, \\lambda) = f(x, y) - \\lambda g(x, y)", formulaMust: true, definition: "制約条件のもとで極値を求める手法。", oral30: "「予算」などの制約条件がある中で、目的の関数を最大化・最小化するための数学的手法です。新しい変数λを使って、制約付きの問題を制約なしの問題に変換して解きます。", explanation: "制約関数g(x,y)=0を、ペナルティ項として目的関数に組み込むことで、連立方程式として解けるようにします。", application: "限られた予算で満足度（効用）を最大化する消費者行動の分析に必須です。", followups: [{q: "これを解く際、Lをどの変数で偏微分して0とおきますか？", a: "「$x, y$ に加えて、設定した $\\lambda$ の3つすべてで偏微分して0とおき、連立方程式を解きます。$\\lambda$で偏微分した式は、元の制約条件そのものになります」"}], isImportant: true, level: "core" },
+  { id: 304, category: "3. ラグランジュ", title: "λ（ラグランジュ乗数）の意味は？", formula: "\\lambda = \\frac{\\partial f^*}{\\partial c}", formulaMust: true, definition: "制約を1単位緩めたときの目的関数の増加量。", oral30: "λは「影の価格」とも呼ばれ、制約（予算など）を1単位緩めたときに、目的関数の最大値が限界的にどれだけ増えるかを表す価値の指標です。", explanation: "ただの計算上の係数ではなく、「あと1円予算が増えたら、どれくらい利益が増えるか」という経営指標として直接使えます。", application: "リソースを追加投入したときの費用対効果を示すため、経営判断に直結する重要な数値です。", followups: [{q: "λ=0になった場合、その制約はどういう状態だと言えますか？", a: "「その制約が全く足かせになっていない、例えば予算が余っていて使い切っていない状態です」"}, {q: "環境問題などで、この「影の価格」の考え方はどう使われますか？", a: "「二酸化炭素の排出枠（制約）の『影の価格』を計算することで、排出権取引における適切な価格設定などに直接応用されます。」"}], isImportant: true, level: "core", trap: true },
+
+  // --- 第4群 テイラー展開 ---
+  { id: 401, category: "4. テイラー展開", title: "テイラー展開とは何ですか", formula: "f(x) \\approx \\sum_{n=0}^{k} \\frac{f^{(n)}(a)}{n!} (x-a)^n", formulaMust: true, definition: "関数を多項式で近似する手法。", oral30: "複雑な関数を、特定の点の周辺で「xのべき乗（多項式）」の足し算に展開して近似する手法です。計算機で扱いやすい形に直すために使われます。", explanation: "sinやexpなどのそのままでは計算しづらい曲線を、一次（接線）や二次（放物線）の式に落とし込んで解析します。", application: "非線形の経済モデルを線形化したり、リスク管理で価格変動を近似計算する際に多用されます。", followups: [{q: "展開する中心の点を x=0 とした特別なテイラー展開を何と呼びますか？", a: "「マクローリン展開です」"}], isImportant: true, level: "core", trap: true },
+  { id: 411, category: "4. テイラー展開", title: "ニュートン法とは何ですか", formula: "x_{n+1} = x_n - \\frac{f(x_n)}{f'(x_n)}", definition: "方程式の解（f(x)=0）を反復計算で探すアルゴリズム。", oral30: "方程式の解を求めるために、ある点での接線を引き、その接線とx軸との交点を次の候補とする計算を繰り返して、徐々に真の解に近づけていく数値計算の手法です。", explanation: "裏側では関数を一次近似（テイラー展開の1次まで）して、直線の方程式の解を求める操作を繰り返しています。", application: "解析的に解けない複雑な方程式の解や、最適化問題（微分の値が0になる点）をコンピュータで高速に見つけ出すアルゴリズムです。", followups: [{q: "ニュートン法が上手く解にたどり着けない（発散してしまう）のはどんなケースですか？", a: "「スタート地点が本当の解から遠すぎる場合や、途中で関数の傾き（微分）が0に近くなって接線が平行になり、次の点が飛んでいってしまうようなケースです」"}], isImportant: false, level: "core" },
+  { id: 412, category: "4. テイラー展開", title: "マクローリン展開の具体例 (e^x, sin x, cos x)", formula: "e^x = 1 + x + \\frac{x^2}{2!} + \\dots \\quad \\sin x = x - \\frac{x^3}{3!} + \\dots", formulaMust: true, definition: "x=0を中心としたテイラー展開の代表的な公式。", oral30: "e^x は微分しても形が変わらないため全項がプラスで階乗がつき、sin は奇関数なので奇数乗のみ、cos は偶関数なので偶数乗のみが現れ、それぞれ符号が交互に入れ替わります。", explanation: "この3つはホワイトボードでサラッと書けるようにしておくことが必須です。e^x に ix を代入するとオイラーの公式が導ける点までセットで覚えておくと面接で強いです。", application: "複雑な関数の計算を四則演算に落とし込む際の基本中の基本です。", followups: [{q: "cos x の展開式をホワイトボードに書いてみてください。", a: "「1 - (x^2 / 2!) + (x^4 / 4!) - ... となります。（偶数乗のみで符号が交互）」"}, {q: "なぜ sin x の展開式には奇数乗しか出てこないのですか？", a: "「sin x は原点対称な奇関数であり、何回微分しても x=0 での偶数階の微分係数がすべて0になるためです。」"}], isImportant: true, level: "core", trap: true },
+  { id: 413, category: "4. テイラー展開", title: "テイラー展開の「剰余項」とは何ですか", formula: "f(x) = P_n(x) + R_n(x)", definition: "多項式近似した際の「誤差」を表す項。", oral30: "テイラー展開を途中のn次で打ち切った場合に、実際の関数の値と、近似した多項式の値との間に生じる「誤差」の部分のことです。", explanation: "テイラー展開は「無限に足せば完全に一致」しますが、現実には途中で打ち切ります。その際、「この近似はどれくらい正確か（誤差は最大でどれくらいか）」を保証するために剰余項を評価します。", application: "シミュレーションや数値計算において、計算結果が信頼できる範囲にあるかを証明するために使われます。", followups: [{q: "代表的な剰余項の形（〇〇の剰余項）を一つ挙げてください。", a: "「ラグランジュの剰余項です。微分の中間値の定理の応用のような形で表されます。」"}], isImportant: false, level: "advanced" },
+
+  // --- 第5群 線形代数 ---
+  { id: 509, category: "5. 線形代数", title: "連立方程式と Ax=b の関係", formula: "A\\mathbf{x} = \\mathbf{b}", formulaMust: true, definition: "連立方程式の行列表現。", oral30: "複数の連立方程式を、「係数行列A」というシステムに「未知の状態x」を入れたら「結果b」が出た、という1つの行列表現にまとめたものです。", explanation: "バラバラの式をベクトルと行列で一括りにすることで、逆行列を使った全体最適解の計算が一発で可能になります。", application: "複雑な需要・供給の均衡モデルを解く際、変数が増えてもコンピュータで瞬時に計算できる基盤になります。", followups: [{q: "この形式のメリットは、未知数xが何百個に増えてもどうなることですか？", a: "「行列のサイズが大きくなるだけで、$A^{-1}b$ という逆行列を使った解の導き方は全く変わりません。そのため、コンピュータで一気に計算するのに非常に適しています」"}, {q: "逆行列A^-1が存在する場合、解xはどうやって求まりますか？", a: "「$A^{-1}$ を両辺の左から掛けて、$x = A^{-1}b$ で一発で求まります。」"}], isImportant: true, level: "core" },
+  { id: 512, category: "5. 線形代数", title: "行列式とは何ですか", formula: "\\det(A) = |A|", definition: "空間の拡大・縮小率。", oral30: "行列による変換を行ったときに、元の空間の面積や体積が「何倍に拡大・縮小されるか」を示すスカラー値です。", explanation: "行列式が0の場合、空間がペチャンコに潰れて次元が下がってしまったことを意味し、逆行列を持たなくなります。", application: "データ分析において、変数間に無駄な重複がなく、システムとして正しく解けるかを判定するチェッカーになります。", followups: [{q: "行列式がマイナスの値になった場合、図形的にはどういう状態ですか？", a: "「空間が裏返しに反転した状態です。鏡写しになったようなイメージです」"}, {q: "固有値と行列式の間には、どんな関係（公式）がありますか？", a: "「行列式は、その行列が持つすべての固有値を掛け合わせた値に等しくなります。」"}], isImportant: false, level: "core" },
+  { id: 517, category: "5. 線形代数", title: "固有値とは何ですか", formula: "A\\mathbf{x} = \\lambda \\mathbf{x}", formulaMust: true, definition: "ベクトルの向きを変えない変換の倍率。", oral30: "行列変換において、向きが変わらず長さだけが変化するベクトルの『倍率（スカラー）』のことであり、そのシステム固有の振る舞いを表す値です。", explanation: "固有ベクトルというブレない軸に沿って、どれだけのパワー（固有値）で伸縮するかを表します。", application: "主成分分析で「どの軸がデータの情報を一番多く持っているか」を評価する際や、動学モデルの安定性を測る指標になります。", followups: [{q: "固有値を求めるための方程式（特性方程式）を式で言えますか？", a: "「$\\det(A - \\lambda I) = 0$ です。」"}, {q: "固有値に1つでも「0」が含まれていると、その行列の逆行列はどうなりますか？", a: "「行列式はすべての固有値の掛け算なので、1つでも0があると行列式全体も0になります。つまり、空間が潰れてしまうため逆行列は存在しません」"}], isImportant: true, level: "core", trap: true },
+  { id: 526, category: "5. 線形代数", title: "ランク（階数）が落ちると何が起こるか", formula: "\\text{rank}(A) < n", definition: "行列の持つ独立な情報量が不足している状態。", oral30: "行列のランクが変数の数より落ちている場合、方程式の中に無駄な重複（線形従属）が含まれており、解が1つに決まらなくなる（無数にあるか解なしになる）状態が起きます。", explanation: "ランクはその行列が持つ「実質的な情報量」です。変数が3つあるのにランクが2しかない場合、情報不足で答えは出ません。", application: "データを分析する際、多重共線性（マルチコ）が起きていてパラメータが特定できないというエラーの根本原因です。", followups: [{q: "ランクが落ちている正方行列の「行列式」の値はいくつになりますか？", a: "「0になります。独立な次元が減ってペチャンコになっているからです」"}, {q: "データ分析でこの状態に陥った場合、どう対処しますか？", a: "「多重共線性を疑い、相関が高すぎる変数の片方を削るか、主成分分析などで次元を圧縮して対応します。」"}], isImportant: false, level: "core" },
+  { id: 527, category: "5. 線形代数", title: "内積とは何ですか", formula: "\\mathbf{a} \\cdot \\mathbf{b} = |\\mathbf{a}||\\mathbf{b}|\\cos\\theta", formulaMust: true, definition: "2つのベクトルが同じ方向を向いている度合い。", oral30: "内積とは、片方のベクトルにもう片方のベクトルを射影した（影を落とした）長さの掛け算であり、2つのデータがどれくらい似た方向を向いているかを示すスカラー値です。", explanation: "内積が0であれば、なす角が90度（直交）となり、互いに全く影響を与えない無関係なデータ同士であると言えます。", application: "統計学における「共分散」や「相関係数」は、データをベクトルと見なした時の内積そのものです。", followups: [{q: "では、内積が「マイナス」になるのは、ベクトルがどんな角度の時ですか？", a: "「なす角が90度より大きい、鈍角の時です。お互いに逆の方向を向き始めている状態です」"}], isImportant: true, level: "core" },
+  { id: 528, category: "5. 線形代数", title: "コーシー・シュワルツの不等式", formula: "|\\mathbf{a} \\cdot \\mathbf{b}| \\le |\\mathbf{a}||\\mathbf{b}|", definition: "内積の絶対値は、各ベクトルの長さの積以下になるという法則。", oral30: "2つのベクトルの内積の大きさは、それぞれのベクトルの長さを掛け合わせたものより常に小さくなるか等しい、という線形代数の強力な不等式です。", explanation: "内積の公式に現れる cosθ が必ず -1 から 1 の間に収まることから直感的に導かれます。", application: "統計学において、相関係数が必ず「-1 から 1 の間に収まる」ことの数学的な証明にそのまま使われます。", followups: [{q: "この不等式で「等号（＝）」が成り立つのは、2つのベクトルがどんな関係の時ですか？", a: "「2つのベクトルが全く同じ方向を向いている、つまり平行（一方がもう一方の定数倍）の時です」"}, {q: "これを確率変数 X, Y の期待値の形で表すとどうなりますか？", a: "「$E[XY]^2 \\le E[X^2]E[Y^2]$ という形になります。」"}], isImportant: false, level: "core" },
+  { id: 529, category: "5. 線形代数", title: "正定値行列とは何ですか（軽く）", formula: "\\mathbf{x}^T A \\mathbf{x} > 0 \\quad (\\mathbf{x} \\neq \\mathbf{0})", definition: "どんなゼロでないベクトルを掛けても、結果が必ずプラスになる行列。", oral30: "どんなベクトルを掛けても二次形式が必ずプラスになる行列のことです。多変数関数の最適化において、ヘッセ行列が正定値であれば、そこが「最小値（谷底）」であると判定できます。", explanation: "1変数の「二階微分がプラス（下に凸）」という概念を、多変数（行列）に拡張したものです。", application: "最適化問題での最小値の判定条件として必須の概念です。", followups: [{q: "逆に、結果が必ずマイナスになる行列を何と呼びますか？", a: "「負定値行列です。」"}, {q: "正定値行列の固有値は、どのような値になりますか？", a: "「すべてプラス（正の実数）になります。」"}], isImportant: false, level: "core" },
+  { id: 530, category: "5. 線形代数", title: "行列の対角化とは何ですか", formula: "P^{-1}AP = \\begin{pmatrix} \\lambda_1 & 0 \\\\ 0 & \\lambda_2 \\end{pmatrix}", definition: "行列を、固有値が対角線に並んだ扱いやすい行列に変換すること。", oral30: "正方行列Aに対して、正則行列Pを用いて P^{-1}AP の形にし、対角成分に固有値が並ぶ「対角行列」に変換する操作です。Aがn個の一次独立な固有ベクトルを持つことが条件です。", explanation: "対角行列になると、行列のn乗の計算が単なる各成分のn乗になり、計算が劇的に簡単になります。過去問でも『対角化の条件』が頻出しています。", application: "マルコフ連鎖などで「n年後の状態」といった行列の累乗を計算する際や、微分方程式のシステムを解く際に必須となるテクニックです。", followups: [{q: "対角化できるための必要十分条件は何ですか？", a: "「n次正方行列が、n個の『一次独立な』固有ベクトルを持つことです。」"}, {q: "固有値に重複がある（重解を持つ）場合、必ず対角化できませんか？", a: "「いいえ、重解を持っていても、その固有値に対応する固有ベクトルが複数（重解の数だけ）存在して一次独立であれば対角化可能です。」"}], isImportant: true, level: "core" },
+  { id: 531, category: "5. 線形代数", title: "対称行列の対角化（直交対角化）", formula: "P^T A P = D \\quad (P^T = P^{-1})", formulaMust: true, definition: "対称行列は必ず直交行列を用いて対角化できるという性質。", oral30: "元の行列Aが『対称行列（転置しても元のまま）』である場合、必ず対角化が可能であり、さらに変換に使う行列Pを『直交行列』として選ぶことができるという非常に強力な定理です。", explanation: "対称行列の固有値はすべて『実数』になり、異なる固有値に対応する固有ベクトルは必ず『直交する』という美しい性質を持っています。試験で対称行列が出たらボーナス問題です。", application: "統計学における分散共分散行列（対称行列）の主成分分析において、データを無相関な直交軸に回転させる基礎理論となります。", followups: [{q: "直交行列とはどのような行列ですか？", a: "「転置行列が逆行列と等しくなる（P^T = P^-1）行列のことです。図形的には『回転』や『反転』を表し、ベクトルの長さを変えません。」"}], isImportant: true, level: "core", trap: true },
+  { id: 532, category: "5. 線形代数", title: "ケイリー・ハミルトンの定理", formula: "A^2 - (a+d)A + (ad-bc)I = O", definition: "行列自身が、自分の特性方程式を満たすという定理。", oral30: "行列の固有値を求めるための『特性方程式』の変数を、行列そのものに置き換えても、結果が零行列になるという定理です。主に行列の累乗や逆行列を素早く計算するのに使います。", explanation: "2×2行列の場合は上記の公式になります。n次行列にも拡張でき、「行列の高次式を、低次式に次数下げする」ための強力なテクニックです。", application: "対角化が面倒な場合や、対角化できない行列の累乗を計算する際の裏技的なアプローチとして機能します。", followups: [{q: "この定理を使って、正則行列Aの逆行列 A^-1 をどうやって求めますか？", a: "「定理の式 $A^2 - (a+d)A + (ad-bc)I = O$ の両辺に $A^{-1}$ を掛け、$A^{-1} = \\dots$ の形に変形して求めます。」"}], isImportant: false, level: "core" },
+
+  // --- 第6群 最小二乗・回帰 ---
+  { id: 601, category: "6. 最小二乗・回帰", title: "最小二乗法とは何ですか", formula: "S = \\sum_{i=1}^n (y_i - (ax_i + b))^2 \\to \\min", formulaMust: true, definition: "誤差の二乗和を最小にする直線を引く手法。", oral30: "実際のデータと予測モデルとのズレ（誤差）を二乗して足し合わせたものを最も小さくするような、最適なパラメータ（直線など）を求める計算手法です。", explanation: "二乗することでプラスマイナスの相殺を防ぎつつ、大きな誤差に重いペナルティを与え、かつ微分がしやすいというメリットがあります。", application: "回帰分析のモデルを作る際の、最も標準的で強力な計算アルゴリズムです。", followups: [{q: "なぜ『絶対値』ではなく『二乗』を使うのですか？", a: "「絶対値はV字型のグラフになって底が尖るため微分がしづらいですが、二乗なら綺麗な放物線（二次関数）になるため、微分して0とおいて最小値を求めるのが非常に簡単だからです」"}, {q: "誤差関数を最小化するために、具体的にどんな数学の操作（微分）をしますか？", a: "「誤差関数を各パラメータ（傾きや切片）でそれぞれ偏微分し、すべてを0とおいた連立方程式（正規方程式）を解きます。」"}], isImportant: true, level: "core" },
+  { id: 609, category: "6. 最小二乗・回帰", title: "回帰分析と最小二乗法の違い", formula: "", definition: "分析の目的と、そのための計算手段。", oral30: "「回帰分析」は変数間の関係性をモデル化して予測や要因分析を行うという「目的」であり、「最小二乗法」はその直線を引くための「計算手段（アルゴリズム）」の1つです。", explanation: "家を建てる（回帰分析）ための、トンカチ（最小二乗法）という関係性です。", application: "実務では、データの特徴によって最小二乗法以外のトンカチ（他の推定法）を使うこともあります。", followups: [{q: "回帰分析における「説明変数」と「目的変数」の違いを説明してください。", a: "「説明変数は原因となる変数（x）、目的変数は結果として予測したい変数（y）です。」"}, {q: "最小二乗法は外れ値（異常なデータ）に対して強いですか？弱いですか？", a: "「弱いです。誤差を二乗して評価するため、1つでも遠く離れた外れ値があると、その二乗のペナルティが大きくなりすぎて、直線全体がそっちに引っ張られてしまいます」"}], isImportant: false, level: "core" },
+  { id: 611, category: "6. 最小二乗・回帰", title: "相関と因果の違い", formula: "", definition: "連動することと、原因・結果であることの違い。", oral30: "「相関」は2つのデータが一緒に動く傾向のことですが、「因果」はAが原因でBが起きたという明確な理由付けのことです。相関があるからといって因果があるとは限りません。", explanation: "例えば「広告費」と「売上」に正の相関があっても、広告の効果で売上が上がった（因果）のか、売上が良い時期だから広告を多く出せた（逆の因果）のかは式だけでは分かりません。", application: "データ分析の「見せかけの相関」に騙されて、誤ったビジネスの意思決定をしないために最も警戒すべき概念です。", followups: [{q: "広告費と売上の背後にあるかもしれない、第3の要因（交絡因子）の例を挙げられますか？", a: "「例えば『季節』や『ボーナス月』です。ボーナス月だから売上が上がり、同時に広告費も多く投入していただけで、直接の因果はないというケースが考えられます」"}, {q: "因果関係を正しく証明するためには、実務でどんなアプローチをとりますか？", a: "「ランダム化比較試験（A/Bテスト）を行ったり、操作変数法などの統計的因果推論の手法を用いて、純粋な効果を切り分けます。」"}], isImportant: true, level: "core", trap: true },
+
+  // --- 第7群 確率統計 ---
+  { id: 702, category: "7. 確率・統計", title: "期待値とは何ですか", formula: "E[X] = \\sum x_i P(x_i)", formulaMust: true, definition: "確率を考慮した平均値。", oral30: "起こりうるすべての結果に対して、それぞれの確率を掛けて足し合わせた「平均的に期待される見込みの値」のことです。", explanation: "宝くじで「1枚買ったら平均していくら戻ってくるか」という数値です。", application: "投資案件を評価する際、リターンの期待値がプラスかマイナスかで、その投資を実行すべきかの基準になります。", followups: [{q: "期待値がマイナスの投資やゲームに参加する合理的な理由はありますか？", a: "「保険がその代表例です。期待値としては損をしますが、万が一の莫大な損失（家が燃えるなど）を回避するために、安心という価値を買っています」"}, {q: "確率変数の定数倍 aX の期待値 E[aX] はどう変形できますか？", a: "「定数aはそのまま外に出せるので、$aE[X]$ となります。」"}], isImportant: true, level: "core" },
+  { id: 703, category: "7. 確率・統計", title: "分散とは何ですか", formula: "V[X] = E[(X - \\mu)^2] = E[X^2] - (E[X])^2", formulaMust: true, definition: "平均からの散らばり度合い。", oral30: "データが平均値（期待値）からどれくらい散らばっているか、ブレているかを示す指標です。", explanation: "平均との差を二乗して平均をとることで計算されます。これをルートに戻したものが標準偏差です。", application: "金融工学において「分散＝リスクの大きさ」です。同じ期待値でも、分散が大きい資産ほどハイリスクと見なされます。", followups: [{q: "分散を計算する時、なぜ平均との差を「二乗」するのですか？", a: "「そのまま足すと、プラスとマイナスのブレが相殺して必ず0になってしまうからです。二乗することで全てプラスになり、かつ計算（微分など）がしやすくなります」"}, {q: "分散の公式 E[X^2] - (E[X])^2 を口頭で説明できますか？", a: "「『二乗の平均』から『平均の二乗』を引いたもの、と覚えられます。」"}], isImportant: true, level: "core" },
+  { id: 705, category: "7. 確率・統計", title: "条件付き確率とは何ですか", formula: "P(A \\mid B) = \\frac{P(A \\cap B)}{P(B)}", definition: "ある事象が起こったという前提の下で、別の事象が起こる確率。", oral30: "「事象Bがすでに起こった」という新しい情報（条件）が与えられた時に、事象Aが起こる確率のことです。ベイズの定理の基礎になります。", explanation: "全体の確率の中で考えるのではなく、前提条件によって絞り込まれた世界の中で確率を計算し直す概念です。", application: "特定の経済指標が悪化したという条件下で、株価が暴落するリスクを評価するような実践的な分析で使います。", followups: [{q: "ベイズの定理を条件付き確率を使って説明できますか？", a: "「$P(B|A) = \\frac{P(A|B)P(B)}{P(A)}$ です。新しい情報が入ったときに事後確率をアップデートするために使います。」"}, {q: "事象AとBが独立の場合、P(A|B) はどうなりますか？", a: "「ただの $P(A)$ になります。Bが起こったという情報が、Aの確率に一切影響を与えないからです」"}], isImportant: true, level: "core" },
+  { id: 711, category: "7. 確率・統計", title: "正規分布とはどんな分布ですか", formula: "f(x) = \\frac{1}{\\sqrt{2\\pi\\sigma^2}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}", formulaMust: true, definition: "自然界に最もよく現れる釣鐘型の分布。", oral30: "平均を中心に左右対称な釣鐘型を描く確率分布です。自然界や社会データの誤差など、多くの現象が最終的にこの分布に近似できるため統計学の主役です。", explanation: "「平均」と「分散（標準偏差）」の2つのパラメータだけで、グラフの形が完全に決定されます。", application: "データ分析や金融工学の多くが、「データの誤差や価格の変動は正規分布に従う」という前提で計算式を組んでいます。", followups: [{q: "正規分布において、平均±1標準偏差(1σ)の中にデータ全体の約何％が収まりますか？", a: "「約68%です。ちなみに2σの中には約95%が収まります」"}, {q: "現実の株価の変動は、綺麗な正規分布と比べてどんな違いがありますか？", a: "「現実の市場では、極端な暴落や暴騰が正規分布の予測よりも頻繁に起きる『ファットテール（裾野が厚い）』という特徴があります。」"}], isImportant: true, level: "core" },
+  { id: 713, category: "7. 確率・統計", title: "大数の法則と中心極限定理の違い", formula: "\\bar{X} \\to \\mu, \\quad Z \\to N(0,1)", definition: "サンプルサイズを大きくした時の、平均値の「近づき先」と「分布の形」。", oral30: "『大数の法則』は、サンプルを増やすと標本平均が真の平均（母平均）に限りなく近づくという法則です。『中心極限定理』は、元のデータがどんな分布であっても、サンプルを足し合わせた平均の「分布の形」が、正規分布に近づくという定理です。", explanation: "「どこに近づくか（値）」を保証するのが大数、「どんな形になるか（分布）」を保証するのが中心極限定理です。統計的推測はこの2大定理の上に成り立っています。", application: "アンケート調査や製品検査で、一部のサンプル（標本）から全体（母集団）の性質を確率的に推測して意思決定する際の根拠となります。", followups: [{q: "サイコロを振る回数を増やすとどうなるか、この2つの定理を使って説明して", a: "「大数の法則により、出た目の平均値は次第に3.5に近づきます。さらに中心極限定理により、その『平均値のばらつき方（ヒストグラム）』を描くと、3.5を中心とした綺麗な釣鐘型（正規分布）になります。」"}], isImportant: true, level: "core" },
+  { id: 714, category: "7. 確率・統計", title: "推定量の一致性と不偏性の違い", formula: "E[\\hat{\\theta}] = \\theta \\quad (\\text{不偏})", definition: "良い推定量の持つべき2つの性質。", oral30: "『不偏性』は、推定量の期待値（平均的な結果）が真の値に一致すること、つまり「偏りがない」ことです。『一致性』は、サンプルサイズを無限に大きくすれば、推定量が真の値そのものに限りなく近づく（大数の法則が成り立つ）性質です。", explanation: "ダーツに例えると、不偏性は「たくさん投げた重心が真ん中にある（けどバラけているかも）」、一致性は「投げる回数を増やすほど、矢が真ん中に一点集中していく」というイメージです。", application: "回帰分析などで使われる最小二乗推定量は、この「不偏性」と「一致性（および有効性）」を満たす最良の推定量（BLUE）であることが証明されています。", followups: [{q: "標本分散を計算するとき、n ではなく n-1 で割るのはなぜですか？", a: "「nで割ると、真の分散よりも少し小さめに見積もってしまう『偏り』が出るため、n-1で割ることで『不偏性（期待値が真の分散と一致する）』を持たせるためです。（これを不偏分散と呼びます）」"}], isImportant: true, level: "core", trap: true },
+  { id: 715, category: "7. 確率・統計", title: "ベイズの定理", formula: "P(A \\mid B) = \\frac{P(B \\mid A) P(A)}{P(B)}", formulaMust: true, definition: "結果から原因の確率を逆算する定理。", oral30: "ある結果（B）が観測されたという新しい情報をもとに、その原因（A）が起きていた事後確率を、事前の確率からアップデートして求めるための定理です。", explanation: "「病気の検査で陽性が出た時、本当に病気である確率は？」といった、直感と実際の確率がズレやすい問題（条件付き確率の逆）を正確に計算できます。", application: "スパムメールの判定フィルターや、機械学習のベイズ推定、不確実な情報下での意思決定など、現代のデータサイエンスの根幹をなす定理です。", followups: [{q: "ベイズの定理における『事前確率』と『事後確率』を、検査の例で説明してください。", a: "「事前確率は『検査前に持っていた、その人が病気である確率（罹患率）』、事後確率は『陽性という結果が出た後にアップデートされた、本当に病気である確率』です。」"}], isImportant: true, level: "core" },
+  { id: 712, category: "7. 確率・統計", title: "仮説検定の「帰無仮説」と「対立仮説」", formula: "H_0 \\text{ vs } H_1", definition: "否定したい仮説と、主張したい仮説。", oral30: "自分が証明したい主張を「対立仮説」とし、あえて「そんな効果はない」という「帰無仮説」を立てます。そして、データから帰無仮説が『確率的にあり得ない』と矛盾を突くことで、自分の主張を通すアプローチです。", explanation: "背理法のような考え方で、統計的にエビデンスを示すための基本的なフレームワークです。", application: "新しいマーケティング施策を打った時に、売上の増加が「単なる偶然」なのか「本当に施策の効果」なのかを白黒つけるのに使います。", followups: [{q: "帰無仮説を捨てる基準となる確率のことを何と呼びますか？", a: "「有意水準（例えば5%など）と呼びます。」"}, {q: "p値が有意水準より「小さい」とき、帰無仮説はどうなりますか？", a: "「帰無仮説のもとでこんなデータが出るのはレアケースだと判断して『帰無仮説を棄却』します。つまり、対立仮説（自分の主張）を支持します」"}], isImportant: false, level: "advanced" },
+
+  // --- 第8群 微分方程式 ---
+  { id: 801, category: "8. 微分方程式", title: "微分方程式とは何ですか", formula: "\\frac{dy}{dt} = f(y, t)", formulaMust: true, definition: "未知の「関数」と「導関数」を含む方程式。", oral30: "普通の方程式が「特定の数字」を当てるクイズだとすれば、微分方程式は「変化のルール」から「元の関数の形そのもの」を復元するクイズです。", explanation: "時間変化を表す動学的なシステムを数式化するための最強のツールです。", application: "経済成長モデルにおいて、資本や人口が時間とともにどう変化し、最終的に定常状態に落ち着くのかというシミュレーションに使われます。", followups: [{q: "微分方程式を解く際に、スタート地点の条件（t=0の時の値）を何と呼びますか？", a: "「初期条件です。これがないと、積分定数（C）が残ったままの一般解しか求まらず、具体的な軌道が確定しません」"}, {q: "2階の微分方程式の解が「波のように振動する」のは、特性方程式の解がどんな数の時ですか？", a: "「解が虚数（複素数）になる時です。オイラーの公式により三角関数が現れるため振動します。」"}], isImportant: true, level: "core" },
+
+  // --- 第9群 経済学基礎 ---
+  { id: 901, category: "9. 経済基礎", title: "需要関数とは何ですか", formula: "D = f(P, I, \\dots)", formulaMust: true, definition: "価格と買いたい量の関係を表す関数。", oral30: "商品の「価格」や消費者の「所得」などから、市場でどれだけの「数量」が買われるかを表した関数のことです。通常、価格が上がれば需要は減る（右肩下がり）とモデル化されます。", explanation: "経済学における最も基本的な関数の1つで、消費者行動の最適化（効用最大化）の結果として導き出されます。", application: "「価格を1%上げた時、需要が何%減るか（価格弾力性）」を微分を使って計算し、企業の価格戦略を決定するベースになります。", followups: [{q: "価格以外の要因（例えば流行や所得）が変化した場合、グラフ上ではどんな動きをしますか？", a: "「価格以外の要因が変化すると、需要曲線そのものが右（需要増）や左（需要減）に平行シフトします。」"}, {q: "生活必需品と高級車では、需要関数の「傾き」はどう違いますか？", a: "「生活必需品は価格が変わっても需要が落ちにくいので『傾きが急（非弾力的）』、高級車は価格に敏感なので『傾きが緩やか（弾力的）』になります。」"}], isImportant: true, level: "core" },
+  { id: 902, category: "9. 経済基礎", title: "限界費用（Marginal Cost）とは何ですか", formula: "MC = \\frac{dC(q)}{dq}", formulaMust: true, definition: "追加で1つ生産するためのコスト。", oral30: "総費用関数を生産量で微分したもので、「生産量をあと1単位追加で増やした時に、余分にかかるコスト」のことです。", explanation: "経済学では平均のコストではなく、この「限界的なコスト」を見て企業が生産量を決定すると考えます。", application: "完全競争市場では、「価格＝限界費用」となる点が企業の利益を最大化する最適な生産量となります。", followups: [{q: "なぜ企業は「平均費用」ではなく「限界費用」を見て生産量を決めるのですか？", a: "「過去の費用（サンクコスト）は取り戻せないので無視し、『今ここから、もう1つ追加で作るべきか』という未来の損益だけを純粋に比較して意思決定するためです」"}, {q: "固定費（家賃など）は、微分して求める限界費用に影響を与えますか？", a: "「影響しません。限界費用は微分して求めるため、定数である固定費は0になって消えるからです。」"}], isImportant: true, level: "core" },
+  { id: 903, category: "9. 経済基礎", title: "限界利益（限界収入）とは何ですか", formula: "MR = \\frac{dR(q)}{dq} \\quad (\\text{最適化: } MR=MC)", formulaMust: true, definition: "生産量（販売量）を1単位追加した時に得られる追加的な収益。", oral30: "商品をあと1つ追加で売った時に、企業に新しく入ってくる追加の収益（売上）のことです。限界費用と一致するまで生産するのが最適だと考えます。", explanation: "経済学では限界費用 (MC) と限界収入 (MR) が等しくなる点 (MR=MC) で企業の利益が最大化されます。", application: "企業が「これ以上作ると赤字になる」ギリギリの生産量を決定する基準になります。", followups: [{q: "完全競争市場では、限界収入（MR）は何と等しくなりますか？", a: "「市場価格（P）と等しくなります。1つ売れるごとに必ず価格分の売上がそのまま入ってくるからです。」"}, {q: "限界効用とは何が違いますか？", a: "「限界効用は消費者が追加で得る『満足度』、限界収入は企業が追加で得る『売上（金銭）』です。」"}], isImportant: true, level: "core" },
+  { id: 904, category: "9. 経済基礎", title: "効用最大化とは何ですか", formula: "\\max U(x,y) \\quad \\text{s.t.} \\quad P_x x + P_y y = I", formulaMust: true, definition: "消費者が限られた予算内で最も高い満足度を得るための行動。", oral30: "消費者が、限られた予算の制約のもとで、自分自身の満足度（効用）が最も高くなるような商品の組み合わせを選ぶという、ミクロ経済学の最も基本となる意思決定モデルです。", explanation: "ラグランジュの未定乗数法を使って数学的に解くことができます。最適点では、無差別曲線と予算制約線が接します。", application: "ここから需要関数を導出することで、市場全体の需要の動きを数理的に分析する土台となります。", followups: [{q: "最適点において、限界代替率と価格比にはどんな関係がありますか？", a: "「限界代替率（主観的な交換比率）と、価格比（市場での客観的な交換比率）が完全に一致します。」"}, {q: "所得が増えた場合、予算制約線はどう動きますか？", a: "「傾き（価格比）はそのままで、予算制約線が外側（右上）に平行移動します。」"}], isImportant: true, level: "core" },
+  { id: 905, category: "9. 経済基礎", title: "費用関数とは何ですか", formula: "C(q) = FC + VC(q)", definition: "生産量とそれに必要な総費用の関係を表す関数。", oral30: "企業がある量の製品を作るために、どれだけのコストがかかるかを表した関数です。家賃などの「固定費」と、材料費など生産量に応じて増える「変動費」の合計で表されます。", explanation: "この関数を微分したものが限界費用（MC）になり、企業の最適な生産量を決定するための出発点になります。", application: "利益最大化問題を解く際に、売上関数からこの費用関数を引いたものを目的関数として最大化します。", followups: [{q: "長期と短期で、固定費の扱いはどう変わりますか？", a: "「短期では家賃などの固定費は変えられませんが、長期では工場を移転するなどすべてを可変費用として扱うことができます。」"}, {q: "平均費用曲線と限界費用曲線の交点には、どんな経済的意味がありますか？", a: "「その交点は平均費用が最小となる点であり、『操業停止点』や『損益分岐点』の基準になります。」"}], isImportant: true, level: "core" }
+];
+
+const oralCategories = ["すべて", "1. 一変数微積", "2. 多変数・最適化", "3. ラグランジュ", "4. テイラー展開", "5. 線形代数", "6. 最小二乗・回帰", "7. 確率・統計", "8. 微分方程式", "9. 経済基礎"];
+
+function App() {
+  const [appMode, setAppMode] = useState('oral'); // 'oral' | 'general'
+  const [activeCategory, setActiveCategory] = useState("すべて");
+  const [selectedCard, setSelectedCard] = useState(null);
+  
+  const [showAdvanced, setShowAdvanced] = useState(false); 
+  const [showUntouchedOnly, setShowUntouchedOnly] = useState(false);
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [showDueOnly, setShowDueOnly] = useState(false);
+  const [showHiddenOnly, setShowHiddenOnly] = useState(false);
+
+  const [mockExamMode, setMockExamMode] = useState(null); // 'oral' | 'general' | null
+  const [mockQuestions, setMockQuestions] = useState([]);
+  const [mockIndex, setMockIndex] = useState(0);
+  const [mockTimeLeft, setMockTimeLeft] = useState(60);
+  const [showMockAnswer, setShowMockAnswer] = useState(false);
+
+  const [revealedAnswers, setRevealedAnswers] = useState({});
+  const [katexLoaded, setKatexLoaded] = useState(false);
+
+  // ▼ 詳細進捗モーダルのステートを追加
+  const [showProgressModal, setShowProgressModal] = useState(false);
+
+  // ▼ 新規：カスタム問題追加用ステート
+  const [customQuestions, setCustomQuestions] = useState([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [newQuestion, setNewQuestion] = useState({
+    category: "1. 一変数微積",
+    title: "",
+    formula: "",
+    oral30: "",
+    explanation: "",
+    application: "",
+    followups: [],
+    isImportant: false,
+    level: "core",
+    isCustom: true
+  });
+
+  const [user, setUser] = useState(null);
+  const [dailyHistory, setDailyHistory] = useState({}); 
+  const [userNotes, setUserNotes] = useState({}); 
+  const [checklists, setChecklists] = useState({}); 
+  const [hiddenCards, setHiddenCards] = useState({}); 
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [editingNote, setEditingNote] = useState("");
+
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  useEffect(() => {
+    if (!document.getElementById('katex-css')) {
+      const link = document.createElement('link');
+      link.id = 'katex-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+      document.head.appendChild(link);
+    }
+    if (!document.getElementById('katex-js')) {
+      const script = document.createElement('script');
+      script.id = 'katex-js';
+      script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js';
+      script.onload = () => setKatexLoaded(true);
+      document.head.appendChild(script);
+    } else if (window.katex) {
+      setKatexLoaded(true);
+    }
+  }, []);
+
+  const renderFormula = (formula, isDisplay = false) => {
+    if (!formula) return null;
+    if (!katexLoaded || !window.katex) return <span>{formula}</span>;
+    try {
+      const html = window.katex.renderToString(formula, {
+        displayMode: isDisplay,
+        throwOnError: false,
+      });
+      return <span dangerouslySetInnerHTML={{ __html: html }} />;
+    } catch (e) {
+      return <span>{formula}</span>;
+    }
+  };
+
+  useEffect(() => {
+    if (!auth) { setIsLoading(false); return; }
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else { await signInAnonymously(auth); }
+      } catch (e) { console.error(e); }
     };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
 
-    const els = {
-      dateInput: document.getElementById('dateInput'),
-      progressPct: document.getElementById('progressPct'),
-      progressBar: document.getElementById('progressBar'),
-      progressCount: document.getElementById('progressCount'),
-      categoryTabs: document.getElementById('categoryTabs'),
-      importantBtn: document.getElementById('importantBtn'),
-      untouchedBtn: document.getElementById('untouchedBtn'),
-      summary: document.getElementById('summary'),
-      cardGrid: document.getElementById('cardGrid'),
-      empty: document.getElementById('empty'),
-      modalRoot: document.getElementById('modalRoot')
-    };
-
-    function today() {
-      const d = new Date();
-      return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
-    }
-
-    function loadProgress() {
-      try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); }
-      catch { return {}; }
-    }
-
-    function saveProgress() {
-      localStorage.setItem(storageKey, JSON.stringify(state.dailyHistory));
-    }
-
-    function shortCategory(cat) {
-      return cat.replace(/^\d+\.\s*/, '');
-    }
-
-    function escapeHtml(value) {
-      return String(value).replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
-    }
-
-    function masteredIds() {
-      const ids = new Set();
-      Object.values(state.dailyHistory).forEach(day => {
-        Object.entries(day || {}).forEach(([id, status]) => { if (status === 'mastered') ids.add(Number(id)); });
-      });
-      return ids;
-    }
-
-    function touchedIds() {
-      const ids = new Set();
-      Object.values(state.dailyHistory).forEach(day => Object.keys(day || {}).forEach(id => ids.add(Number(id))));
-      return ids;
-    }
-
-    function currentDayRecord() {
-      return state.dailyHistory[state.selectedDate] || {};
-    }
-
-    function filteredData() {
-      const touched = touchedIds();
-      return quizData.filter(item => {
-        if (state.showOnlyImportant && !item.isImportant) return false;
-        if (state.showUntouchedOnly && touched.has(item.id)) return false;
-        if (state.activeCategory !== 'すべて' && item.category !== state.activeCategory) return false;
-        return true;
-      });
-    }
-
-    function setStatus(id, status) {
-      const day = { ...currentDayRecord() };
-      day[id] = day[id] === status ? undefined : status;
-      Object.keys(day).forEach(key => day[key] === undefined && delete day[key]);
-      state.dailyHistory = { ...state.dailyHistory, [state.selectedDate]: day };
-      saveProgress();
-      render();
-    }
-
-    function renderTabs() {
-      els.categoryTabs.innerHTML = categories.map(cat => `<button type="button" class="chip ${state.activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}">${escapeHtml(shortCategory(cat))}</button>`).join('');
-      els.categoryTabs.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', () => { state.activeCategory = button.dataset.category; render(); });
-      });
-    }
-
-    function renderProgress() {
-      const mastered = masteredIds();
-      const pct = Math.round((mastered.size / quizData.length) * 100);
-      els.progressPct.textContent = pct + '%';
-      els.progressBar.style.width = pct + '%';
-      els.progressCount.textContent = mastered.size + ' / ' + quizData.length + ' 問';
-    }
-
-    function renderCards() {
-      const day = currentDayRecord();
-      const data = filteredData();
-      els.summary.textContent = data.length + '問を表示中 / 全' + quizData.length + '問';
-      els.empty.classList.toggle('hidden', data.length !== 0);
-      els.cardGrid.classList.toggle('hidden', data.length === 0);
-      els.cardGrid.innerHTML = data.map(item => {
-        const status = day[item.id];
-        return `
-          <article class="card ${status === 'mastered' ? 'mastered' : status === 'review' ? 'review' : ''}" data-open="${item.id}">
-            <div class="card-head">
-              <div class="badges">
-                <span class="badge">${escapeHtml(shortCategory(item.category))}</span>
-                ${item.isImportant ? '<span class="badge hot">最重要</span>' : ''}
-              </div>
-              <div class="status">
-                <button class="icon-btn review ${status === 'review' ? 'on' : ''}" type="button" data-status="review" data-id="${item.id}" aria-label="要復習にする">△</button>
-                <button class="icon-btn mastered ${status === 'mastered' ? 'on' : ''}" type="button" data-status="mastered" data-id="${item.id}" aria-label="覚えたにする">✓</button>
-              </div>
-            </div>
-            <h2>${escapeHtml(item.title)}</h2>
-            <p class="def">${escapeHtml(item.definition)}</p>
-          </article>`;
-      }).join('');
-      els.cardGrid.querySelectorAll('[data-open]').forEach(card => card.addEventListener('click', () => openModal(Number(card.dataset.open))));
-      els.cardGrid.querySelectorAll('[data-status]').forEach(button => {
-        button.addEventListener('click', event => {
-          event.stopPropagation();
-          setStatus(Number(button.dataset.id), button.dataset.status);
-        });
-      });
-    }
-
-    function openModal(id) {
-      state.selectedId = id;
-      state.showTsukkomi = false;
-      renderModal();
-    }
-
-    function closeModal() {
-      state.selectedId = null;
-      state.showTsukkomi = false;
-      renderModal();
-    }
-
-    function renderModal() {
-      const item = quizData.find(q => q.id === state.selectedId);
-      if (!item) {
-        els.modalRoot.innerHTML = '';
-        document.body.style.overflow = '';
-        return;
+  useEffect(() => {
+    if (!user || !db) { setIsLoading(false); return; }
+    const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'appData', 'progress');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setDailyHistory(data.dailyHistory || {});
+        setUserNotes(data.userNotes || {}); 
+        setChecklists(data.checklists || {});
+        setHiddenCards(data.hiddenCards || {}); 
+        setCustomQuestions(data.customQuestions || []); 
       }
-      document.body.style.overflow = 'hidden';
-      const day = currentDayRecord();
-      const status = day[item.id];
-      els.modalRoot.innerHTML = `
-        <div class="modal-backdrop" id="modalBackdrop">
-          <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div class="modal-head">
-              <div class="badges">
-                <span class="badge">${escapeHtml(item.category)}</span>
-                ${item.isImportant ? '<span class="badge hot">頻出</span>' : ''}
-              </div>
-              <button class="close" type="button" id="closeModal" aria-label="閉じる">×</button>
-            </div>
-            <div class="modal-body">
-              <h2 id="modalTitle">${escapeHtml(item.title)}</h2>
-              <div class="box">
-                <p class="label">定義・公式の確認</p>
-                <p class="answer">${escapeHtml(item.definition)}</p>
-              </div>
-              <div class="section">
-                <p class="label rose">面接での口頭説明（例）</p>
-                <p class="quote">「${escapeHtml(item.explanation)}」</p>
-              </div>
-              <div class="section">
-                <p class="label indigo">経済・工学への応用視点</p>
-                <p class="quote indigo">「${escapeHtml(item.application)}」</p>
-              </div>
-              <div class="deep">
-                ${state.showTsukkomi ? `
-                  <div class="tsukkomi">
-                    <p class="label amber">面接官からの深掘り質問</p>
-                    <p class="answer">「${escapeHtml(item.tsukkomi)}」</p>
-                    <p class="note">この質問に対して、自分の言葉で短く打ち返す練習をしよう。</p>
-                  </div>` : `
-                  <button type="button" class="dash" id="showTsukkomi">面接官からの「ツッコミ」をシミュレーションする</button>`
-                }
-              </div>
-            </div>
-            <div class="modal-foot">
-              <button type="button" class="action secondary" id="footerClose">閉じる</button>
-              <div class="footer-actions">
-                <button type="button" class="action review ${status === 'review' ? 'on' : ''}" data-modal-status="review">△ 詰まった</button>
-                <button type="button" class="action mastered ${status === 'mastered' ? 'on' : ''}" data-modal-status="mastered">✓ 言えた</button>
-              </div>
-            </div>
-          </section>
-        </div>`;
-      document.getElementById('modalBackdrop').addEventListener('click', event => { if (event.target.id === 'modalBackdrop') closeModal(); });
-      document.getElementById('closeModal').addEventListener('click', closeModal);
-      document.getElementById('footerClose').addEventListener('click', closeModal);
-      const showButton = document.getElementById('showTsukkomi');
-      if (showButton) showButton.addEventListener('click', () => { state.showTsukkomi = true; renderModal(); });
-      els.modalRoot.querySelectorAll('[data-modal-status]').forEach(button => {
-        button.addEventListener('click', () => { setStatus(item.id, button.dataset.modalStatus); closeModal(); });
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const mergedQuizData = useMemo(() => {
+    return [...quizData, ...customQuestions];
+  }, [customQuestions]);
+
+  const allMasteredIds = useMemo(() => {
+    const ids = new Set();
+    Object.values(dailyHistory).forEach(dayRecord => {
+      Object.entries(dayRecord).forEach(([id, status]) => {
+        if (status === 'mastered') ids.add(Number(id));
+      });
+    });
+    return ids;
+  }, [dailyHistory]);
+
+  const touchedIds = useMemo(() => {
+    const ids = new Set();
+    Object.values(dailyHistory).forEach(dayRecord => {
+      Object.keys(dayRecord).forEach(id => { ids.add(Number(id)); });
+    });
+    return ids;
+  }, [dailyHistory]);
+
+  const dueCardIds = useMemo(() => {
+    const ids = new Set();
+    const intervals = [1, 3, 7, 14, 30];
+    mergedQuizData.forEach(q => {
+      const id = String(q.id);
+      let consecutiveMastered = 0;
+      let nextReviewDate = null;
+      let lastStudiedDate = null;
+      const sortedDates = Object.keys(dailyHistory).sort();
+      for (const date of sortedDates) {
+        if (date > selectedDate) continue;
+        const status = dailyHistory[date]?.[id];
+        if (!status) continue;
+        lastStudiedDate = date;
+        if (status === 'review') {
+          consecutiveMastered = 0;
+          const d = new Date(date); d.setDate(d.getDate() + 1);
+          nextReviewDate = d.toISOString().split('T')[0];
+        } else if (status === 'mastered') {
+          consecutiveMastered += 1;
+          const interval = intervals[Math.min(consecutiveMastered - 1, intervals.length - 1)];
+          const d = new Date(date); d.setDate(d.getDate() + interval);
+          nextReviewDate = d.toISOString().split('T')[0];
+        }
+      }
+      if (nextReviewDate && selectedDate >= nextReviewDate && lastStudiedDate !== selectedDate) {
+        ids.add(q.id);
+      }
+    });
+    return ids;
+  }, [dailyHistory, selectedDate, mergedQuizData]);
+
+  const progress = Math.round((allMasteredIds.size / mergedQuizData.length) * 100) || 0;
+  const currentDayRecord = dailyHistory[selectedDate] || {};
+
+  const progressDetails = useMemo(() => {
+    const stats = {
+      total: { total: 0, mastered: 0 },
+      core: { total: 0, mastered: 0 },
+      advanced: { total: 0, mastered: 0 },
+      important: { total: 0, mastered: 0 },
+      categories: {}
+    };
+
+    mergedQuizData.forEach(q => {
+      const isMastered = allMasteredIds.has(q.id);
+      
+      stats.total.total++;
+      if (isMastered) stats.total.mastered++;
+
+      if (q.level === 'core') {
+        stats.core.total++;
+        if (isMastered) stats.core.mastered++;
+      }
+      if (q.level === 'advanced') {
+        stats.advanced.total++;
+        if (isMastered) stats.advanced.mastered++;
+      }
+      if (q.isImportant) {
+        stats.important.total++;
+        if (isMastered) stats.important.mastered++;
+      }
+
+      if (!stats.categories[q.category]) {
+        stats.categories[q.category] = { total: 0, mastered: 0 };
+      }
+      stats.categories[q.category].total++;
+      if (isMastered) stats.categories[q.category].mastered++;
+    });
+
+    return stats;
+  }, [allMasteredIds, mergedQuizData]);
+
+  // ▼ グラフの基準を「今日」ではなく「選択した日付(selectedDate)」に変更
+  const last7DaysStats = useMemo(() => {
+    const stats = [];
+    let maxCount = 0;
+    let weeklyTotal = 0;
+    
+    // selectedDateを基準に過去7日間を計算
+    const targetDate = new Date(selectedDate);
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(targetDate);
+      d.setDate(d.getDate() - i);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      
+      const dayRecord = dailyHistory[dateStr] || {};
+      let mastered = 0;
+      let review = 0;
+      Object.values(dayRecord).forEach(status => {
+        if (status === 'mastered') mastered++;
+        if (status === 'review') review++;
+      });
+      
+      const total = mastered + review;
+      if (total > maxCount) maxCount = total;
+      weeklyTotal += total;
+      
+      stats.push({ 
+        date: dateStr, 
+        displayDate: `${d.getMonth() + 1}/${d.getDate()}`, 
+        mastered, 
+        review, 
+        total 
       });
     }
+    return { stats, maxCount, weeklyTotal };
+  }, [dailyHistory, selectedDate]);
 
-    function render() {
-      els.dateInput.value = state.selectedDate;
-      els.importantBtn.classList.toggle('active', state.showOnlyImportant);
-      els.untouchedBtn.classList.toggle('active', state.showUntouchedOnly);
-      renderTabs();
-      renderProgress();
-      renderCards();
-      if (state.selectedId) renderModal();
+  // ▼ 新規追加：選択した日付に学習した問題リストを取得
+  const dailyStudiedItems = useMemo(() => {
+    const dayRecord = dailyHistory[selectedDate] || {};
+    return Object.entries(dayRecord).map(([idStr, status]) => {
+      const id = Number(idStr);
+      const item = mergedQuizData.find(q => q.id === id);
+      return item ? { ...item, status } : null;
+    }).filter(Boolean);
+  }, [dailyHistory, selectedDate, mergedQuizData]);
+
+  const filteredData = useMemo(() => {
+    let data = [...mergedQuizData];
+    
+    if (appMode === 'oral') {
+      data = data.filter(q => q.category !== "0. 志望理由・面接");
+    } else {
+      data = data.filter(q => q.category === "0. 志望理由・面接");
     }
 
-    els.dateInput.addEventListener('change', event => { state.selectedDate = event.target.value || today(); render(); });
-    els.importantBtn.addEventListener('click', () => { state.showOnlyImportant = !state.showOnlyImportant; render(); });
-    els.untouchedBtn.addEventListener('click', () => { state.showUntouchedOnly = !state.showUntouchedOnly; render(); });
-    window.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
-    render();
+    if (shuffleSeed > 0) {
+      for (let i = data.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [data[i], data[j]] = [data[j], data[i]];
+      }
+    }
+
+    if (showHiddenOnly) {
+      data = data.filter(q => hiddenCards[q.id] && !q.isCustom); 
+      if (activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
+    } else {
+      data = data.filter(q => !hiddenCards[q.id]);
+      
+      if (!showAdvanced) data = data.filter(q => q.level !== "advanced");
+      if (showDueOnly) data = data.filter(q => dueCardIds.has(q.id));
+      if (showUntouchedOnly) data = data.filter(q => !touchedIds.has(q.id));
+      if (activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
+    }
+
+    return data;
+  }, [appMode, activeCategory, showAdvanced, showUntouchedOnly, showDueOnly, touchedIds, dueCardIds, shuffleSeed, hiddenCards, showHiddenOnly, mergedQuizData]);
+
+  const updateStatus = async (id, status, e) => {
+    if (e) e.stopPropagation();
+    const newStatus = currentDayRecord[id] === status ? null : status;
+    const newDayRecord = { ...currentDayRecord };
+    if (newStatus) newDayRecord[id] = newStatus; else delete newDayRecord[id];
+    const newDailyHistory = { ...dailyHistory, [selectedDate]: newDayRecord };
+    setDailyHistory(newDailyHistory);
+    if (user && db) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'appData', 'progress');
+      await setDoc(docRef, { dailyHistory: newDailyHistory }, { merge: true });
+    }
+  };
+
+  const saveNote = async (id, text) => {
+    const newNotes = { ...userNotes, [id]: text };
+    setUserNotes(newNotes);
+    if (user && db) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'appData', 'progress');
+      await setDoc(docRef, { userNotes: newNotes }, { merge: true });
+    }
+  };
+
+  const toggleChecklist = async (id, type) => {
+    const currentChecks = checklists[id] || { def: false, mean: false, eco: false };
+    const newChecks = { ...currentChecks, [type]: !currentChecks[type] };
+    const newChecklists = { ...checklists, [id]: newChecks };
+    setChecklists(newChecklists);
+    if (user && db) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'appData', 'progress');
+      await setDoc(docRef, { checklists: newChecklists }, { merge: true });
+    }
+  };
+
+  const toggleHidden = async (id, e) => {
+    if (e) e.stopPropagation();
+    const newHidden = { ...hiddenCards };
+    if (newHidden[id]) {
+      delete newHidden[id]; 
+    } else {
+      newHidden[id] = true; 
+    }
+    setHiddenCards(newHidden);
+    if (user && db) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'appData', 'progress');
+      await setDoc(docRef, { hiddenCards: newHidden }, { merge: true });
+    }
+  };
+
+  const handleSaveNewQuestion = async () => {
+    if (!newQuestion.title.trim() || !newQuestion.oral30.trim()) {
+      setAddError("タイトルと30秒回答例は必須です。");
+      return;
+    }
+    setAddError("");
+    const newId = Date.now();
+    const qToSave = { ...newQuestion, id: newId };
+    const updatedCustomQuestions = [...customQuestions, qToSave];
+    
+    setCustomQuestions(updatedCustomQuestions);
+    setShowAddModal(false);
+    
+    setNewQuestion({ category: "1. 一変数微積", title: "", formula: "", oral30: "", explanation: "", application: "", followups: [], isImportant: false, level: "core", isCustom: true });
+
+    if (user && db) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'appData', 'progress');
+      await setDoc(docRef, { customQuestions: updatedCustomQuestions }, { merge: true });
+    }
+  };
+
+  const handleDeleteCustomQuestion = async (id, e) => {
+    if (e) e.stopPropagation();
+    const updated = customQuestions.filter(q => q.id !== id);
+    setCustomQuestions(updated);
+    if (user && db) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'appData', 'progress');
+      await setDoc(docRef, { customQuestions: updated }, { merge: true });
+    }
+  };
+
+  const openCard = (item) => {
+    setSelectedCard(item);
+    setEditingNote(userNotes[item.id] || ""); 
+    setRevealedAnswers({}); 
+  };
+  const closeCard = () => setSelectedCard(null);
+
+  const toggleAnswer = (idx) => {
+    setRevealedAnswers(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const startMockExam = (type) => {
+    if (type === 'oral') {
+      const shibou = mergedQuizData.filter(q => q.category === "0. 志望理由・面接" && !hiddenCards[q.id]);
+      const others = mergedQuizData.filter(q => q.category !== "0. 志望理由・面接" && q.level !== "advanced" && !hiddenCards[q.id]);
+      const randShibou = shibou.length > 0 ? shibou[Math.floor(Math.random() * shibou.length)] : mergedQuizData[0]; 
+      const shuffledOthers = others.sort(() => 0.5 - Math.random()).slice(0, 3);
+      setMockQuestions([randShibou, ...shuffledOthers]);
+    } else if (type === 'general') {
+      const shibou = mergedQuizData.filter(q => q.category === "0. 志望理由・面接" && !hiddenCards[q.id]);
+      const shuffledShibou = shibou.sort(() => 0.5 - Math.random()).slice(0, 4);
+      setMockQuestions(shuffledShibou);
+    }
+    
+    setMockExamMode(type);
+    setMockIndex(0);
+    setMockTimeLeft(60);
+    setShowMockAnswer(false);
+    setRevealedAnswers({});
+  };
+
+  useEffect(() => {
+    let timer;
+    if (mockExamMode !== null && !showMockAnswer && mockTimeLeft > 0) {
+      timer = setTimeout(() => setMockTimeLeft(prev => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [mockExamMode, showMockAnswer, mockTimeLeft]);
+
+  const nextMockQuestion = () => {
+    if (mockIndex < mockQuestions.length - 1) {
+      setMockIndex(mockIndex + 1);
+      setMockTimeLeft(60);
+      setShowMockAnswer(false);
+      setRevealedAnswers({}); 
+    } else {
+      setMockExamMode(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-rose-200">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex items-center gap-2">
+              <BrainCircuit className="text-rose-600 w-8 h-8" /> 九大経済工学 面接対策
+            </h1>
+            <div className="text-sm text-slate-500 mt-1 flex items-center gap-2 min-h-[20px]">
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+            </div>
+          </div>
+          <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1 rounded-xl">
+              <button 
+                onClick={() => { setAppMode('oral'); setActiveCategory('すべて'); setShowHiddenOnly(false); }}
+                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'oral' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <BrainCircuit className="w-4 h-4" /> 数学・経済
+              </button>
+              <button 
+                onClick={() => { setAppMode('general'); setActiveCategory('すべて'); setShowHiddenOnly(false); }}
+                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'general' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <User className="w-4 h-4" /> 志望動機・人物
+              </button>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 bg-indigo-50 border border-indigo-200 px-4 py-2 rounded-xl text-indigo-700 font-bold transition-all hover:bg-indigo-100">
+              <Calendar className="w-4 h-4" />
+              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent border-none outline-none text-indigo-900 cursor-pointer font-bold" />
+            </div>
+
+            <button 
+              onClick={() => setShowProgressModal(true)}
+              className="w-full sm:w-64 bg-slate-100 p-3 rounded-xl border border-slate-200 hover:bg-slate-200 transition-colors text-left relative group"
+            >
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                  <BarChart2 className="w-3 h-3"/> 累計習得度
+                </span>
+                <span className="text-sm font-bold text-rose-600">{progress}%</span>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-2.5">
+                <div className="bg-rose-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+              </div>
+              <div className="absolute inset-0 bg-slate-900/5 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <span className="text-xs font-bold text-slate-700 bg-white/95 px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                  <BarChart2 className="w-3 h-3"/> 詳細分析を見る
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <button 
+            onClick={() => startMockExam(appMode)}
+            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-white shadow-lg transition-transform hover:-translate-y-1 ${
+              appMode === 'oral' 
+                ? 'bg-gradient-to-r from-rose-500 to-indigo-600 shadow-rose-200' 
+                : 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-200'
+            }`}
+          >
+            <Mic className="w-6 h-6 animate-pulse" /> 
+            {appMode === 'oral' ? '模擬口頭試問（数学・経済）をスタート' : '模擬一般面接（志望動機・人物）をスタート'}
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="flex overflow-x-auto pb-2 sm:pb-0 gap-2 hide-scrollbar w-full sm:w-auto">
+            {appMode === 'oral' && oralCategories.map(cat => (
+              <button key={cat} onClick={() => setActiveCategory(cat)} className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === cat ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}`}>
+                {cat.replace(/^\d+\.\s*/, '')}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto overflow-x-auto hide-scrollbar pb-2 sm:pb-0 items-center">
+            <button onClick={() => setShowAddModal(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 bg-rose-600 text-white border-rose-700 hover:bg-rose-700 shadow-sm">
+              <Plus className="w-4 h-4" /> 問題作成
+            </button>
+
+            <div className="w-px h-6 bg-slate-200 mx-1 shrink-0"></div>
+
+            <button onClick={() => setShowHiddenOnly(!showHiddenOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showHiddenOnly ? 'bg-slate-800 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+              <EyeOff className="w-4 h-4" /> 非表示中 ({Object.keys(hiddenCards).length})
+            </button>
+            
+            <div className="w-px h-6 bg-slate-200 mx-1 shrink-0"></div>
+
+            <button onClick={() => setShowAdvanced(!showAdvanced)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${!showAdvanced ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-indigo-100 text-indigo-700 border-indigo-300'}`}>
+              {!showAdvanced ? <><Flame className="w-4 h-4" /> 本番頻出のみ</> : <><Sparkles className="w-4 h-4" /> 発展含む</>}
+            </button>
+            <button onClick={() => setShowUntouchedOnly(!showUntouchedOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showUntouchedOnly ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-white text-slate-500 border-slate-200'}`}>
+              <CircleDashed className="w-4 h-4" /> 未着手
+            </button>
+            <button onClick={() => setShowDueOnly(!showDueOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showDueOnly ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-500 border-slate-200'}`}>
+              <Clock className="w-4 h-4" /> 復習 ({dueCardIds.size})
+            </button>
+            <button onClick={() => setShuffleSeed(prev => prev + 1)} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border bg-white text-slate-500 border-slate-200 hover:bg-slate-50 shrink-0">
+              <Shuffle className="w-4 h-4" /> シャッフル
+            </button>
+          </div>
+        </div>
+
+        {showHiddenOnly && (
+           <div className="mb-4 p-4 bg-slate-800 text-white rounded-xl font-bold flex items-center justify-between shadow-md">
+             <div className="flex items-center gap-2">
+               <EyeOff className="w-5 h-5 text-slate-300"/> 
+               現在「非表示にした問題」のみを表示しています。カードを開いて非表示を解除できます。
+             </div>
+             <button onClick={() => setShowHiddenOnly(false)} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors">通常に戻る</button>
+           </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredData.map((item) => {
+            const status = currentDayRecord[item.id];
+            const isMastered = status === 'mastered';
+            const isReview = status === 'review';
+            const itemCheck = checklists[item.id] || {};
+
+            return (
+              <div key={item.id} onClick={() => openCard(item)} className={`group relative bg-white p-5 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-lg flex flex-col justify-between ${showHiddenOnly ? 'border-slate-400 bg-slate-100 opacity-80' : isMastered ? 'border-emerald-400 bg-emerald-50/40' : isReview ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200 hover:border-slate-300'}`}>
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex gap-2 items-center flex-wrap">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600">{item.category.replace(/^\d+\.\s*/, '')}</span>
+                      {item.isCustom && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3 mr-1" />自作</span>}
+                      {item.trap && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-red-100 text-red-700"><Skull className="w-3 h-3 mr-1" />事故注意</span>}
+                      {item.level === 'advanced' ? (
+                        <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-indigo-100 text-indigo-700"><Sparkles className="w-3 h-3 mr-1" />発展</span>
+                      ) : item.isImportant ? (
+                        <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700"><Flame className="w-3 h-3 mr-1" />重要</span>
+                      ) : null}
+                      {userNotes[item.id] && <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3" /></span>}
+                    </div>
+                    <div className="flex gap-1 -mr-2 -mt-2">
+                      <button onClick={(e) => updateStatus(item.id, 'review', e)} className={`p-2 transition-transform hover:scale-110 ${isReview ? 'text-amber-500' : 'text-slate-200 hover:text-amber-400'}`}><AlertTriangle className="w-6 h-6" /></button>
+                      <button onClick={(e) => updateStatus(item.id, 'mastered', e)} className={`p-2 transition-transform hover:scale-110 ${isMastered ? 'text-emerald-500' : 'text-slate-200 hover:text-emerald-400'}`}>{isMastered ? <CheckCircle className="w-6 h-6" /> : <Circle className="w-6 h-6" />}</button>
+                    </div>
+                  </div>
+                  <h3 className={`text-lg font-bold mb-2 ${showHiddenOnly ? 'text-slate-500' : 'text-slate-800'}`}>{item.title}</h3>
+                  
+                  {item.formula && (
+                    <div className="bg-slate-50/80 rounded-lg p-2 text-slate-700 border border-slate-100 mb-3 overflow-x-auto hide-scrollbar text-center flex items-center justify-center relative">
+                      {item.formulaMust && <span className="absolute top-1 left-1 text-[8px] font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded">暗記必須</span>}
+                      {renderFormula(item.formula, false)}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 line-clamp-2 mt-auto mb-2">{item.oral30}</p>
+                  {item.category !== "0. 志望理由・面接" && (
+                    <div className="flex gap-3 text-[10px] font-bold text-slate-400 mt-2 border-t border-slate-100 pt-2">
+                      <span className={itemCheck.def ? 'text-emerald-500' : ''}>{itemCheck.def ? '☑' : '□'} 定義</span>
+                      <span className={itemCheck.mean ? 'text-emerald-500' : ''}>{itemCheck.mean ? '☑' : '□'} 意味</span>
+                      <span className={itemCheck.eco ? 'text-emerald-500' : ''}>{itemCheck.eco ? '☑' : '□'} 経済接続</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {filteredData.length === 0 && (
+            <div className="col-span-1 md:col-span-2 text-center py-16 text-slate-400 font-bold">
+              該当する問題がありません。
+            </div>
+          )}
+        </div>
+      </main>
+
+      {selectedCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={closeCard}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="flex gap-2 items-center">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-700">{selectedCard.category}</span>
+                {selectedCard.isCustom && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3 mr-1" />自作問題</span>}
+                {selectedCard.trap && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-red-100 text-red-700"><Skull className="w-3 h-3 mr-1" />面接で事故注意！</span>}
+                {hiddenCards[selectedCard.id] && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-slate-800 text-white"><EyeOff className="w-3 h-3 mr-1" />非表示中</span>}
+              </div>
+              <button onClick={closeCard} className="p-2 bg-slate-200 hover:bg-slate-300 rounded-full text-slate-600 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            
+            <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4 leading-tight flex items-center gap-3">
+                {selectedCard.title}
+                {selectedCard.level === 'advanced' && <span className="inline-flex items-center text-sm font-bold px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700 align-middle"><Sparkles className="w-4 h-4 mr-1" />発展</span>}
+              </h2>
+
+              {selectedCard.category !== "0. 志望理由・面接" && (
+                <div className="flex flex-wrap gap-4 mb-6 p-3 bg-slate-50 border border-slate-200 rounded-xl justify-center">
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
+                    {checklists[selectedCard.id]?.def ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
+                    <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.def || false} onChange={() => toggleChecklist(selectedCard.id, 'def')} />
+                    定義言えた
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
+                    {checklists[selectedCard.id]?.mean ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
+                    <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.mean || false} onChange={() => toggleChecklist(selectedCard.id, 'mean')} />
+                    意味言えた
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
+                    {checklists[selectedCard.id]?.eco ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
+                    <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.eco || false} onChange={() => toggleChecklist(selectedCard.id, 'eco')} />
+                    経済接続言えた
+                  </label>
+                </div>
+              )}
+              
+              {selectedCard.formula && (
+                <div className="bg-slate-900 rounded-2xl p-6 mb-6 shadow-inner relative overflow-x-auto hide-scrollbar border-2 border-slate-800">
+                  {selectedCard.formulaMust && <div className="absolute top-0 left-0 bg-rose-600 text-white text-xs font-bold px-3 py-1 rounded-br-lg shadow-md">🔥 面接で書けるように暗記必須</div>}
+                  <div className="absolute top-2 right-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center">
+                    <Sigma className="w-3 h-3 mr-1" /> Formula
+                  </div>
+                  <div className="flex justify-center items-center py-4 text-white text-lg sm:text-xl md:text-2xl min-h-[80px]">
+                    {renderFormula(selectedCard.formula, true)}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="flex items-center text-sm font-bold text-rose-600 mb-2 uppercase tracking-wider">
+                    <MessageSquare className="w-4 h-4 mr-2" /> 面接30秒回答（暗唱用）
+                  </h4>
+                  <p className="text-slate-900 font-bold text-lg leading-relaxed pl-4 border-l-4 border-rose-400 bg-rose-50 p-4 rounded-r-xl">
+                    「{selectedCard.oral30}」
+                  </p>
+                </div>
+
+                {selectedCard.explanation && (
+                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                    <h4 className="flex items-center text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider"><BookOpen className="w-4 h-4 mr-2" /> 詳細・深掘り解説</h4>
+                    <p className="text-slate-700 font-medium leading-relaxed">{selectedCard.explanation}</p>
+                  </div>
+                )}
+
+                {selectedCard.category !== "0. 志望理由・面接" && selectedCard.application && (
+                  <div>
+                    <h4 className="flex items-center text-xs font-bold text-indigo-600 mb-2 uppercase tracking-wider"><Target className="w-4 h-4 mr-2" /> 経済・工学への応用</h4>
+                    <p className="text-slate-700 leading-relaxed pl-4 border-l-4 border-indigo-200">{selectedCard.application}</p>
+                  </div>
+                )}
+
+                {selectedCard.followups && selectedCard.followups.length > 0 && (
+                  <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
+                    <h4 className="flex items-center text-sm font-bold text-amber-700 mb-4 uppercase tracking-wider">
+                      <Sparkles className="w-5 h-5 mr-2" /> 面接官からの追撃質問
+                    </h4>
+                    <ul className="space-y-3 mb-4">
+                      {selectedCard.followups.map((item, idx) => (
+                        <li key={idx} className="bg-white rounded-xl border border-amber-100 p-3 shadow-sm">
+                          <div className="flex justify-between items-start gap-3">
+                            <span className="text-slate-800 font-bold text-sm leading-snug">Q. {item.q}</span>
+                            <button
+                              onClick={() => toggleAnswer(idx)}
+                              className="text-[10px] px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold shrink-0 hover:bg-amber-200 flex items-center transition-colors"
+                            >
+                              {revealedAnswers[idx] ? <><EyeOff className="w-3 h-3 mr-1"/>非表示</> : <><Eye className="w-3 h-3 mr-1"/>解答を見る</>}
+                            </button>
+                          </div>
+                          {revealedAnswers[idx] && (
+                            <div className="mt-3 pt-3 border-t border-amber-100 text-slate-700 text-sm font-medium animate-fade-in flex items-start gap-2">
+                              <span className="text-rose-500 font-black shrink-0">A.</span>
+                              <span className="leading-relaxed">{item.a}</span>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {selectedCard.category !== "0. 志望理由・面接" && (
+                      <div className="pt-3 border-t border-amber-200/50">
+                        <p className="text-xs font-bold text-amber-600/80 mb-2 flex items-center"><Target className="w-3 h-3 mr-1"/>【全問共通】王道・深掘りテンプレ</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="bg-white border border-amber-200 text-amber-700 text-xs px-2 py-1 rounded-md font-bold shadow-sm">数式で書くと？</span>
+                          <span className="bg-white border border-amber-200 text-amber-700 text-xs px-2 py-1 rounded-md font-bold shadow-sm">図で説明すると？</span>
+                          <span className="bg-white border border-amber-200 text-amber-700 text-xs px-2 py-1 rounded-md font-bold shadow-sm">経済で例えると？</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="pt-4 border-t border-slate-100">
+                  <h4 className="flex items-center text-xs font-bold text-emerald-600 mb-3 uppercase tracking-wider"><Edit3 className="w-4 h-4 mr-2" /> 自分専用メモ（エピソード・追撃への回答）</h4>
+                  <textarea value={editingNote} onChange={(e) => setEditingNote(e.target.value)} onBlur={() => saveNote(selectedCard.id, editingNote)} placeholder="自分の開発経験などを絡めたトークや、追撃質問への回答をメモ..." className="w-full h-32 p-4 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white transition-colors custom-scrollbar" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-white flex justify-between items-center gap-2">
+              {selectedCard.isCustom ? (
+                <button 
+                  onClick={(e) => { handleDeleteCustomQuestion(selectedCard.id, e); closeCard(); }} 
+                  className="px-4 py-2.5 rounded-xl font-bold transition-all text-sm flex items-center gap-2 text-rose-500 hover:bg-rose-50"
+                >
+                  <X className="w-4 h-4"/> 自作問題を削除
+                </button>
+              ) : (
+                <button 
+                  onClick={(e) => { toggleHidden(selectedCard.id, e); closeCard(); }} 
+                  className={`px-4 py-2.5 rounded-xl font-bold transition-all text-sm flex items-center gap-2 ${hiddenCards[selectedCard.id] ? 'bg-slate-800 text-white hover:bg-slate-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                >
+                  {hiddenCards[selectedCard.id] ? <><Eye className="w-4 h-4"/> 非表示を解除</> : <><EyeOff className="w-4 h-4"/> リストから隠す</>}
+                </button>
+              )}
+              <div className="flex gap-2">
+                <button onClick={(e) => { updateStatus(selectedCard.id, 'review', e); closeCard(); }} className={`px-4 py-2.5 rounded-xl font-bold border-2 transition-all flex-1 sm:flex-none ${currentDayRecord[selectedCard.id] === 'review' ? 'bg-amber-100 text-amber-700 border-amber-400' : 'bg-white border-amber-200 text-amber-600 hover:bg-amber-50'}`}>ちょっと詰まった</button>
+                <button onClick={(e) => { updateStatus(selectedCard.id, 'mastered', e); closeCard(); }} className={`px-4 py-2.5 rounded-xl font-bold border-2 transition-all flex-1 sm:flex-none ${currentDayRecord[selectedCard.id] === 'mastered' ? 'bg-emerald-100 text-emerald-700 border-emerald-400' : 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800'}`}>余裕で言えた！</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProgressModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowProgressModal(false)}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <BarChart2 className="w-5 h-5 text-indigo-600" /> 詳細な習得状況分析
+              </h3>
+              <button onClick={() => setShowProgressModal(false)} className="p-2 bg-slate-200 hover:bg-slate-300 rounded-full text-slate-600 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            
+            <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar space-y-8">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center shadow-sm">
+                  <div className="text-xs font-bold text-slate-500 mb-1">全体進捗</div>
+                  <div className="text-3xl font-black text-slate-800">{Math.round((progressDetails.total.mastered / progressDetails.total.total) * 100) || 0}<span className="text-lg">%</span></div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-1">{progressDetails.total.mastered} / {progressDetails.total.total}問</div>
+                </div>
+                <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100 text-center shadow-sm">
+                  <div className="text-xs font-bold text-rose-600 mb-1 flex items-center justify-center gap-1"><Flame className="w-3 h-3"/>重要問題</div>
+                  <div className="text-3xl font-black text-rose-700">{Math.round((progressDetails.important.mastered / progressDetails.important.total) * 100) || 0}<span className="text-lg">%</span></div>
+                  <div className="text-[10px] text-rose-400 font-bold mt-1">{progressDetails.important.mastered} / {progressDetails.important.total}問</div>
+                </div>
+                <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 text-center shadow-sm">
+                  <div className="text-xs font-bold text-indigo-600 mb-1 flex items-center justify-center gap-1"><BrainCircuit className="w-3 h-3"/>本番頻出(Core)</div>
+                  <div className="text-3xl font-black text-indigo-700">{Math.round((progressDetails.core.mastered / progressDetails.core.total) * 100) || 0}<span className="text-lg">%</span></div>
+                  <div className="text-[10px] text-indigo-400 font-bold mt-1">{progressDetails.core.mastered} / {progressDetails.core.total}問</div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100 text-center shadow-sm">
+                  <div className="text-xs font-bold text-purple-600 mb-1 flex items-center justify-center gap-1"><Sparkles className="w-3 h-3"/>発展(Advanced)</div>
+                  <div className="text-3xl font-black text-purple-700">{progressDetails.advanced.total > 0 ? Math.round((progressDetails.advanced.mastered / progressDetails.advanced.total) * 100) : 0}<span className="text-lg">%</span></div>
+                  <div className="text-[10px] text-purple-400 font-bold mt-1">{progressDetails.advanced.mastered} / {progressDetails.advanced.total}問</div>
+                </div>
+              </div>
+
+              {/* ▼ 新規：日別レコードと推移グラフを統合したUI */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4">
+                  <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-indigo-500"/> 日別学習レコード
+                  </h4>
+                  <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200 shadow-inner">
+                    <button 
+                      onClick={() => {
+                        const d = new Date(selectedDate);
+                        d.setDate(d.getDate() - 1);
+                        setSelectedDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-3 py-1.5 hover:bg-white rounded-lg transition-colors font-bold text-slate-500 hover:text-slate-800 hover:shadow-sm"
+                    >
+                      &lt;
+                    </button>
+                    <input 
+                      type="date" 
+                      value={selectedDate} 
+                      onChange={(e) => setSelectedDate(e.target.value)} 
+                      className="bg-transparent border-none outline-none font-bold text-indigo-700 px-3 cursor-pointer text-sm"
+                    />
+                    <button 
+                      onClick={() => {
+                        const d = new Date(selectedDate);
+                        d.setDate(d.getDate() + 1);
+                        setSelectedDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-3 py-1.5 hover:bg-white rounded-lg transition-colors font-bold text-slate-500 hover:text-slate-800 hover:shadow-sm"
+                    >
+                      &gt;
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6">
+                  {/* 左：選択日までの7日間グラフ */}
+                  <div className="flex-1 bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <h5 className="text-xs font-bold text-slate-500 mb-4 flex justify-between">
+                      <span>{last7DaysStats.stats[0].displayDate} ～ {last7DaysStats.stats[6].displayDate}</span>
+                      <span className="text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded">計 {last7DaysStats.weeklyTotal} 問</span>
+                    </h5>
+                    <div className="flex items-end justify-between h-32 gap-1.5">
+                      {last7DaysStats.stats.map((day, idx) => {
+                        const heightPercent = last7DaysStats.maxCount > 0 ? (day.total / last7DaysStats.maxCount) * 100 : 0;
+                        const isSelected = day.date === selectedDate;
+                        return (
+                          <div 
+                            key={idx} 
+                            onClick={() => setSelectedDate(day.date)}
+                            className="flex flex-col items-center flex-1 group relative cursor-pointer"
+                          >
+                            <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-10 pointer-events-none">
+                              {day.displayDate}: {day.total}問
+                            </div>
+                            
+                            <div className={`w-full max-w-[32px] flex flex-col justify-end h-24 rounded-t-md overflow-hidden relative transition-all ${isSelected ? 'bg-indigo-100 ring-2 ring-indigo-400 ring-offset-1' : 'bg-slate-200/50 hover:bg-slate-300/50'}`}>
+                              <div 
+                                className={`w-full rounded-t-md transition-all duration-500 ${isSelected ? 'bg-indigo-500' : 'bg-slate-400'}`}
+                                style={{ height: `${heightPercent}%` }}
+                              ></div>
+                            </div>
+                            <span className={`text-[10px] font-bold mt-2 transition-colors ${isSelected ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                              {day.displayDate}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 右：選択日の詳細リスト */}
+                  <div className="flex-1 flex flex-col min-h-[200px]">
+                    <div className="flex gap-2 mb-3">
+                      <div className="flex-1 bg-emerald-50 rounded-xl p-3 text-center border border-emerald-100 shadow-sm">
+                        <div className="text-[10px] font-bold text-emerald-600 mb-0.5 flex justify-center items-center gap-1"><CheckCircle className="w-3 h-3"/>余裕</div>
+                        <div className="text-xl font-black text-emerald-700">{dailyStudiedItems.filter(i=>i.status==='mastered').length}</div>
+                      </div>
+                      <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center border border-amber-100 shadow-sm">
+                        <div className="text-[10px] font-bold text-amber-600 mb-0.5 flex justify-center items-center gap-1"><AlertTriangle className="w-3 h-3"/>詰まった</div>
+                        <div className="text-xl font-black text-amber-700">{dailyStudiedItems.filter(i=>i.status==='review').length}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 bg-slate-50 rounded-xl border border-slate-200 p-2 overflow-hidden flex flex-col shadow-inner">
+                      {dailyStudiedItems.length > 0 ? (
+                        <ul className="space-y-1.5 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                          {dailyStudiedItems.map(item => (
+                            <li key={item.id} className="flex justify-between items-center bg-white p-2.5 rounded-lg text-xs shadow-sm border border-slate-100 hover:border-indigo-200 transition-colors">
+                              <span className="font-bold text-slate-700 truncate mr-2 flex-1" title={item.title}>{item.title}</span>
+                              <span className={`shrink-0 font-bold px-2 py-0.5 rounded text-[10px] ${item.status === 'mastered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {item.status === 'mastered' ? '完' : '詰'}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center text-slate-400 font-bold text-xs flex-col gap-2 opacity-70">
+                          <CircleDashed className="w-6 h-6" />
+                          <span>学習記録がありません</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-slate-700 mb-4 border-b border-slate-200 pb-2 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-slate-400"/> 分野別の習得率（弱点分析）
+                </h4>
+                <div className="space-y-4">
+                  {Object.entries(progressDetails.categories).map(([cat, stats]) => {
+                    const percent = Math.round((stats.mastered / stats.total) * 100) || 0;
+                    return (
+                      <div key={cat} className="flex flex-col">
+                        <div className="flex justify-between items-end mb-1">
+                          <span className="text-xs font-bold text-slate-700">{cat}</span>
+                          <span className="text-xs font-bold text-slate-400">{stats.mastered} / {stats.total} <span className={`ml-2 text-sm ${percent === 100 ? 'text-emerald-500' : percent >= 50 ? 'text-indigo-500' : 'text-rose-500'}`}>{percent}%</span></span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 shadow-inner overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-700 ease-out ${
+                              percent === 100 ? 'bg-emerald-400' : 
+                              percent >= 80 ? 'bg-indigo-400' : 
+                              percent >= 50 ? 'bg-amber-400' : 'bg-rose-400'
+                            }`} 
+                            style={{ width: `${percent}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 mt-4 text-right">※ 100%は緑、80%以上は青、50%以上は黄、それ未満は赤で表示されます。</p>
+              </div>
+
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
+              <button onClick={() => setShowProgressModal(false)} className="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mockExamMode !== null && mockQuestions.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-md">
+          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
+            
+            <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                {mockExamMode === 'oral' ? (
+                  <Mic className="w-6 h-6 text-rose-500 animate-pulse" />
+                ) : (
+                  <User className="w-6 h-6 text-emerald-500 animate-pulse" />
+                )}
+                <span className="font-bold text-lg">
+                  {mockExamMode === 'oral' ? '模擬口頭試問（数学・経済）' : '模擬一般面接（人物・志望動機）'}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className={`flex items-center font-mono text-xl font-bold px-3 py-1 rounded-lg ${mockTimeLeft <= 10 ? 'bg-red-500/20 text-red-400 animate-bounce' : 'bg-slate-800 text-emerald-400'}`}>
+                  <Timer className="w-5 h-5 mr-2" /> 00:{String(mockTimeLeft).padStart(2, '0')}
+                </div>
+                <button onClick={() => setMockExamMode(null)} className="text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
+              </div>
+            </div>
+
+            <div className="p-8 sm:p-12 flex flex-col items-center justify-center min-h-[400px]">
+              <div className="text-slate-400 font-bold mb-4 uppercase tracking-widest">
+                Question {mockIndex + 1} / {mockQuestions.length}
+              </div>
+              
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-800 text-center mb-8 leading-tight">
+                「{mockQuestions[mockIndex].title}」
+              </h2>
+
+              {!showMockAnswer ? (
+                <div className="w-full text-center space-y-6 mt-8">
+                  <div className="w-16 h-16 rounded-full border-4 border-rose-500 border-t-transparent animate-spin mx-auto opacity-20"></div>
+                  <p className="text-slate-500 font-bold">自分の言葉で、声に出して説明してください。</p>
+                  <button 
+                    onClick={() => setShowMockAnswer(true)}
+                    className="px-8 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 border border-slate-300 transition-colors"
+                  >
+                    解答・追撃を確認する
+                  </button>
+                </div>
+              ) : (
+                <div className="w-full bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-fade-in text-left max-h-[50vh] overflow-y-auto custom-scrollbar">
+                  <h4 className="text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> 30秒回答例</h4>
+                  <p className="text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                    「{mockQuestions[mockIndex].oral30}」
+                  </p>
+                  
+                  {mockQuestions[mockIndex].followups && mockQuestions[mockIndex].followups.length > 0 && (
+                    <>
+                      <h4 className="text-sm font-bold text-amber-600 mb-3 flex items-center"><Sparkles className="w-4 h-4 mr-2"/> 追撃への備え</h4>
+                      <ul className="space-y-3 mb-4">
+                        {mockQuestions[mockIndex].followups.map((item, idx) => (
+                          <li key={idx} className="bg-white rounded-xl border border-amber-100 p-3 shadow-sm">
+                            <div className="flex justify-between items-start gap-3">
+                              <span className="text-slate-800 font-bold text-sm leading-snug">Q. {item.q}</span>
+                              <button
+                                onClick={() => toggleAnswer(idx)}
+                                className="text-[10px] px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold shrink-0 hover:bg-amber-200 flex items-center transition-colors"
+                              >
+                                {revealedAnswers[idx] ? <><EyeOff className="w-3 h-3 mr-1"/>非表示</> : <><Eye className="w-3 h-3 mr-1"/>解答を見る</>}
+                              </button>
+                            </div>
+                            {revealedAnswers[idx] && (
+                              <div className="mt-3 pt-3 border-t border-amber-100 text-slate-700 text-sm font-medium animate-fade-in flex items-start gap-2">
+                                <span className="text-rose-500 font-black shrink-0">A.</span>
+                                <span className="leading-relaxed">{item.a}</span>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {mockQuestions[mockIndex].category !== "0. 志望理由・面接" && (
+                    <p className="text-xs font-bold text-slate-400 mt-4">
+                      ※さらに「数式で書くと？」「図で説明すると？」と聞かれる可能性にも備えておきましょう。
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+              <button onClick={() => setMockExamMode(null)} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition-colors">
+                中断する
+              </button>
+              <button 
+                onClick={nextMockQuestion}
+                className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow-lg flex items-center transition-transform hover:-translate-y-0.5"
+              >
+                {mockIndex < mockQuestions.length - 1 ? '次の問題へ' : '面接を終了する'} <ChevronRight className="w-5 h-5 ml-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-rose-600" /> オリジナル問題を追加
+              </h3>
+              <button onClick={() => setShowAddModal(false)} className="p-2 bg-slate-200 hover:bg-slate-300 rounded-full text-slate-600 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            
+            <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar space-y-5">
+              {addError && (
+                <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" /> {addError}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">カテゴリ</label>
+                <select 
+                  value={newQuestion.category} 
+                  onChange={e => setNewQuestion({...newQuestion, category: e.target.value})} 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-400 focus:bg-white outline-none font-bold text-slate-700"
+                >
+                  <option value="0. 志望理由・面接">0. 志望理由・面接</option>
+                  {oralCategories.filter(c => c !== "すべて").map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-end mb-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">タイトル（問題文） <span className="text-rose-500">*</span></label>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input 
+                    type="text" 
+                    value={newQuestion.title} 
+                    onChange={e => setNewQuestion({...newQuestion, title: e.target.value})} 
+                    className="w-full sm:flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-400 focus:bg-white outline-none text-slate-800 font-bold" 
+                    placeholder="例：固有値とは何か" 
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">30秒回答例（暗唱用） <span className="text-rose-500">*</span></label>
+                <textarea 
+                  value={newQuestion.oral30} 
+                  onChange={e => setNewQuestion({...newQuestion, oral30: e.target.value})} 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-400 focus:bg-white outline-none text-slate-700 h-24 custom-scrollbar leading-relaxed" 
+                  placeholder="口頭で説明する時のスクリプトを入力..." 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">数式 (LaTeX記法 - 任意)</label>
+                <input 
+                  type="text" 
+                  value={newQuestion.formula} 
+                  onChange={e => setNewQuestion({...newQuestion, formula: e.target.value})} 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-400 focus:bg-white outline-none font-mono text-sm text-slate-700" 
+                  placeholder="\int_{0}^{1} x dx" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">詳細解説 (任意)</label>
+                <textarea 
+                  value={newQuestion.explanation} 
+                  onChange={e => setNewQuestion({...newQuestion, explanation: e.target.value})} 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-400 focus:bg-white outline-none text-slate-700 h-24 custom-scrollbar leading-relaxed" 
+                  placeholder="式の意味や補足情報などを入力..." 
+                />
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 border-t border-slate-100 bg-white flex justify-end gap-3">
+              <button onClick={() => setShowAddModal(false)} className="px-5 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">キャンセル</button>
+              <button onClick={handleSaveNewQuestion} className="px-6 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 shadow-md transition-all flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" /> 保存して追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+      `}} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
+
