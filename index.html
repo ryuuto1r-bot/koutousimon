@@ -35,7 +35,7 @@
   <div id="root"></div>
   <script type="text/babel" data-presets="react">
 
-const { useState, useEffect, useMemo } = React;
+const { useState, useEffect, useMemo, useRef } = React;
 
 function makeIcon(symbol) {
   return function Icon({ className = '', ...props }) {
@@ -363,6 +363,7 @@ function App() {
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [selectedCard, setSelectedCard] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef(null);
   
   const [showHeaderControls, setShowHeaderControls] = useState(true); // ▼ 追加: ヘッダー表示切り替え
 
@@ -1004,6 +1005,11 @@ function App() {
     }
   };
 
+  const focusSearch = () => {
+    searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => searchInputRef.current?.focus(), 220);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-rose-200 app-shell">
       <header className="bg-white/90 backdrop-blur-xl border-b border-white/70 sticky top-0 z-10 shadow-sm transition-all duration-300">
@@ -1122,6 +1128,7 @@ function App() {
           <label className="flex items-center gap-3">
             <Search className="w-5 h-5 text-slate-400" />
             <input
+              ref={searchInputRef}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="問題名・回答・数式を検索"
@@ -1971,6 +1978,26 @@ function App() {
         </div>
       )}
 
+      <nav className="mobile-bottom-nav sm:hidden" aria-label="スマホ用メニュー">
+        <button type="button" onClick={focusSearch} className={`mobile-nav-item ${searchQuery ? 'is-active' : ''}`}>
+          <Search className="mobile-nav-icon" />
+          <span>検索</span>
+        </button>
+        <button type="button" onClick={() => { setShowHiddenOnly(false); setShowDueOnly(prev => !prev); }} className={`mobile-nav-item ${showDueOnly ? 'is-active' : ''}`}>
+          <Clock className="mobile-nav-icon" />
+          <span>復習</span>
+          {dueCardIds.size > 0 && <b>{dueCardIds.size}</b>}
+        </button>
+        <button type="button" onClick={() => startMockExam(appMode)} className="mobile-nav-item mobile-nav-primary">
+          <Mic className="mobile-nav-icon" />
+          <span>面接</span>
+        </button>
+        <button type="button" onClick={() => setShowProgressModal(true)} className="mobile-nav-item">
+          <BarChart2 className="mobile-nav-icon" />
+          <span>進捗</span>
+        </button>
+      </nav>
+
       <style dangerouslySetInnerHTML={{__html: `
         body {
           background:
@@ -1983,6 +2010,7 @@ function App() {
             linear-gradient(180deg, rgba(255,255,255,0.70) 0%, rgba(248,250,252,0.88) 18rem, rgba(248,250,252,1) 100%);
         }
         .tap-target { min-height: 52px; }
+        .mobile-bottom-nav { display: none; }
         .stat-tile {
           transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
         }
@@ -1998,6 +2026,9 @@ function App() {
           box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
         }
         @media (max-width: 640px) {
+          main {
+            padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
+          }
           header { max-height: 72vh; overflow-y: auto; }
           .study-card {
             min-height: 0;
@@ -2006,6 +2037,69 @@ function App() {
           .study-card h3 {
             font-size: 1.02rem;
             line-height: 1.55;
+          }
+          .mobile-bottom-nav {
+            position: fixed;
+            left: 0.75rem;
+            right: 0.75rem;
+            bottom: calc(0.75rem + env(safe-area-inset-bottom));
+            z-index: 45;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.35rem;
+            padding: 0.45rem;
+            border: 1px solid rgba(255, 255, 255, 0.86);
+            border-radius: 1.45rem;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
+            backdrop-filter: blur(18px);
+          }
+          .mobile-nav-item {
+            position: relative;
+            min-height: 3.25rem;
+            border-radius: 1.05rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.1rem;
+            font-size: 0.66rem;
+            font-weight: 900;
+            color: #64748b;
+            transition: transform 150ms ease, background 150ms ease, color 150ms ease;
+          }
+          .mobile-nav-item:active {
+            transform: scale(0.96);
+          }
+          .mobile-nav-item.is-active {
+            background: #f1f5f9;
+            color: #4f46e5;
+          }
+          .mobile-nav-primary {
+            background: linear-gradient(135deg, #f43f5e, #4f46e5);
+            color: white;
+            box-shadow: 0 10px 24px rgba(79, 70, 229, 0.28);
+          }
+          .mobile-nav-icon {
+            width: 1.15rem;
+            height: 1.15rem;
+            font-size: 0.95rem;
+          }
+          .mobile-nav-item b {
+            position: absolute;
+            top: 0.28rem;
+            right: 0.52rem;
+            min-width: 1.05rem;
+            height: 1.05rem;
+            padding: 0 0.22rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #7c3aed;
+            color: white;
+            font-size: 0.58rem;
+            line-height: 1;
           }
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
