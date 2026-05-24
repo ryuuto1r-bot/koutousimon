@@ -371,6 +371,7 @@ function App() {
   const [showUntouchedOnly, setShowUntouchedOnly] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const [showDueOnly, setShowDueOnly] = useState(false);
+  const [showWeakOnly, setShowWeakOnly] = useState(false);
   const [showHiddenOnly, setShowHiddenOnly] = useState(false);
 
   const [mockExamMode, setMockExamMode] = useState(null);
@@ -575,6 +576,50 @@ function App() {
     return ids;
   }, [dailyHistory, selectedDate, mergedQuizData]);
 
+  const weaknessStats = useMemo(() => {
+    const scores = {};
+    const details = {};
+
+    mergedQuizData.forEach(q => {
+      const id = String(q.id);
+      let reviewCount = 0;
+      let masteredCount = 0;
+      let lastStatus = null;
+      let lastDate = null;
+
+      Object.keys(dailyHistory).sort().forEach(date => {
+        const status = dailyHistory[date]?.[id];
+        if (!status) return;
+        lastStatus = status;
+        lastDate = date;
+        if (status === 'review') reviewCount += 1;
+        if (status === 'mastered') masteredCount += 1;
+      });
+
+      const checks = checklists[q.id] || {};
+      const missingChecks = q.category !== "0. 志望理由・面接"
+        ? ['def', 'mean', 'eco'].filter(key => !checks[key]).length
+        : 0;
+
+      let score = (reviewCount * 4) - (masteredCount * 1.5);
+      if (lastStatus === 'review') score += 3;
+      if (dueCardIds.has(q.id)) score += 2;
+      score += missingChecks * 0.6;
+
+      if (reviewCount > 0 && score > 0) {
+        scores[q.id] = score;
+        details[q.id] = { reviewCount, masteredCount, lastStatus, lastDate, missingChecks, score };
+      }
+    });
+
+    return {
+      ids: new Set(Object.keys(scores).map(Number)),
+      scores,
+      details,
+      count: Object.keys(scores).length
+    };
+  }, [dailyHistory, checklists, dueCardIds, mergedQuizData]);
+
   const progress = mergedQuizData.length > 0 ? Math.round((allMasteredIds.size / mergedQuizData.length) * 100) : 0;
   const currentDayRecord = dailyHistory[selectedDate] || {};
 
@@ -693,6 +738,7 @@ function App() {
       
       if (!showAdvanced) data = data.filter(q => q.rank !== 'B');
       if (showDueOnly) data = data.filter(q => dueCardIds.has(q.id));
+      if (showWeakOnly) data = data.filter(q => weaknessStats.ids.has(q.id));
       if (showUntouchedOnly) data = data.filter(q => !touchedIds.has(q.id));
       if (activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
     }
@@ -713,8 +759,12 @@ function App() {
       });
     }
 
+    if (showWeakOnly) {
+      data.sort((a, b) => (weaknessStats.scores[b.id] || 0) - (weaknessStats.scores[a.id] || 0));
+    }
+
     return data;
-  }, [appMode, activeCategory, showAdvanced, showUntouchedOnly, showDueOnly, touchedIds, dueCardIds, shuffleSeed, hiddenCards, showHiddenOnly, mergedQuizData, searchQuery]);
+  }, [appMode, activeCategory, showAdvanced, showUntouchedOnly, showDueOnly, showWeakOnly, touchedIds, dueCardIds, weaknessStats, shuffleSeed, hiddenCards, showHiddenOnly, mergedQuizData, searchQuery]);
 
   const getProgressDocRef = (targetUser = user) => {
     if (!targetUser || !db || targetUser.isLocal || syncMode !== 'cloud') return { local: true };
@@ -1095,14 +1145,18 @@ function App() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
-        <div className="mb-5 sm:mb-6 grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="mb-5 sm:mb-6 grid grid-cols-4 gap-2 sm:gap-3">
           <button onClick={() => setShowProgressModal(true)} className="stat-tile bg-white/90 border border-white/80 rounded-2xl px-3 py-3 text-left shadow-sm">
             <div className="text-[10px] font-black text-slate-400 mb-1">今日</div>
             <div className="text-xl font-black text-slate-900">{todaySummary.total}<span className="text-xs text-slate-400 ml-1">問</span></div>
           </button>
-          <button onClick={() => setShowDueOnly(!showDueOnly)} className={`stat-tile border rounded-2xl px-3 py-3 text-left shadow-sm ${showDueOnly ? 'bg-purple-100 border-purple-200' : 'bg-white/90 border-white/80'}`}>
+          <button onClick={() => { setShowWeakOnly(false); setShowDueOnly(!showDueOnly); }} className={`stat-tile border rounded-2xl px-3 py-3 text-left shadow-sm ${showDueOnly ? 'bg-purple-100 border-purple-200' : 'bg-white/90 border-white/80'}`}>
             <div className="text-[10px] font-black text-purple-500 mb-1">復習</div>
             <div className="text-xl font-black text-slate-900">{dueCardIds.size}<span className="text-xs text-slate-400 ml-1">問</span></div>
+          </button>
+          <button onClick={() => { setShowHiddenOnly(false); setShowDueOnly(false); setShowUntouchedOnly(false); setShowWeakOnly(prev => !prev); }} className={`stat-tile border rounded-2xl px-3 py-3 text-left shadow-sm ${showWeakOnly ? 'bg-rose-100 border-rose-200' : 'bg-white/90 border-white/80'}`}>
+            <div className="text-[10px] font-black text-rose-500 mb-1">弱点</div>
+            <div className="text-xl font-black text-slate-900">{weaknessStats.count}<span className="text-xs text-slate-400 ml-1">問</span></div>
           </button>
           <button onClick={() => setShowProgressModal(true)} className="stat-tile bg-white/90 border border-white/80 rounded-2xl px-3 py-3 text-left shadow-sm">
             <div className="text-[10px] font-black text-rose-500 mb-1">習得</div>
@@ -1172,8 +1226,11 @@ function App() {
             <button onClick={() => setShowUntouchedOnly(!showUntouchedOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showUntouchedOnly ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-white text-slate-500 border-slate-200'}`}>
               <CircleDashed className="w-4 h-4" /> 未着手
             </button>
-            <button onClick={() => setShowDueOnly(!showDueOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showDueOnly ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-500 border-slate-200'}`}>
+            <button onClick={() => { setShowWeakOnly(false); setShowDueOnly(!showDueOnly); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showDueOnly ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-500 border-slate-200'}`}>
               <Clock className="w-4 h-4" /> 復習 ({dueCardIds.size})
+            </button>
+            <button onClick={() => { setShowHiddenOnly(false); setShowDueOnly(false); setShowUntouchedOnly(false); setShowWeakOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showWeakOnly ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-white text-slate-500 border-slate-200'}`}>
+              <Target className="w-4 h-4" /> 弱点 ({weaknessStats.count})
             </button>
             <button onClick={() => setShuffleSeed(prev => prev + 1)} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border bg-white text-slate-500 border-slate-200 hover:bg-slate-50 shrink-0">
               <Shuffle className="w-4 h-4" /> シャッフル
@@ -1210,6 +1267,7 @@ function App() {
                       </span>
                       {item.isCustom && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3 mr-1" />自作</span>}
                       {item.isEdited && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-violet-100 text-violet-700"><Edit3 className="w-3 h-3 mr-1" />編集済み</span>}
+                      {showWeakOnly && weaknessStats.details[item.id] && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700"><Target className="w-3 h-3 mr-1" />弱点度 {Math.round(weaknessStats.details[item.id].score)}</span>}
                       {item.trap && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-red-100 text-red-700"><Skull className="w-3 h-3 mr-1" />事故注意</span>}
                       {item.rank === 'S' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700">S (必須)</span>}
                       {item.rank === 'A' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700">A (重要)</span>}
@@ -1983,7 +2041,12 @@ function App() {
           <Search className="mobile-nav-icon" />
           <span>検索</span>
         </button>
-        <button type="button" onClick={() => { setShowHiddenOnly(false); setShowDueOnly(prev => !prev); }} className={`mobile-nav-item ${showDueOnly ? 'is-active' : ''}`}>
+        <button type="button" onClick={() => { setShowHiddenOnly(false); setShowDueOnly(false); setShowUntouchedOnly(false); setShowWeakOnly(prev => !prev); }} className={`mobile-nav-item ${showWeakOnly ? 'is-active' : ''}`}>
+          <Target className="mobile-nav-icon" />
+          <span>弱点</span>
+          {weaknessStats.count > 0 && <b>{weaknessStats.count}</b>}
+        </button>
+        <button type="button" onClick={() => { setShowWeakOnly(false); setShowHiddenOnly(false); setShowDueOnly(prev => !prev); }} className={`mobile-nav-item ${showDueOnly ? 'is-active' : ''}`}>
           <Clock className="mobile-nav-icon" />
           <span>復習</span>
           {dueCardIds.size > 0 && <b>{dueCardIds.size}</b>}
@@ -2045,7 +2108,7 @@ function App() {
             bottom: calc(0.75rem + env(safe-area-inset-bottom));
             z-index: 45;
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 0.35rem;
             padding: 0.45rem;
             border: 1px solid rgba(255, 255, 255, 0.86);
