@@ -76,6 +76,9 @@ const Search = makeIcon('探');
 const ImageIcon = makeIcon('画');
 const LinkIcon = makeIcon('↗');
 const FileText = makeIcon('資');
+const PenIcon = makeIcon('ペ');
+const EraserIcon = makeIcon('消');
+const NoteIcon = makeIcon('メ');
 
 const LOCAL_KEY = 'koutousimon4-progress-v1';
 const FIREBASE_CONFIG_KEY = 'koutousimon-firebase-config-v1';
@@ -385,6 +388,7 @@ function App() {
 
   const [revealedAnswers, setRevealedAnswers] = useState({});
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
+  const [activeCardTab, setActiveCardTab] = useState('answer');
   const [katexLoaded, setKatexLoaded] = useState(false);
 
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -425,8 +429,12 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   
   const [editingNote, setEditingNote] = useState("");
-  const [materialDraft, setMaterialDraft] = useState({ title: "", url: "", text: "" });
   const [materialError, setMaterialError] = useState("");
+  const [sketchMode, setSketchMode] = useState('pen');
+  const [sketchColor, setSketchColor] = useState('#0f172a');
+  const [sketchSize, setSketchSize] = useState(4);
+  const sketchCanvasRef = useRef(null);
+  const sketchDrawingRef = useRef({ drawing: false, lastX: 0, lastY: 0 });
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -890,6 +898,8 @@ function App() {
   };
 
   const getCardMaterials = (id) => studyMaterials[id] || [];
+  const getCardSketch = (id) => getCardMaterials(id).find(item => item.type === "sketch");
+  const getLegacyMaterials = (id) => getCardMaterials(id).filter(item => item.type !== "sketch");
 
   const saveStudyMaterials = async (id, nextList) => {
     const newMaterials = { ...studyMaterials };
@@ -905,93 +915,154 @@ function App() {
     }
   };
 
-  const normalizeMaterialUrl = (url) => {
-    const trimmed = (url || "").trim();
-    if (!trimmed) return "";
-    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  };
+  const paintSketchCanvas = () => {
+    const canvas = sketchCanvasRef.current;
+    if (!canvas || !selectedCard) return;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = Math.round(rect.width * ratio);
+    canvas.height = Math.round(rect.height * ratio);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, rect.width, rect.height);
 
-  const handleAddMaterial = async () => {
-    if (!selectedCard) return;
-    const title = materialDraft.title.trim();
-    const url = normalizeMaterialUrl(materialDraft.url);
-    const text = materialDraft.text.trim();
-    if (!title && !url && !text) {
-      setMaterialError("資料名・URL・メモのどれかを入力してください。");
-      return;
+    const sketch = getCardSketch(selectedCard.id);
+    if (sketch?.imageData) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      img.src = sketch.imageData;
     }
-    const nextItem = {
-      id: Date.now(),
-      type: "note",
-      title: title || (url ? "資料リンク" : "資料メモ"),
-      url,
-      text,
-      createdAt: new Date().toISOString()
+  };
+
+  useEffect(() => {
+    if (!selectedCard || activeCardTab !== 'notes') return;
+    const timer = setTimeout(paintSketchCanvas, 60);
+    window.addEventListener('resize', paintSketchCanvas);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', paintSketchCanvas);
     };
-    await saveStudyMaterials(selectedCard.id, [nextItem, ...getCardMaterials(selectedCard.id)]);
-    setMaterialDraft({ title: "", url: "", text: "" });
-    setMaterialError("");
+  }, [selectedCard?.id, activeCardTab, studyMaterials]);
+
+  const saveSketchImage = async (imageData) => {
+    if (!selectedCard) return;
+    const otherMaterials = getCardMaterials(selectedCard.id).filter(item => item.type !== "sketch");
+    const nextList = imageData
+      ? [{
+          id: `sketch-${selectedCard.id}`,
+          type: "sketch",
+          title: "手書きノート",
+          imageData,
+          updatedAt: new Date().toISOString()
+        }, ...otherMaterials]
+      : otherMaterials;
+    await saveStudyMaterials(selectedCard.id, nextList);
   };
 
-  const compressImageFile = (file) => {
-    const MAX_IMAGE_BYTES = 520000;
-    return new Promise((resolve, reject) => {
-      if (!file || !file.type.startsWith("image/")) {
-        reject(new Error("画像ファイルを選んでください。"));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("画像を読み込めませんでした。"));
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error("画像を表示できませんでした。"));
-        img.onload = () => {
-          const maxSide = 1100;
-          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, Math.round(img.width * scale));
-          canvas.height = Math.max(1, Math.round(img.height * scale));
-          const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          let quality = 0.74;
-          let dataUrl = canvas.toDataURL("image/jpeg", quality);
-          while (((dataUrl.length * 3) / 4) > MAX_IMAGE_BYTES && quality > 0.42) {
-            quality -= 0.08;
-            dataUrl = canvas.toDataURL("image/jpeg", quality);
-          }
-          if (((dataUrl.length * 3) / 4) > MAX_IMAGE_BYTES) {
-            reject(new Error("画像が大きすぎます。スクショを少し切り抜いてから追加してください。"));
-            return;
-          }
-          resolve(dataUrl);
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleMaterialImageUpload = async (id, e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
+  const saveSketchCanvas = async () => {
+    const canvas = sketchCanvasRef.current;
+    if (!canvas || !selectedCard) return;
     try {
       setMaterialError("");
-      const imageData = await compressImageFile(file);
-      const nextItem = {
-        id: Date.now(),
-        type: "image",
-        title: file.name.replace(/\.[^.]+$/, "") || "手書きメモ",
-        imageData,
-        createdAt: new Date().toISOString()
-      };
-      await saveStudyMaterials(id, [nextItem, ...getCardMaterials(id)]);
+      await saveSketchImage(canvas.toDataURL("image/jpeg", 0.84));
     } catch (err) {
-      setMaterialError(err.message || String(err));
+      setMaterialError("手書きメモを保存できませんでした。線を少し減らしてください。");
     }
+  };
+
+  const clearSketchCanvas = async () => {
+    const canvas = sketchCanvasRef.current;
+    if (!canvas || !selectedCard) return;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    await saveSketchImage("");
+  };
+
+  const getSketchPoint = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const getTouchSketchPoint = (target, touch) => {
+    const rect = target.getBoundingClientRect();
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+  };
+
+  const startSketchStroke = (e) => {
+    e.preventDefault();
+    if (e.pointerId !== undefined) e.currentTarget.setPointerCapture?.(e.pointerId);
+    const point = getSketchPoint(e);
+    sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y };
+  };
+
+  const moveSketchStroke = (e) => {
+    if (!sketchDrawingRef.current.drawing) return;
+    e.preventDefault();
+    const canvas = sketchCanvasRef.current;
+    if (!canvas) return;
+    const point = getSketchPoint(e);
+    const ctx = canvas.getContext("2d");
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = sketchMode === "eraser" ? "#ffffff" : sketchColor;
+    ctx.lineWidth = sketchMode === "eraser" ? sketchSize * 4 : sketchSize;
+    ctx.beginPath();
+    ctx.moveTo(sketchDrawingRef.current.lastX, sketchDrawingRef.current.lastY);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+    sketchDrawingRef.current.lastX = point.x;
+    sketchDrawingRef.current.lastY = point.y;
+  };
+
+  const endSketchStroke = async (e) => {
+    if (!sketchDrawingRef.current.drawing) return;
+    e.preventDefault();
+    if (e.pointerId !== undefined) e.currentTarget.releasePointerCapture?.(e.pointerId);
+    sketchDrawingRef.current.drawing = false;
+    await saveSketchCanvas();
+  };
+
+  const startTouchSketchStroke = (e) => {
+    if (window.PointerEvent) return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    e.preventDefault();
+    const point = getTouchSketchPoint(e.currentTarget, touch);
+    sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y };
+  };
+
+  const moveTouchSketchStroke = (e) => {
+    if (window.PointerEvent) return;
+    if (!sketchDrawingRef.current.drawing) return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    e.preventDefault();
+    const canvas = sketchCanvasRef.current;
+    if (!canvas) return;
+    const point = getTouchSketchPoint(canvas, touch);
+    const ctx = canvas.getContext("2d");
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = sketchMode === "eraser" ? "#ffffff" : sketchColor;
+    ctx.lineWidth = sketchMode === "eraser" ? sketchSize * 4 : sketchSize;
+    ctx.beginPath();
+    ctx.moveTo(sketchDrawingRef.current.lastX, sketchDrawingRef.current.lastY);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+    sketchDrawingRef.current.lastX = point.x;
+    sketchDrawingRef.current.lastY = point.y;
+  };
+
+  const endTouchSketchStroke = async (e) => {
+    if (window.PointerEvent) return;
+    if (!sketchDrawingRef.current.drawing) return;
+    e.preventDefault();
+    sketchDrawingRef.current.drawing = false;
+    await saveSketchCanvas();
   };
 
   const handleDeleteMaterial = async (id, materialId) => {
@@ -1150,7 +1221,7 @@ function App() {
   const openCard = (item) => {
     setSelectedCard(item);
     setEditingNote(userNotes[item.id] || ""); 
-    setMaterialDraft({ title: "", url: "", text: "" });
+    setActiveCardTab('answer');
     setMaterialError("");
     setRevealedAnswers({}); 
     setIsAnswerRevealed(false);
@@ -1462,12 +1533,13 @@ function App() {
             const isMastered = status === 'mastered';
             const isReview = status === 'review';
             const itemCheck = checklists[item.id] || {};
-            const materialCount = getCardMaterials(item.id).length;
+            const legacyMaterialCount = getLegacyMaterials(item.id).length;
+            const hasPersonalNote = !!userNotes[item.id] || !!getCardSketch(item.id);
 
             return (
-              <div key={item.id} onClick={() => openCard(item)} className={`study-card group relative bg-white/95 p-5 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-lg flex flex-col justify-between ${showHiddenOnly ? 'border-slate-400 bg-slate-100 opacity-80' : isMastered ? 'border-emerald-400 bg-emerald-50/40' : isReview ? 'border-amber-400 bg-amber-50/40' : 'border-white hover:border-indigo-200'}`}>
+              <div key={item.id} onClick={() => openCard(item)} className={`study-card group relative bg-white/95 p-4 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-lg flex flex-col justify-between ${showHiddenOnly ? 'border-slate-400 bg-slate-100 opacity-80' : isMastered ? 'border-emerald-400 bg-emerald-50/40' : isReview ? 'border-amber-400 bg-amber-50/40' : 'border-white hover:border-indigo-200'}`}>
                 <div>
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start mb-2.5">
                     <div className="flex gap-2 items-center flex-wrap">
                       <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 flex items-center gap-1.5">
                         {item.category.replace(/^\d+\.\s*/, '')}
@@ -1481,8 +1553,8 @@ function App() {
                       {item.rank === 'S' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700">S (必須)</span>}
                       {item.rank === 'A' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700">A (重要)</span>}
                       {item.rank === 'B' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">B (基礎/発展)</span>}
-                      {userNotes[item.id] && <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3" /></span>}
-                      {materialCount > 0 && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {materialCount}</span>}
+                      {hasPersonalNote && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><NoteIcon className="w-3 h-3 mr-1" />ノート</span>}
+                      {legacyMaterialCount > 0 && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {legacyMaterialCount}</span>}
                     </div>
                     <div className="flex gap-1 -mr-2 -mt-2">
                       <button onClick={(e) => updateStatus(item.id, 'review', e)} className={`p-2 transition-transform hover:scale-110 ${isReview ? 'text-amber-500' : 'text-slate-200 hover:text-amber-400'}`}><AlertTriangle className="w-6 h-6" /></button>
@@ -1499,18 +1571,18 @@ function App() {
                   )}
                 </div>
                 <div>
-                  <div className="mt-auto mb-2 flex items-center justify-center py-3 bg-slate-50/50 rounded-lg border border-slate-100 group-hover:bg-indigo-50 transition-colors">
-                    <span className="text-xs font-bold text-slate-400 group-hover:text-indigo-600 flex items-center">
-                      <Eye className="w-4 h-4 mr-1.5" /> タップして解答・解説を確認
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
+                    <span className="text-xs font-black text-slate-400 group-hover:text-indigo-600 flex items-center">
+                      <Eye className="w-4 h-4 mr-1.5" /> 解答を見る
                     </span>
+                    {item.category !== "0. 志望理由・面接" && (
+                      <div className="flex gap-2 text-[10px] font-bold text-slate-400">
+                        <span className={itemCheck.def ? 'text-emerald-500' : ''}>{itemCheck.def ? '☑' : '□'} 定義</span>
+                        <span className={itemCheck.mean ? 'text-emerald-500' : ''}>{itemCheck.mean ? '☑' : '□'} 意味</span>
+                        <span className={itemCheck.eco ? 'text-emerald-500' : ''}>{itemCheck.eco ? '☑' : '□'} 応用</span>
+                      </div>
+                    )}
                   </div>
-                  {item.category !== "0. 志望理由・面接" && (
-                    <div className="flex gap-3 text-[10px] font-bold text-slate-400 mt-2 border-t border-slate-100 pt-2">
-                      <span className={itemCheck.def ? 'text-emerald-500' : ''}>{itemCheck.def ? '☑' : '□'} 定義</span>
-                      <span className={itemCheck.mean ? 'text-emerald-500' : ''}>{itemCheck.mean ? '☑' : '□'} 意味</span>
-                      <span className={itemCheck.eco ? 'text-emerald-500' : ''}>{itemCheck.eco ? '☑' : '□'} 経済接続</span>
-                    </div>
-                  )}
                 </div>
               </div>
             );
@@ -1546,7 +1618,8 @@ function App() {
                 {selectedCard.rank === 'S' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700">S (必須)</span>}
                 {selectedCard.rank === 'A' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700">A (重要)</span>}
                 {selectedCard.rank === 'B' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">B (基礎/発展)</span>}
-                {getCardMaterials(selectedCard.id).length > 0 && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {getCardMaterials(selectedCard.id).length}</span>}
+                {(userNotes[selectedCard.id] || getCardSketch(selectedCard.id)) && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><NoteIcon className="w-3 h-3 mr-1" />ノートあり</span>}
+                {getLegacyMaterials(selectedCard.id).length > 0 && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {getLegacyMaterials(selectedCard.id).length}</span>}
                 {hiddenCards[selectedCard.id] && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-slate-800 text-white"><EyeOff className="w-3 h-3 mr-1" />非表示中</span>}
               </div>
               <div className="flex items-center gap-2">
@@ -1557,86 +1630,94 @@ function App() {
               </div>
             </div>
             
-            <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4 leading-tight flex items-center gap-3">
+            <div className="card-detail-body p-5 sm:p-7 overflow-y-auto custom-scrollbar">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 leading-tight">
                 {renderTextWithMath(selectedCard.title)}
               </h2>
 
-              {!isAnswerRevealed ? (
-                <div 
-                  onClick={() => setIsAnswerRevealed(true)}
-                  className="my-6 py-12 sm:py-16 flex flex-col items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all group animate-fade-in"
-                >
-                  <div className="bg-white p-4 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                    <BrainCircuit className="w-8 h-8 text-indigo-400" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-700 mb-2">まずは自分の言葉で考えてみよう！</h3>
-                  <p className="text-sm text-slate-500 font-bold flex items-center"><Eye className="w-4 h-4 mr-1.5"/>タップして解答・解説を表示</p>
-                </div>
-              ) : (
-                <div className="animate-fade-in">
-                  {selectedCard.category !== "0. 志望理由・面接" && (
-                    <div className="flex flex-wrap gap-4 mb-6 p-3 bg-slate-50 border border-slate-200 rounded-xl justify-center">
-                      <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
-                        {checklists[selectedCard.id]?.def ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
-                        <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.def || false} onChange={() => toggleChecklist(selectedCard.id, 'def')} />
-                        定義言えた
-                      </label>
-                      <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
-                        {checklists[selectedCard.id]?.mean ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
-                        <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.mean || false} onChange={() => toggleChecklist(selectedCard.id, 'mean')} />
-                        意味言えた
-                      </label>
-                      <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
-                        {checklists[selectedCard.id]?.eco ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
-                        <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.eco || false} onChange={() => toggleChecklist(selectedCard.id, 'eco')} />
-                        経済接続言えた
-                      </label>
-                    </div>
-                  )}
-                  
-                  {selectedCard.formula && (
-                    <div className="bg-slate-900 rounded-2xl p-6 mb-6 shadow-inner relative overflow-x-auto hide-scrollbar border-2 border-slate-800">
-                      {selectedCard.formulaMust && <div className="absolute top-0 left-0 bg-rose-600 text-white text-xs font-bold px-3 py-1 rounded-br-lg shadow-md">🔥 面接で書けるように暗記必須</div>}
-                      <div className="absolute top-2 right-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <Sigma className="w-3 h-3 mr-1" /> Formula
-                      </div>
-                      <div className="flex justify-center items-center py-4 text-white text-lg sm:text-xl md:text-2xl min-h-[80px]">
-                        {renderFormula(selectedCard.formula, true)}
-                      </div>
-                    </div>
-                  )}
+              <div className="detail-tabs mb-5">
+                <button type="button" onClick={() => setActiveCardTab('answer')} className={activeCardTab === 'answer' ? 'is-active' : ''}>
+                  <MessageSquare className="w-4 h-4" /> 回答
+                </button>
+                <button type="button" onClick={() => setActiveCardTab('notes')} className={activeCardTab === 'notes' ? 'is-active' : ''}>
+                  <PenIcon className="w-4 h-4" /> 手書きノート
+                  {(userNotes[selectedCard.id] || getCardSketch(selectedCard.id)) && <span className="detail-tab-dot">保存済</span>}
+                </button>
+              </div>
 
-                  <div className="space-y-6">
-                    <div>
+              {activeCardTab === 'answer' ? (
+                !isAnswerRevealed ? (
+                  <div
+                    onClick={() => setIsAnswerRevealed(true)}
+                    className="my-5 py-10 sm:py-14 flex flex-col items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all group animate-fade-in"
+                  >
+                    <div className="bg-white p-4 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                      <BrainCircuit className="w-8 h-8 text-indigo-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-700 mb-2">まずは自分の言葉で考えてみよう！</h3>
+                    <p className="text-sm text-slate-500 font-bold flex items-center"><Eye className="w-4 h-4 mr-1.5"/>タップして解答・解説を表示</p>
+                  </div>
+                ) : (
+                  <div className="animate-fade-in space-y-5">
+                    {selectedCard.category !== "0. 志望理由・面接" && (
+                      <div className="flex flex-wrap gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl justify-center">
+                        <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
+                          {checklists[selectedCard.id]?.def ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
+                          <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.def || false} onChange={() => toggleChecklist(selectedCard.id, 'def')} />
+                          定義
+                        </label>
+                        <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
+                          {checklists[selectedCard.id]?.mean ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
+                          <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.mean || false} onChange={() => toggleChecklist(selectedCard.id, 'mean')} />
+                          意味
+                        </label>
+                        <label className="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-emerald-600 transition-colors">
+                          {checklists[selectedCard.id]?.eco ? <CheckSquare className="w-5 h-5 text-emerald-500"/> : <Square className="w-5 h-5"/>}
+                          <input type="checkbox" className="hidden" checked={checklists[selectedCard.id]?.eco || false} onChange={() => toggleChecklist(selectedCard.id, 'eco')} />
+                          経済接続
+                        </label>
+                      </div>
+                    )}
+
+                    {selectedCard.formula && (
+                      <div className="bg-slate-900 rounded-2xl p-5 shadow-inner relative overflow-x-auto hide-scrollbar border-2 border-slate-800">
+                        {selectedCard.formulaMust && <div className="absolute top-0 left-0 bg-rose-600 text-white text-xs font-bold px-3 py-1 rounded-br-lg shadow-md">暗記必須</div>}
+                        <div className="absolute top-2 right-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center">
+                          <Sigma className="w-3 h-3 mr-1" /> Formula
+                        </div>
+                        <div className="flex justify-center items-center py-3 text-white text-lg sm:text-xl md:text-2xl min-h-[72px]">
+                          {renderFormula(selectedCard.formula, true)}
+                        </div>
+                      </div>
+                    )}
+
+                    <section>
                       <h4 className="flex items-center text-sm font-bold text-rose-600 mb-2 uppercase tracking-wider">
-                        <MessageSquare className="w-4 h-4 mr-2" /> 面接30秒回答（暗唱用）
+                        <MessageSquare className="w-4 h-4 mr-2" /> 30秒回答
                       </h4>
-                      <p className="text-slate-900 font-bold text-lg leading-relaxed pl-4 border-l-4 border-rose-400 bg-rose-50 p-4 rounded-r-xl">
+                      <p className="text-slate-900 font-bold text-lg leading-relaxed border-l-4 border-rose-400 bg-rose-50 p-4 rounded-r-xl">
                         「{renderTextWithMath(selectedCard.oral30)}」
                       </p>
-                    </div>
+                    </section>
 
                     {selectedCard.explanation && (
-                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                        <h4 className="flex items-center text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider"><BookOpen className="w-4 h-4 mr-2" /> 詳細・深掘り解説</h4>
-                        <p className="text-slate-700 font-medium leading-relaxed">{renderTextWithMath(selectedCard.explanation)}</p>
-                      </div>
+                      <details className="compact-detail" open>
+                        <summary><BookOpen className="w-4 h-4" /> 詳細・深掘り解説</summary>
+                        <p>{renderTextWithMath(selectedCard.explanation)}</p>
+                      </details>
                     )}
 
                     {selectedCard.category !== "0. 志望理由・面接" && selectedCard.application && (
-                      <div>
-                        <h4 className="flex items-center text-xs font-bold text-indigo-600 mb-2 uppercase tracking-wider"><Target className="w-4 h-4 mr-2" /> 経済・工学への応用</h4>
-                        <p className="text-slate-700 leading-relaxed pl-4 border-l-4 border-indigo-200">{renderTextWithMath(selectedCard.application)}</p>
-                      </div>
+                      <details className="compact-detail">
+                        <summary><Target className="w-4 h-4" /> 経済・工学への応用</summary>
+                        <p>{renderTextWithMath(selectedCard.application)}</p>
+                      </details>
                     )}
 
                     {selectedCard.followups && selectedCard.followups.length > 0 && (
-                      <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
-                        <h4 className="flex items-center text-sm font-bold text-amber-700 mb-4 uppercase tracking-wider">
-                          <Sparkles className="w-5 h-5 mr-2" /> 面接官からの追撃質問
-                        </h4>
-                        <ul className="space-y-3 mb-4">
+                      <details className="compact-detail followup-detail">
+                        <summary><Sparkles className="w-4 h-4" /> 追撃質問 {selectedCard.followups.length}件</summary>
+                        <ul className="space-y-3 mt-3">
                           {selectedCard.followups.map((item, idx) => (
                             <li key={idx} className="bg-white rounded-xl border border-amber-100 p-3 shadow-sm">
                               <div className="flex justify-between items-start gap-3">
@@ -1645,7 +1726,7 @@ function App() {
                                   onClick={() => toggleAnswer(idx)}
                                   className="text-[10px] px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold shrink-0 hover:bg-amber-200 flex items-center transition-colors"
                                 >
-                                  {revealedAnswers[idx] ? <><EyeOff className="w-3 h-3 mr-1"/>非表示</> : <><Eye className="w-3 h-3 mr-1"/>解答を見る</>}
+                                  {revealedAnswers[idx] ? <><EyeOff className="w-3 h-3 mr-1"/>非表示</> : <><Eye className="w-3 h-3 mr-1"/>解答</>}
                                 </button>
                               </div>
                               {revealedAnswers[idx] && (
@@ -1657,108 +1738,94 @@ function App() {
                             </li>
                           ))}
                         </ul>
-
-                        {selectedCard.category !== "0. 志望理由・面接" && (
-                          <div className="pt-3 border-t border-amber-200/50">
-                            <p className="text-xs font-bold text-amber-600/80 mb-2 flex items-center"><Target className="w-3 h-3 mr-1"/>【全問共通】王道・深掘りテンプレ</p>
-                            <div className="flex flex-wrap gap-2">
-                              <span className="bg-white border border-amber-200 text-amber-700 text-xs px-2 py-1 rounded-md font-bold shadow-sm">数式で書くと？</span>
-                              <span className="bg-white border border-amber-200 text-amber-700 text-xs px-2 py-1 rounded-md font-bold shadow-sm">図で説明すると？</span>
-                              <span className="bg-white border border-amber-200 text-amber-700 text-xs px-2 py-1 rounded-md font-bold shadow-sm">経済で例えると？</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      </details>
                     )}
                   </div>
-                </div>
-              )}
-              
-              {/* 自分専用メモは解答の表示状態に関わらず表示しておく */}
-              <div className={`pt-4 border-t border-slate-100 ${!isAnswerRevealed ? 'mt-4' : 'mt-6'}`}>
-                <h4 className="flex items-center text-xs font-bold text-emerald-600 mb-3 uppercase tracking-wider"><Edit3 className="w-4 h-4 mr-2" /> 自分専用メモ（エピソード・追撃への回答）</h4>
-                <textarea value={editingNote} onChange={(e) => setEditingNote(e.target.value)} onBlur={() => saveNote(selectedCard.id, editingNote)} placeholder="自分の開発経験などを絡めたトークや、追撃質問への回答をメモ..." className="w-full h-32 p-4 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white transition-colors custom-scrollbar" />
-              </div>
+                )
+              ) : (
+                <div className="animate-fade-in space-y-4">
+                  <section className="rounded-2xl border border-emerald-100 bg-emerald-50/55 p-4">
+                    <h4 className="flex items-center text-xs font-bold text-emerald-700 mb-3 uppercase tracking-wider"><Edit3 className="w-4 h-4 mr-2" /> テキストメモ</h4>
+                    <textarea value={editingNote} onChange={(e) => setEditingNote(e.target.value)} onBlur={() => saveNote(selectedCard.id, editingNote)} placeholder="自分の言葉、ミスした点、面接で使う言い回し..." className="w-full h-24 p-3 text-sm font-medium text-slate-700 bg-white border border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors custom-scrollbar" />
+                  </section>
 
-              <div className="pt-5 mt-5 border-t border-slate-100">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <h4 className="flex items-center text-xs font-bold text-cyan-700 uppercase tracking-wider"><FileText className="w-4 h-4 mr-2" /> 資料・手書きメモ</h4>
-                  <label className="cursor-pointer px-3 py-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border border-cyan-100">
-                    <ImageIcon className="w-4 h-4" /> 画像を追加
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleMaterialImageUpload(selectedCard.id, e)} />
-                  </label>
-                </div>
-
-                {materialError && (
-                  <div className="mb-3 rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 text-xs font-bold text-rose-600 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" /> {materialError}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                  <input
-                    value={materialDraft.title}
-                    onChange={(e) => setMaterialDraft({ ...materialDraft, title: e.target.value })}
-                    placeholder="資料名（例：固有値 iPadメモ）"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white text-sm font-bold text-slate-700"
-                  />
-                  <input
-                    value={materialDraft.url}
-                    onChange={(e) => setMaterialDraft({ ...materialDraft, url: e.target.value })}
-                    placeholder="資料URL（任意）"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white text-sm font-bold text-slate-700"
-                  />
-                </div>
-                <textarea
-                  value={materialDraft.text}
-                  onChange={(e) => setMaterialDraft({ ...materialDraft, text: e.target.value })}
-                  placeholder="資料の要点・iPadメモの補足・解き直しポイント..."
-                  className="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white text-sm font-medium text-slate-700 custom-scrollbar"
-                />
-                <div className="mt-3 flex justify-end">
-                  <button onClick={handleAddMaterial} className="px-4 py-2.5 bg-cyan-700 text-white rounded-xl text-sm font-bold hover:bg-cyan-800 transition-colors flex items-center gap-2">
-                    <Plus className="w-4 h-4" /> 資料メモを保存
-                  </button>
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  {getCardMaterials(selectedCard.id).length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-xs font-bold text-slate-400">
-                      このカードの資料はまだありません。
-                    </div>
-                  ) : (
-                    getCardMaterials(selectedCard.id).map(material => (
-                      <div key={material.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 text-sm font-black text-slate-800">
-                              {material.type === "image" ? <ImageIcon className="w-4 h-4 text-cyan-600" /> : <FileText className="w-4 h-4 text-cyan-600" />}
-                              <span className="truncate">{material.title || "資料メモ"}</span>
-                            </div>
-                            {material.createdAt && <div className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(material.createdAt).toLocaleDateString('ja-JP')}</div>}
-                          </div>
-                          <button onClick={() => handleDeleteMaterial(selectedCard.id, material.id)} className="shrink-0 p-2 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                        {material.imageData && (
-                          <a href={material.imageData} target="_blank" rel="noreferrer" className="mt-3 block overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
-                            <img src={material.imageData} alt={material.title || "手書きメモ"} className="w-full max-h-72 object-contain bg-white" />
-                          </a>
-                        )}
-                        {material.url && (
-                          <a href={material.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">
-                            <LinkIcon className="w-4 h-4" /> 資料を開く
-                          </a>
-                        )}
-                        {material.text && (
-                          <p className="mt-3 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-sm font-medium leading-relaxed text-slate-700">{material.text}</p>
-                        )}
+                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                      <h4 className="flex items-center text-xs font-bold text-slate-700 uppercase tracking-wider"><PenIcon className="w-4 h-4 mr-2" /> 手書きノート</h4>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={() => setSketchMode('pen')} className={`sketch-tool ${sketchMode === 'pen' ? 'is-active' : ''}`}><PenIcon className="w-4 h-4" />ペン</button>
+                        <button type="button" onClick={() => setSketchMode('eraser')} className={`sketch-tool ${sketchMode === 'eraser' ? 'is-active' : ''}`}><EraserIcon className="w-4 h-4" />消す</button>
+                        {['#0f172a', '#e11d48', '#2563eb', '#16a34a'].map(color => (
+                          <button key={color} type="button" onClick={() => { setSketchColor(color); setSketchMode('pen'); }} className={`color-swatch ${sketchColor === color && sketchMode === 'pen' ? 'is-active' : ''}`} style={{ backgroundColor: color }} aria-label={`色 ${color}`} />
+                        ))}
+                        <label className="sketch-size-label">太さ
+                          <input type="range" min="2" max="12" value={sketchSize} onChange={(e) => setSketchSize(Number(e.target.value))} />
+                        </label>
+                        <button type="button" onClick={clearSketchCanvas} className="sketch-tool text-rose-600"><X className="w-4 h-4" />全消し</button>
                       </div>
-                    ))
+                    </div>
+                    {materialError && (
+                      <div className="mb-3 rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 text-xs font-bold text-rose-600 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" /> {materialError}
+                      </div>
+                    )}
+                    <canvas
+                      ref={sketchCanvasRef}
+                      className="sketch-canvas"
+                      onPointerDown={startSketchStroke}
+                      onPointerMove={moveSketchStroke}
+                      onPointerUp={endSketchStroke}
+                      onPointerCancel={endSketchStroke}
+                      onMouseDown={startSketchStroke}
+                      onMouseMove={moveSketchStroke}
+                      onMouseUp={endSketchStroke}
+                      onMouseLeave={endSketchStroke}
+                      onTouchStart={startTouchSketchStroke}
+                      onTouchMove={moveTouchSketchStroke}
+                      onTouchEnd={endTouchSketchStroke}
+                      onTouchCancel={endTouchSketchStroke}
+                    />
+                    <p className="mt-2 text-[11px] font-bold text-slate-400">Apple Pencil・指・マウスでそのまま書けます。線を離すたび自動保存します。</p>
+                  </section>
+
+                  {getLegacyMaterials(selectedCard.id).length > 0 && (
+                    <details className="compact-detail">
+                      <summary><FileText className="w-4 h-4" /> 以前保存した資料 {getLegacyMaterials(selectedCard.id).length}件</summary>
+                      <div className="mt-3 space-y-3">
+                        {getLegacyMaterials(selectedCard.id).map(material => (
+                          <div key={material.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 text-sm font-black text-slate-800">
+                                  {material.type === "image" ? <ImageIcon className="w-4 h-4 text-cyan-600" /> : <FileText className="w-4 h-4 text-cyan-600" />}
+                                  <span className="truncate">{material.title || "資料メモ"}</span>
+                                </div>
+                                {(material.createdAt || material.updatedAt) && <div className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(material.createdAt || material.updatedAt).toLocaleDateString('ja-JP')}</div>}
+                              </div>
+                              <button onClick={() => handleDeleteMaterial(selectedCard.id, material.id)} className="shrink-0 p-2 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            {material.imageData && (
+                              <a href={material.imageData} target="_blank" rel="noreferrer" className="mt-3 block overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                                <img src={material.imageData} alt={material.title || "手書きメモ"} className="w-full max-h-72 object-contain bg-white" />
+                              </a>
+                            )}
+                            {material.url && (
+                              <a href={material.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">
+                                <LinkIcon className="w-4 h-4" /> 資料を開く
+                              </a>
+                            )}
+                            {material.text && (
+                              <p className="mt-3 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-sm font-medium leading-relaxed text-slate-700">{material.text}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
                   )}
                 </div>
-              </div>
+              )}
 
             </div>
             <div className="px-6 py-4 border-t border-slate-100 bg-white flex justify-between items-center gap-2">
@@ -2451,6 +2518,131 @@ function App() {
           transform: translateY(-2px);
           box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
         }
+        .card-detail-body {
+          scroll-padding-top: 1rem;
+        }
+        .detail-tabs {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.45rem;
+          padding: 0.35rem;
+          border-radius: 1rem;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+        }
+        .detail-tabs button {
+          min-height: 2.75rem;
+          border-radius: 0.75rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.45rem;
+          color: #64748b;
+          font-size: 0.86rem;
+          font-weight: 950;
+          transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+        }
+        .detail-tabs button.is-active {
+          background: white;
+          color: #0f172a;
+          box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+        }
+        .detail-tab-dot {
+          border-radius: 999px;
+          background: #dcfce7;
+          color: #15803d;
+          padding: 0.08rem 0.42rem;
+          font-size: 0.62rem;
+          font-weight: 950;
+        }
+        .compact-detail {
+          border: 1px solid #e2e8f0;
+          border-radius: 1rem;
+          background: #f8fafc;
+          padding: 0.95rem;
+        }
+        .compact-detail summary {
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
+          color: #334155;
+          font-size: 0.84rem;
+          font-weight: 950;
+          list-style: none;
+        }
+        .compact-detail summary::-webkit-details-marker {
+          display: none;
+        }
+        .compact-detail p {
+          margin-top: 0.75rem;
+          color: #475569;
+          font-weight: 650;
+          line-height: 1.8;
+        }
+        .followup-detail {
+          background: #fffbeb;
+          border-color: #fde68a;
+        }
+        .sketch-tool {
+          min-height: 2.25rem;
+          border-radius: 0.75rem;
+          padding: 0 0.7rem;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          color: #475569;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          font-size: 0.78rem;
+          font-weight: 950;
+          transition: transform 140ms ease, background 140ms ease, color 140ms ease;
+        }
+        .sketch-tool:active {
+          transform: scale(0.97);
+        }
+        .sketch-tool.is-active {
+          background: #0f172a;
+          color: white;
+          border-color: #0f172a;
+        }
+        .color-swatch {
+          width: 2.1rem;
+          height: 2.1rem;
+          border-radius: 999px;
+          border: 3px solid white;
+          box-shadow: 0 0 0 1px #cbd5e1;
+        }
+        .color-swatch.is-active {
+          box-shadow: 0 0 0 3px #38bdf8;
+        }
+        .sketch-size-label {
+          min-height: 2.25rem;
+          border-radius: 0.75rem;
+          padding: 0 0.55rem;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          color: #475569;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          font-size: 0.74rem;
+          font-weight: 950;
+        }
+        .sketch-size-label input {
+          width: 5.6rem;
+        }
+        .sketch-canvas {
+          width: 100%;
+          height: 320px;
+          display: block;
+          border-radius: 1rem;
+          border: 1px solid #cbd5e1;
+          background: #fff;
+          box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.03);
+          touch-action: none;
+          cursor: crosshair;
+        }
         @media (max-width: 640px) {
           main {
             padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
@@ -2463,6 +2655,20 @@ function App() {
           .study-card h3 {
             font-size: 1.02rem;
             line-height: 1.55;
+          }
+          .card-detail-body {
+            padding: 1rem;
+          }
+          .detail-tabs {
+            position: sticky;
+            top: -1rem;
+            z-index: 2;
+          }
+          .sketch-canvas {
+            height: 380px;
+          }
+          .sketch-size-label input {
+            width: 4.7rem;
           }
           .mobile-bottom-nav {
             position: fixed;
