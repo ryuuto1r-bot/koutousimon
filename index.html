@@ -73,6 +73,9 @@ const EyeOff = makeIcon('隠');
 const User = makeIcon('人');
 const Plus = makeIcon('+');
 const Search = makeIcon('探');
+const ImageIcon = makeIcon('画');
+const LinkIcon = makeIcon('↗');
+const FileText = makeIcon('資');
 
 const LOCAL_KEY = 'koutousimon4-progress-v1';
 const FIREBASE_CONFIG_KEY = 'koutousimon-firebase-config-v1';
@@ -416,11 +419,14 @@ function App() {
   const [user, setUser] = useState(null);
   const [dailyHistory, setDailyHistory] = useState({}); 
   const [userNotes, setUserNotes] = useState({}); 
+  const [studyMaterials, setStudyMaterials] = useState({});
   const [checklists, setChecklists] = useState({}); 
   const [hiddenCards, setHiddenCards] = useState({}); 
   const [isLoading, setIsLoading] = useState(true);
   
   const [editingNote, setEditingNote] = useState("");
+  const [materialDraft, setMaterialDraft] = useState({ title: "", url: "", text: "" });
+  const [materialError, setMaterialError] = useState("");
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -508,6 +514,7 @@ function App() {
         const data = docSnap.data();
         setDailyHistory(data.dailyHistory || {});
         setUserNotes(data.userNotes || {}); 
+        setStudyMaterials(data.studyMaterials || {});
         setChecklists(data.checklists || {});
         setHiddenCards(data.hiddenCards || {}); 
         setCustomQuestions(data.customQuestions || []); 
@@ -800,6 +807,7 @@ function App() {
   const currentProgressData = () => ({
     dailyHistory,
     userNotes,
+    studyMaterials,
     checklists,
     hiddenCards,
     customQuestions,
@@ -879,6 +887,115 @@ function App() {
       const docRef = getProgressDocRef();
       await setDoc(docRef, { userNotes: newNotes }, { merge: true });
     }
+  };
+
+  const getCardMaterials = (id) => studyMaterials[id] || [];
+
+  const saveStudyMaterials = async (id, nextList) => {
+    const newMaterials = { ...studyMaterials };
+    if (nextList.length > 0) {
+      newMaterials[id] = nextList;
+    } else {
+      delete newMaterials[id];
+    }
+    setStudyMaterials(newMaterials);
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, { studyMaterials: newMaterials }, { merge: true });
+    }
+  };
+
+  const normalizeMaterialUrl = (url) => {
+    const trimmed = (url || "").trim();
+    if (!trimmed) return "";
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
+  const handleAddMaterial = async () => {
+    if (!selectedCard) return;
+    const title = materialDraft.title.trim();
+    const url = normalizeMaterialUrl(materialDraft.url);
+    const text = materialDraft.text.trim();
+    if (!title && !url && !text) {
+      setMaterialError("資料名・URL・メモのどれかを入力してください。");
+      return;
+    }
+    const nextItem = {
+      id: Date.now(),
+      type: "note",
+      title: title || (url ? "資料リンク" : "資料メモ"),
+      url,
+      text,
+      createdAt: new Date().toISOString()
+    };
+    await saveStudyMaterials(selectedCard.id, [nextItem, ...getCardMaterials(selectedCard.id)]);
+    setMaterialDraft({ title: "", url: "", text: "" });
+    setMaterialError("");
+  };
+
+  const compressImageFile = (file) => {
+    const MAX_IMAGE_BYTES = 520000;
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith("image/")) {
+        reject(new Error("画像ファイルを選んでください。"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("画像を読み込めませんでした。"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("画像を表示できませんでした。"));
+        img.onload = () => {
+          const maxSide = 1100;
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          let quality = 0.74;
+          let dataUrl = canvas.toDataURL("image/jpeg", quality);
+          while (((dataUrl.length * 3) / 4) > MAX_IMAGE_BYTES && quality > 0.42) {
+            quality -= 0.08;
+            dataUrl = canvas.toDataURL("image/jpeg", quality);
+          }
+          if (((dataUrl.length * 3) / 4) > MAX_IMAGE_BYTES) {
+            reject(new Error("画像が大きすぎます。スクショを少し切り抜いてから追加してください。"));
+            return;
+          }
+          resolve(dataUrl);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleMaterialImageUpload = async (id, e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      setMaterialError("");
+      const imageData = await compressImageFile(file);
+      const nextItem = {
+        id: Date.now(),
+        type: "image",
+        title: file.name.replace(/\.[^.]+$/, "") || "手書きメモ",
+        imageData,
+        createdAt: new Date().toISOString()
+      };
+      await saveStudyMaterials(id, [nextItem, ...getCardMaterials(id)]);
+    } catch (err) {
+      setMaterialError(err.message || String(err));
+    }
+  };
+
+  const handleDeleteMaterial = async (id, materialId) => {
+    await saveStudyMaterials(id, getCardMaterials(id).filter(item => item.id !== materialId));
   };
 
   const toggleChecklist = async (id, type) => {
@@ -1033,6 +1150,8 @@ function App() {
   const openCard = (item) => {
     setSelectedCard(item);
     setEditingNote(userNotes[item.id] || ""); 
+    setMaterialDraft({ title: "", url: "", text: "" });
+    setMaterialError("");
     setRevealedAnswers({}); 
     setIsAnswerRevealed(false);
   };
@@ -1343,6 +1462,7 @@ function App() {
             const isMastered = status === 'mastered';
             const isReview = status === 'review';
             const itemCheck = checklists[item.id] || {};
+            const materialCount = getCardMaterials(item.id).length;
 
             return (
               <div key={item.id} onClick={() => openCard(item)} className={`study-card group relative bg-white/95 p-5 rounded-2xl border-2 transition-all cursor-pointer hover:shadow-lg flex flex-col justify-between ${showHiddenOnly ? 'border-slate-400 bg-slate-100 opacity-80' : isMastered ? 'border-emerald-400 bg-emerald-50/40' : isReview ? 'border-amber-400 bg-amber-50/40' : 'border-white hover:border-indigo-200'}`}>
@@ -1362,6 +1482,7 @@ function App() {
                       {item.rank === 'A' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700">A (重要)</span>}
                       {item.rank === 'B' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">B (基礎/発展)</span>}
                       {userNotes[item.id] && <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3" /></span>}
+                      {materialCount > 0 && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {materialCount}</span>}
                     </div>
                     <div className="flex gap-1 -mr-2 -mt-2">
                       <button onClick={(e) => updateStatus(item.id, 'review', e)} className={`p-2 transition-transform hover:scale-110 ${isReview ? 'text-amber-500' : 'text-slate-200 hover:text-amber-400'}`}><AlertTriangle className="w-6 h-6" /></button>
@@ -1425,6 +1546,7 @@ function App() {
                 {selectedCard.rank === 'S' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700">S (必須)</span>}
                 {selectedCard.rank === 'A' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700">A (重要)</span>}
                 {selectedCard.rank === 'B' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">B (基礎/発展)</span>}
+                {getCardMaterials(selectedCard.id).length > 0 && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {getCardMaterials(selectedCard.id).length}</span>}
                 {hiddenCards[selectedCard.id] && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-slate-800 text-white"><EyeOff className="w-3 h-3 mr-1" />非表示中</span>}
               </div>
               <div className="flex items-center gap-2">
@@ -1556,6 +1678,86 @@ function App() {
               <div className={`pt-4 border-t border-slate-100 ${!isAnswerRevealed ? 'mt-4' : 'mt-6'}`}>
                 <h4 className="flex items-center text-xs font-bold text-emerald-600 mb-3 uppercase tracking-wider"><Edit3 className="w-4 h-4 mr-2" /> 自分専用メモ（エピソード・追撃への回答）</h4>
                 <textarea value={editingNote} onChange={(e) => setEditingNote(e.target.value)} onBlur={() => saveNote(selectedCard.id, editingNote)} placeholder="自分の開発経験などを絡めたトークや、追撃質問への回答をメモ..." className="w-full h-32 p-4 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white transition-colors custom-scrollbar" />
+              </div>
+
+              <div className="pt-5 mt-5 border-t border-slate-100">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h4 className="flex items-center text-xs font-bold text-cyan-700 uppercase tracking-wider"><FileText className="w-4 h-4 mr-2" /> 資料・手書きメモ</h4>
+                  <label className="cursor-pointer px-3 py-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border border-cyan-100">
+                    <ImageIcon className="w-4 h-4" /> 画像を追加
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleMaterialImageUpload(selectedCard.id, e)} />
+                  </label>
+                </div>
+
+                {materialError && (
+                  <div className="mb-3 rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 text-xs font-bold text-rose-600 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" /> {materialError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <input
+                    value={materialDraft.title}
+                    onChange={(e) => setMaterialDraft({ ...materialDraft, title: e.target.value })}
+                    placeholder="資料名（例：固有値 iPadメモ）"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white text-sm font-bold text-slate-700"
+                  />
+                  <input
+                    value={materialDraft.url}
+                    onChange={(e) => setMaterialDraft({ ...materialDraft, url: e.target.value })}
+                    placeholder="資料URL（任意）"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white text-sm font-bold text-slate-700"
+                  />
+                </div>
+                <textarea
+                  value={materialDraft.text}
+                  onChange={(e) => setMaterialDraft({ ...materialDraft, text: e.target.value })}
+                  placeholder="資料の要点・iPadメモの補足・解き直しポイント..."
+                  className="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white text-sm font-medium text-slate-700 custom-scrollbar"
+                />
+                <div className="mt-3 flex justify-end">
+                  <button onClick={handleAddMaterial} className="px-4 py-2.5 bg-cyan-700 text-white rounded-xl text-sm font-bold hover:bg-cyan-800 transition-colors flex items-center gap-2">
+                    <Plus className="w-4 h-4" /> 資料メモを保存
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {getCardMaterials(selectedCard.id).length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-xs font-bold text-slate-400">
+                      このカードの資料はまだありません。
+                    </div>
+                  ) : (
+                    getCardMaterials(selectedCard.id).map(material => (
+                      <div key={material.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 text-sm font-black text-slate-800">
+                              {material.type === "image" ? <ImageIcon className="w-4 h-4 text-cyan-600" /> : <FileText className="w-4 h-4 text-cyan-600" />}
+                              <span className="truncate">{material.title || "資料メモ"}</span>
+                            </div>
+                            {material.createdAt && <div className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(material.createdAt).toLocaleDateString('ja-JP')}</div>}
+                          </div>
+                          <button onClick={() => handleDeleteMaterial(selectedCard.id, material.id)} className="shrink-0 p-2 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {material.imageData && (
+                          <a href={material.imageData} target="_blank" rel="noreferrer" className="mt-3 block overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                            <img src={material.imageData} alt={material.title || "手書きメモ"} className="w-full max-h-72 object-contain bg-white" />
+                          </a>
+                        )}
+                        {material.url && (
+                          <a href={material.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">
+                            <LinkIcon className="w-4 h-4" /> 資料を開く
+                          </a>
+                        )}
+                        {material.text && (
+                          <p className="mt-3 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-sm font-medium leading-relaxed text-slate-700">{material.text}</p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
             </div>
