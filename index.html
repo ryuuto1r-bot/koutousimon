@@ -364,6 +364,10 @@ const categoryRankMap = {
   "9. 経済基礎": ""
 };
 
+const DEFAULT_SKETCH_PAPER_HEIGHT = 820;
+const SKETCH_PAPER_INCREMENT = 620;
+const MAX_SKETCH_PAPER_HEIGHT = 3300;
+
 function App() {
   const [appMode, setAppMode] = useState('oral');
   const [activeCategory, setActiveCategory] = useState("すべて");
@@ -434,8 +438,9 @@ function App() {
   const [sketchMode, setSketchMode] = useState('pen');
   const [sketchColor, setSketchColor] = useState('#0f172a');
   const [sketchSize, setSketchSize] = useState(4);
+  const [sketchPaperHeight, setSketchPaperHeight] = useState(DEFAULT_SKETCH_PAPER_HEIGHT);
   const sketchCanvasRef = useRef(null);
-  const sketchDrawingRef = useRef({ drawing: false, lastX: 0, lastY: 0 });
+  const sketchDrawingRef = useRef({ drawing: false, lastX: 0, lastY: 0, pointerId: null, touchId: null });
   const sketchHistoryRef = useRef([]);
   const cardSwipeRef = useRef(null);
 
@@ -959,7 +964,10 @@ function App() {
     const sketch = getCardSketch(selectedCard.id);
     if (sketch?.imageData) {
       const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      img.onload = () => {
+        const savedHeight = sketch.imageHeight || sketch.paperHeight || rect.height;
+        ctx.drawImage(img, 0, 0, rect.width, Math.min(rect.height, savedHeight));
+      };
       img.src = sketch.imageData;
     }
   };
@@ -972,7 +980,7 @@ function App() {
       clearTimeout(timer);
       window.removeEventListener('resize', paintSketchCanvas);
     };
-  }, [selectedCard?.id, activeCardTab, showSketchFullscreen, studyMaterials]);
+  }, [selectedCard?.id, activeCardTab, showSketchFullscreen, studyMaterials, sketchPaperHeight]);
 
   const captureSketchHistory = () => {
     const canvas = sketchCanvasRef.current;
@@ -985,7 +993,7 @@ function App() {
     }
   };
 
-  const saveSketchImage = async (imageData) => {
+  const saveSketchImage = async (imageData, paperHeight = sketchPaperHeight, imageHeight = paperHeight) => {
     if (!selectedCard) return;
     const otherMaterials = getCardMaterials(selectedCard.id).filter(item => item.type !== "sketch");
     const nextList = imageData
@@ -994,6 +1002,8 @@ function App() {
           type: "sketch",
           title: "手書きノート",
           imageData,
+          paperHeight: Math.round(paperHeight),
+          imageHeight: Math.round(imageHeight),
           updatedAt: new Date().toISOString()
         }, ...otherMaterials]
       : otherMaterials;
@@ -1005,10 +1015,27 @@ function App() {
     if (!canvas || !selectedCard) return;
     try {
       setMaterialError("");
-      await saveSketchImage(canvas.toDataURL("image/jpeg", 0.84));
+      await saveSketchImage(canvas.toDataURL("image/jpeg", 0.84), sketchPaperHeight, sketchPaperHeight);
     } catch (err) {
       setMaterialError("手書きメモを保存できませんでした。線を少し減らしてください。");
     }
+  };
+
+  const extendSketchPaper = async () => {
+    const nextHeight = Math.min(sketchPaperHeight + SKETCH_PAPER_INCREMENT, MAX_SKETCH_PAPER_HEIGHT);
+    if (nextHeight === sketchPaperHeight) return;
+    const canvas = sketchCanvasRef.current;
+    if (canvas && selectedCard) {
+      captureSketchHistory();
+      try {
+        setMaterialError("");
+        await saveSketchImage(canvas.toDataURL("image/jpeg", 0.84), nextHeight, sketchPaperHeight);
+      } catch (err) {
+        setMaterialError("紙を追加できませんでした。先に線を少し減らすか、全消ししてください。");
+        return;
+      }
+    }
+    setSketchPaperHeight(nextHeight);
   };
 
   const clearSketchCanvas = async () => {
@@ -1047,16 +1074,27 @@ function App() {
     return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
   };
 
+  const isPenPointer = (e) => e.pointerType === "pen";
+
+  const getStylusTouch = (touches, touchId = null) => {
+    const list = Array.from(touches || []);
+    return list.find(touch => (
+      touch.touchType === "stylus" && (touchId === null || touch.identifier === touchId)
+    ));
+  };
+
   const startSketchStroke = (e) => {
+    if (!isPenPointer(e)) return;
     e.preventDefault();
     if (e.pointerId !== undefined) e.currentTarget.setPointerCapture?.(e.pointerId);
     captureSketchHistory();
     const point = getSketchPoint(e);
-    sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y };
+    sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y, pointerId: e.pointerId, touchId: null };
   };
 
   const moveSketchStroke = (e) => {
     if (!sketchDrawingRef.current.drawing) return;
+    if (!isPenPointer(e) || sketchDrawingRef.current.pointerId !== e.pointerId) return;
     e.preventDefault();
     const canvas = sketchCanvasRef.current;
     if (!canvas) return;
@@ -1076,26 +1114,27 @@ function App() {
 
   const endSketchStroke = async (e) => {
     if (!sketchDrawingRef.current.drawing) return;
+    if (!isPenPointer(e) || sketchDrawingRef.current.pointerId !== e.pointerId) return;
     e.preventDefault();
     if (e.pointerId !== undefined) e.currentTarget.releasePointerCapture?.(e.pointerId);
-    sketchDrawingRef.current.drawing = false;
+    sketchDrawingRef.current = { drawing: false, lastX: 0, lastY: 0, pointerId: null, touchId: null };
     await saveSketchCanvas();
   };
 
   const startTouchSketchStroke = (e) => {
     if (window.PointerEvent) return;
-    const touch = e.touches?.[0];
+    const touch = getStylusTouch(e.touches);
     if (!touch) return;
     e.preventDefault();
     captureSketchHistory();
     const point = getTouchSketchPoint(e.currentTarget, touch);
-    sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y };
+    sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y, pointerId: null, touchId: touch.identifier };
   };
 
   const moveTouchSketchStroke = (e) => {
     if (window.PointerEvent) return;
     if (!sketchDrawingRef.current.drawing) return;
-    const touch = e.touches?.[0];
+    const touch = getStylusTouch(e.touches, sketchDrawingRef.current.touchId);
     if (!touch) return;
     e.preventDefault();
     const canvas = sketchCanvasRef.current;
@@ -1117,8 +1156,10 @@ function App() {
   const endTouchSketchStroke = async (e) => {
     if (window.PointerEvent) return;
     if (!sketchDrawingRef.current.drawing) return;
+    const touch = getStylusTouch(e.changedTouches, sketchDrawingRef.current.touchId);
+    if (!touch) return;
     e.preventDefault();
-    sketchDrawingRef.current.drawing = false;
+    sketchDrawingRef.current = { drawing: false, lastX: 0, lastY: 0, pointerId: null, touchId: null };
     await saveSketchCanvas();
   };
 
@@ -1276,10 +1317,12 @@ function App() {
   };
 
   const openCard = (item) => {
+    const sketch = getCardSketch(item.id);
     setSelectedCard(item);
     setEditingNote(userNotes[item.id] || ""); 
     setActiveCardTab('answer');
     setShowSketchFullscreen(false);
+    setSketchPaperHeight(Math.min(Math.max(sketch?.paperHeight || DEFAULT_SKETCH_PAPER_HEIGHT, DEFAULT_SKETCH_PAPER_HEIGHT), MAX_SKETCH_PAPER_HEIGHT));
     setMaterialError("");
     sketchHistoryRef.current = [];
     setRevealedAnswers({}); 
@@ -1879,6 +1922,8 @@ function App() {
                       <div className="flex flex-wrap items-center gap-2">
                         <button type="button" onClick={() => setShowSketchFullscreen(true)} className="sketch-tool"><Eye className="w-4 h-4" />全画面</button>
                         <button type="button" onClick={undoSketchCanvas} className="sketch-tool"><ChevronUp className="w-4 h-4" />戻す</button>
+                        <button type="button" onClick={extendSketchPaper} disabled={sketchPaperHeight >= MAX_SKETCH_PAPER_HEIGHT} className="sketch-tool"><Plus className="w-4 h-4" />紙を追加</button>
+                        <span className="sketch-paper-badge">紙 {Math.round((sketchPaperHeight / DEFAULT_SKETCH_PAPER_HEIGHT) * 10) / 10}枚分</span>
                         <button type="button" onClick={() => setSketchMode('pen')} className={`sketch-tool ${sketchMode === 'pen' ? 'is-active' : ''}`}><PenIcon className="w-4 h-4" />ペン</button>
                         <button type="button" onClick={() => setSketchMode('eraser')} className={`sketch-tool ${sketchMode === 'eraser' ? 'is-active' : ''}`}><EraserIcon className="w-4 h-4" />消す</button>
                         {['#0f172a', '#e11d48', '#2563eb', '#16a34a'].map(color => (
@@ -1898,6 +1943,7 @@ function App() {
                     <canvas
                       ref={sketchCanvasRef}
                       className="sketch-canvas"
+                      style={{ height: `${sketchPaperHeight}px` }}
                       onPointerDown={startSketchStroke}
                       onPointerMove={moveSketchStroke}
                       onPointerUp={endSketchStroke}
@@ -1911,7 +1957,7 @@ function App() {
                       onTouchEnd={endTouchSketchStroke}
                       onTouchCancel={endTouchSketchStroke}
                     />
-                    <p className="mt-2 text-[11px] font-bold text-slate-400">Apple Pencil・指・マウスでそのまま書けます。線を離すたび自動保存します。</p>
+                    <p className="mt-2 text-[11px] font-bold text-slate-400">Apple Pencilだけで書けます。指や手は描画せず、紙が足りない時は「紙を追加」で下に広げられます。</p>
                   </section>
 
                   {getLegacyMaterials(selectedCard.id).length > 0 && (
@@ -1964,6 +2010,8 @@ function App() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <button type="button" onClick={undoSketchCanvas} className="sketch-tool fullscreen-tool"><ChevronUp className="w-4 h-4" />戻す</button>
+                    <button type="button" onClick={extendSketchPaper} disabled={sketchPaperHeight >= MAX_SKETCH_PAPER_HEIGHT} className="sketch-tool fullscreen-tool"><Plus className="w-4 h-4" />紙を追加</button>
+                    <span className="sketch-paper-badge fullscreen-tool">紙 {Math.round((sketchPaperHeight / DEFAULT_SKETCH_PAPER_HEIGHT) * 10) / 10}枚分</span>
                     <button type="button" onClick={() => setSketchMode('pen')} className={`sketch-tool fullscreen-tool ${sketchMode === 'pen' ? 'is-active' : ''}`}><PenIcon className="w-4 h-4" />ペン</button>
                     <button type="button" onClick={() => setSketchMode('eraser')} className={`sketch-tool fullscreen-tool ${sketchMode === 'eraser' ? 'is-active' : ''}`}><EraserIcon className="w-4 h-4" />消す</button>
                     {['#0f172a', '#e11d48', '#2563eb', '#16a34a'].map(color => (
@@ -1979,6 +2027,7 @@ function App() {
                 <canvas
                   ref={sketchCanvasRef}
                   className="sketch-canvas sketch-canvas-fullscreen"
+                  style={{ height: `${sketchPaperHeight}px` }}
                   onPointerDown={startSketchStroke}
                   onPointerMove={moveSketchStroke}
                   onPointerUp={endSketchStroke}
@@ -2882,6 +2931,23 @@ function App() {
           color: white;
           border-color: #0f172a;
         }
+        .sketch-tool:disabled {
+          opacity: 0.42;
+          cursor: not-allowed;
+        }
+        .sketch-paper-badge {
+          min-height: 2.25rem;
+          border-radius: 999px;
+          padding: 0 0.75rem;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          color: #64748b;
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.72rem;
+          font-weight: 950;
+          white-space: nowrap;
+        }
         .color-swatch {
           width: 2.1rem;
           height: 2.1rem;
@@ -2910,19 +2976,21 @@ function App() {
         }
         .sketch-canvas {
           width: 100%;
-          height: 320px;
+          min-height: 520px;
           display: block;
           border-radius: 1rem;
           border: 1px solid #cbd5e1;
           background: #fff;
           box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.03);
-          touch-action: none;
+          touch-action: pan-y;
           cursor: crosshair;
         }
+        .sketch-fullscreen {
+          overflow-y: auto;
+        }
         .sketch-canvas-fullscreen {
-          flex: 1;
-          min-height: 0;
-          height: auto;
+          flex: 0 0 auto;
+          min-height: 72vh;
           border-radius: 1.15rem;
           border-color: rgba(255, 255, 255, 0.42);
         }
