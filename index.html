@@ -52,7 +52,7 @@ const ChevronUp = makeIcon('⌃');
 const ChevronDown = makeIcon('⌄');
 const X = makeIcon('×');
 const Sparkles = makeIcon('✦');
-const BrainCircuit = makeIcon('脳');
+const BrainCircuit = makeIcon('問');
 const Flame = makeIcon('火');
 const Calendar = makeIcon('日');
 const BarChart2 = makeIcon('▥');
@@ -368,10 +368,11 @@ function App() {
   const [appMode, setAppMode] = useState('oral');
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [selectedCard, setSelectedCard] = useState(null);
+  const [showSketchFullscreen, setShowSketchFullscreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef(null);
   
-  const [showHeaderControls, setShowHeaderControls] = useState(true); // ▼ 追加: ヘッダー表示切り替え
+  const [showHeaderControls, setShowHeaderControls] = useState(false);
 
   const [showAdvanced, setShowAdvanced] = useState(false); 
   const [showUntouchedOnly, setShowUntouchedOnly] = useState(false);
@@ -435,6 +436,8 @@ function App() {
   const [sketchSize, setSketchSize] = useState(4);
   const sketchCanvasRef = useRef(null);
   const sketchDrawingRef = useRef({ drawing: false, lastX: 0, lastY: 0 });
+  const sketchHistoryRef = useRef([]);
+  const cardSwipeRef = useRef(null);
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -807,6 +810,10 @@ function App() {
     return data;
   }, [appMode, activeCategory, showAdvanced, showUntouchedOnly, showDueOnly, showWeakOnly, touchedIds, dueCardIds, weaknessStats, shuffleSeed, hiddenCards, showHiddenOnly, mergedQuizData, searchQuery]);
 
+  const selectedCardIndex = selectedCard ? filteredData.findIndex(item => item.id === selectedCard.id) : -1;
+  const hasPrevCard = selectedCardIndex > 0;
+  const hasNextCard = selectedCardIndex >= 0 && selectedCardIndex < filteredData.length - 1;
+
   const getProgressDocRef = (targetUser = user) => {
     if (!targetUser || !db || targetUser.isLocal || syncMode !== 'cloud') return { local: true };
     return doc(db, 'artifacts', appId, 'users', targetUser.uid, 'appData', 'progress');
@@ -875,9 +882,9 @@ function App() {
     }
   };
 
-  const updateStatus = async (id, status, e) => {
+  const updateStatus = async (id, status, e, options = {}) => {
     if (e) e.stopPropagation();
-    const newStatus = currentDayRecord[id] === status ? null : status;
+    const newStatus = (!options.force && currentDayRecord[id] === status) ? null : status;
     const newDayRecord = { ...currentDayRecord };
     if (newStatus) newDayRecord[id] = newStatus; else delete newDayRecord[id];
     const newDailyHistory = { ...dailyHistory, [selectedDate]: newDayRecord };
@@ -886,6 +893,7 @@ function App() {
       const docRef = getProgressDocRef();
       await setDoc(docRef, { dailyHistory: newDailyHistory }, { merge: true });
     }
+    return newStatus;
   };
 
   const saveNote = async (id, text) => {
@@ -915,6 +923,27 @@ function App() {
     }
   };
 
+  const drawSketchBackground = (ctx, width, height) => {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.save();
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.22)";
+    ctx.lineWidth = 1;
+    for (let x = 24; x < width; x += 24) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 24; y < height; y += 24) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+
   const paintSketchCanvas = () => {
     const canvas = sketchCanvasRef.current;
     if (!canvas || !selectedCard) return;
@@ -925,8 +954,7 @@ function App() {
     canvas.height = Math.round(rect.height * ratio);
     const ctx = canvas.getContext("2d");
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    drawSketchBackground(ctx, rect.width, rect.height);
 
     const sketch = getCardSketch(selectedCard.id);
     if (sketch?.imageData) {
@@ -944,7 +972,18 @@ function App() {
       clearTimeout(timer);
       window.removeEventListener('resize', paintSketchCanvas);
     };
-  }, [selectedCard?.id, activeCardTab, studyMaterials]);
+  }, [selectedCard?.id, activeCardTab, showSketchFullscreen, studyMaterials]);
+
+  const captureSketchHistory = () => {
+    const canvas = sketchCanvasRef.current;
+    if (!canvas) return;
+    try {
+      const nextHistory = [...sketchHistoryRef.current, canvas.toDataURL("image/jpeg", 0.74)];
+      sketchHistoryRef.current = nextHistory.slice(-12);
+    } catch (e) {
+      sketchHistoryRef.current = [];
+    }
+  };
 
   const saveSketchImage = async (imageData) => {
     if (!selectedCard) return;
@@ -975,11 +1014,27 @@ function App() {
   const clearSketchCanvas = async () => {
     const canvas = sketchCanvasRef.current;
     if (!canvas || !selectedCard) return;
+    captureSketchHistory();
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    drawSketchBackground(ctx, rect.width, rect.height);
     await saveSketchImage("");
+  };
+
+  const undoSketchCanvas = async () => {
+    const canvas = sketchCanvasRef.current;
+    if (!canvas || !selectedCard || sketchHistoryRef.current.length === 0) return;
+    const previous = sketchHistoryRef.current[sketchHistoryRef.current.length - 1];
+    sketchHistoryRef.current = sketchHistoryRef.current.slice(0, -1);
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext("2d");
+    drawSketchBackground(ctx, rect.width, rect.height);
+    const img = new Image();
+    img.onload = async () => {
+      ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      await saveSketchImage(previous);
+    };
+    img.src = previous;
   };
 
   const getSketchPoint = (e) => {
@@ -995,6 +1050,7 @@ function App() {
   const startSketchStroke = (e) => {
     e.preventDefault();
     if (e.pointerId !== undefined) e.currentTarget.setPointerCapture?.(e.pointerId);
+    captureSketchHistory();
     const point = getSketchPoint(e);
     sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y };
   };
@@ -1031,6 +1087,7 @@ function App() {
     const touch = e.touches?.[0];
     if (!touch) return;
     e.preventDefault();
+    captureSketchHistory();
     const point = getTouchSketchPoint(e.currentTarget, touch);
     sketchDrawingRef.current = { drawing: true, lastX: point.x, lastY: point.y };
   };
@@ -1222,11 +1279,52 @@ function App() {
     setSelectedCard(item);
     setEditingNote(userNotes[item.id] || ""); 
     setActiveCardTab('answer');
+    setShowSketchFullscreen(false);
     setMaterialError("");
+    sketchHistoryRef.current = [];
     setRevealedAnswers({}); 
     setIsAnswerRevealed(false);
   };
-  const closeCard = () => setSelectedCard(null);
+  const closeCard = () => {
+    setSelectedCard(null);
+    setShowSketchFullscreen(false);
+  };
+
+  const goToAdjacentCard = (direction) => {
+    if (selectedCardIndex < 0) return;
+    const nextIndex = selectedCardIndex + direction;
+    if (nextIndex < 0 || nextIndex >= filteredData.length) return;
+    openCard(filteredData[nextIndex]);
+  };
+
+  const markStatusAndAdvance = async (status, e) => {
+    if (!selectedCard) return;
+    await updateStatus(selectedCard.id, status, e, { force: true });
+    if (hasNextCard) {
+      openCard(filteredData[selectedCardIndex + 1]);
+    } else {
+      closeCard();
+    }
+  };
+
+  const startCardSwipe = (e) => {
+    if (e.target?.closest?.('canvas, textarea, input, button, a, label, select, summary, details')) return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    cardSwipeRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const endCardSwipe = (e) => {
+    if (!cardSwipeRef.current) return;
+    const touch = e.changedTouches?.[0];
+    if (!touch) return;
+    const dx = touch.clientX - cardSwipeRef.current.x;
+    const dy = touch.clientY - cardSwipeRef.current.y;
+    cardSwipeRef.current = null;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+    if (dx < 0) goToAdjacentCard(1);
+    if (dx > 0) goToAdjacentCard(-1);
+  };
 
   const toggleAnswer = (idx) => {
     setRevealedAnswers(prev => ({ ...prev, [idx]: !prev[idx] }));
@@ -1550,8 +1648,6 @@ function App() {
                       {item.isEdited && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-violet-100 text-violet-700"><Edit3 className="w-3 h-3 mr-1" />編集済み</span>}
                       {showWeakOnly && weaknessStats.details[item.id] && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700"><Target className="w-3 h-3 mr-1" />弱点度 {Math.round(weaknessStats.details[item.id].score)}</span>}
                       {item.trap && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-red-100 text-red-700"><Skull className="w-3 h-3 mr-1" />事故注意</span>}
-                      {item.rank === 'S' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700">S (必須)</span>}
-                      {item.rank === 'A' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700">A (重要)</span>}
                       {item.rank === 'B' && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">B (基礎/発展)</span>}
                       {hasPersonalNote && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><NoteIcon className="w-3 h-3 mr-1" />ノート</span>}
                       {legacyMaterialCount > 0 && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {legacyMaterialCount}</span>}
@@ -1604,7 +1700,7 @@ function App() {
 
       {selectedCard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={closeCard}>
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()} onTouchStart={startCardSwipe} onTouchEnd={endCardSwipe}>
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div className="flex gap-2 items-center flex-wrap">
                 <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-700 flex items-center gap-1.5">
@@ -1615,17 +1711,21 @@ function App() {
                 {selectedCard.isCustom && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3 mr-1" />自作問題</span>}
                 {selectedCard.isEdited && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-violet-100 text-violet-700"><Edit3 className="w-3 h-3 mr-1" />編集済み</span>}
                 {selectedCard.trap && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-red-100 text-red-700"><Skull className="w-3 h-3 mr-1" />面接で事故注意！</span>}
-                {selectedCard.rank === 'S' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700">S (必須)</span>}
-                {selectedCard.rank === 'A' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700">A (重要)</span>}
                 {selectedCard.rank === 'B' && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">B (基礎/発展)</span>}
                 {(userNotes[selectedCard.id] || getCardSketch(selectedCard.id)) && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><NoteIcon className="w-3 h-3 mr-1" />ノートあり</span>}
                 {getLegacyMaterials(selectedCard.id).length > 0 && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-cyan-100 text-cyan-700"><FileText className="w-3 h-3 mr-1" />資料 {getLegacyMaterials(selectedCard.id).length}</span>}
                 {hiddenCards[selectedCard.id] && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-slate-800 text-white"><EyeOff className="w-3 h-3 mr-1" />非表示中</span>}
+                {selectedCardIndex >= 0 && <span className="text-xs font-black px-2 py-1 rounded-md bg-white text-slate-500 border border-slate-200">{selectedCardIndex + 1} / {filteredData.length}</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={(e) => startEditQuestion(selectedCard, e)} className="px-3 py-2 bg-violet-100 hover:bg-violet-200 text-violet-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5">
-                  <Edit3 className="w-4 h-4" /> 内容編集
-                </button>
+                <details className="card-action-menu">
+                  <summary>...</summary>
+                  <div>
+                    <button onClick={(e) => startEditQuestion(selectedCard, e)} className="flex items-center gap-2">
+                      <Edit3 className="w-4 h-4" /> 内容編集
+                    </button>
+                  </div>
+                </details>
                 <button onClick={closeCard} className="p-2 bg-slate-200 hover:bg-slate-300 rounded-full text-slate-600 transition-colors"><X className="w-5 h-5" /></button>
               </div>
             </div>
@@ -1634,6 +1734,16 @@ function App() {
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 leading-tight">
                 {renderTextWithMath(selectedCard.title)}
               </h2>
+
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <button type="button" onClick={() => goToAdjacentCard(-1)} disabled={!hasPrevCard} className="nav-step-button">
+                  ‹ 前
+                </button>
+                <div className="text-[11px] font-black text-slate-400">左右スワイプでも移動</div>
+                <button type="button" onClick={() => goToAdjacentCard(1)} disabled={!hasNextCard} className="nav-step-button">
+                  次 ›
+                </button>
+              </div>
 
               <div className="detail-tabs mb-5">
                 <button type="button" onClick={() => setActiveCardTab('answer')} className={activeCardTab === 'answer' ? 'is-active' : ''}>
@@ -1743,16 +1853,32 @@ function App() {
                   </div>
                 )
               ) : (
-                <div className="animate-fade-in space-y-4">
-                  <section className="rounded-2xl border border-emerald-100 bg-emerald-50/55 p-4">
-                    <h4 className="flex items-center text-xs font-bold text-emerald-700 mb-3 uppercase tracking-wider"><Edit3 className="w-4 h-4 mr-2" /> テキストメモ</h4>
-                    <textarea value={editingNote} onChange={(e) => setEditingNote(e.target.value)} onBlur={() => saveNote(selectedCard.id, editingNote)} placeholder="自分の言葉、ミスした点、面接で使う言い回し..." className="w-full h-24 p-3 text-sm font-medium text-slate-700 bg-white border border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors custom-scrollbar" />
-                  </section>
+                <div className="animate-fade-in note-workspace">
+                  <aside className="note-context-panel">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">問題</span>
+                    <h3>{renderTextWithMath(selectedCard.title)}</h3>
+                    {selectedCard.formula && <div className="note-mini-formula">{renderFormula(selectedCard.formula, false)}</div>}
+                    {isAnswerRevealed ? (
+                      <p className="note-mini-answer">「{renderTextWithMath(selectedCard.oral30)}」</p>
+                    ) : (
+                      <button type="button" onClick={() => setIsAnswerRevealed(true)} className="note-reveal-button">
+                        <Eye className="w-4 h-4" /> 回答を見る
+                      </button>
+                    )}
+                  </aside>
 
-                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="note-editor-panel space-y-4">
+                    <section className="rounded-2xl border border-emerald-100 bg-emerald-50/55 p-4">
+                      <h4 className="flex items-center text-xs font-bold text-emerald-700 mb-3 uppercase tracking-wider"><Edit3 className="w-4 h-4 mr-2" /> テキストメモ</h4>
+                      <textarea value={editingNote} onChange={(e) => setEditingNote(e.target.value)} onBlur={() => saveNote(selectedCard.id, editingNote)} placeholder="自分の言葉、ミスした点、面接で使う言い回し..." className="w-full h-24 p-3 text-sm font-medium text-slate-700 bg-white border border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors custom-scrollbar" />
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                       <h4 className="flex items-center text-xs font-bold text-slate-700 uppercase tracking-wider"><PenIcon className="w-4 h-4 mr-2" /> 手書きノート</h4>
                       <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={() => setShowSketchFullscreen(true)} className="sketch-tool"><Eye className="w-4 h-4" />全画面</button>
+                        <button type="button" onClick={undoSketchCanvas} className="sketch-tool"><ChevronUp className="w-4 h-4" />戻す</button>
                         <button type="button" onClick={() => setSketchMode('pen')} className={`sketch-tool ${sketchMode === 'pen' ? 'is-active' : ''}`}><PenIcon className="w-4 h-4" />ペン</button>
                         <button type="button" onClick={() => setSketchMode('eraser')} className={`sketch-tool ${sketchMode === 'eraser' ? 'is-active' : ''}`}><EraserIcon className="w-4 h-4" />消す</button>
                         {['#0f172a', '#e11d48', '#2563eb', '#16a34a'].map(color => (
@@ -1824,10 +1950,50 @@ function App() {
                       </div>
                     </details>
                   )}
+                  </div>
                 </div>
               )}
 
             </div>
+            {showSketchFullscreen && (
+              <div className="sketch-fullscreen fixed inset-0 z-[90] bg-slate-950/95 p-4 sm:p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider">全画面手書きノート</div>
+                    <h3 className="truncate text-lg sm:text-2xl font-black">{renderTextWithMath(selectedCard.title)}</h3>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={undoSketchCanvas} className="sketch-tool fullscreen-tool"><ChevronUp className="w-4 h-4" />戻す</button>
+                    <button type="button" onClick={() => setSketchMode('pen')} className={`sketch-tool fullscreen-tool ${sketchMode === 'pen' ? 'is-active' : ''}`}><PenIcon className="w-4 h-4" />ペン</button>
+                    <button type="button" onClick={() => setSketchMode('eraser')} className={`sketch-tool fullscreen-tool ${sketchMode === 'eraser' ? 'is-active' : ''}`}><EraserIcon className="w-4 h-4" />消す</button>
+                    {['#0f172a', '#e11d48', '#2563eb', '#16a34a'].map(color => (
+                      <button key={color} type="button" onClick={() => { setSketchColor(color); setSketchMode('pen'); }} className={`color-swatch ${sketchColor === color && sketchMode === 'pen' ? 'is-active' : ''}`} style={{ backgroundColor: color }} aria-label={`色 ${color}`} />
+                    ))}
+                    <label className="sketch-size-label fullscreen-tool">太さ
+                      <input type="range" min="2" max="12" value={sketchSize} onChange={(e) => setSketchSize(Number(e.target.value))} />
+                    </label>
+                    <button type="button" onClick={clearSketchCanvas} className="sketch-tool fullscreen-tool text-rose-300"><X className="w-4 h-4" />全消し</button>
+                    <button type="button" onClick={() => setShowSketchFullscreen(false)} className="sketch-close-button">閉じる</button>
+                  </div>
+                </div>
+                <canvas
+                  ref={sketchCanvasRef}
+                  className="sketch-canvas sketch-canvas-fullscreen"
+                  onPointerDown={startSketchStroke}
+                  onPointerMove={moveSketchStroke}
+                  onPointerUp={endSketchStroke}
+                  onPointerCancel={endSketchStroke}
+                  onMouseDown={startSketchStroke}
+                  onMouseMove={moveSketchStroke}
+                  onMouseUp={endSketchStroke}
+                  onMouseLeave={endSketchStroke}
+                  onTouchStart={startTouchSketchStroke}
+                  onTouchMove={moveTouchSketchStroke}
+                  onTouchEnd={endTouchSketchStroke}
+                  onTouchCancel={endTouchSketchStroke}
+                />
+              </div>
+            )}
             <div className="px-6 py-4 border-t border-slate-100 bg-white flex justify-between items-center gap-2">
               {selectedCard.isCustom ? (
                 <button 
@@ -1845,8 +2011,8 @@ function App() {
                 </button>
               )}
               <div className="flex gap-2">
-                <button onClick={(e) => { updateStatus(selectedCard.id, 'review', e); closeCard(); }} className={`px-4 py-2.5 rounded-xl font-bold border-2 transition-all flex-1 sm:flex-none ${currentDayRecord[selectedCard.id] === 'review' ? 'bg-amber-100 text-amber-700 border-amber-400' : 'bg-white border-amber-200 text-amber-600 hover:bg-amber-50'}`}>ちょっと詰まった</button>
-                <button onClick={(e) => { updateStatus(selectedCard.id, 'mastered', e); closeCard(); }} className={`px-4 py-2.5 rounded-xl font-bold border-2 transition-all flex-1 sm:flex-none ${currentDayRecord[selectedCard.id] === 'mastered' ? 'bg-emerald-100 text-emerald-700 border-emerald-400' : 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800'}`}>余裕で言えた！</button>
+                <button onClick={(e) => markStatusAndAdvance('review', e)} className={`px-4 py-2.5 rounded-xl font-bold border-2 transition-all flex-1 sm:flex-none ${currentDayRecord[selectedCard.id] === 'review' ? 'bg-amber-100 text-amber-700 border-amber-400' : 'bg-white border-amber-200 text-amber-600 hover:bg-amber-50'}`}>詰まった → 次へ</button>
+                <button onClick={(e) => markStatusAndAdvance('mastered', e)} className={`px-4 py-2.5 rounded-xl font-bold border-2 transition-all flex-1 sm:flex-none ${currentDayRecord[selectedCard.id] === 'mastered' ? 'bg-emerald-100 text-emerald-700 border-emerald-400' : 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800'}`}>言えた → 次へ</button>
               </div>
             </div>
           </div>
@@ -2518,6 +2684,64 @@ function App() {
           transform: translateY(-2px);
           box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
         }
+        .nav-step-button {
+          min-width: 5rem;
+          min-height: 2.35rem;
+          border-radius: 0.85rem;
+          border: 1px solid #e2e8f0;
+          background: white;
+          color: #475569;
+          font-size: 0.82rem;
+          font-weight: 950;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+        }
+        .nav-step-button:disabled {
+          opacity: 0.35;
+          box-shadow: none;
+        }
+        .card-action-menu {
+          position: relative;
+        }
+        .card-action-menu summary {
+          width: 2.35rem;
+          height: 2.35rem;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #f1f5f9;
+          color: #475569;
+          font-weight: 950;
+          cursor: pointer;
+          list-style: none;
+        }
+        .card-action-menu summary::-webkit-details-marker {
+          display: none;
+        }
+        .card-action-menu > div {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 0.45rem);
+          z-index: 5;
+          min-width: 10rem;
+          border-radius: 0.9rem;
+          border: 1px solid #e2e8f0;
+          background: white;
+          box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+          padding: 0.45rem;
+        }
+        .card-action-menu button {
+          width: 100%;
+          min-height: 2.5rem;
+          border-radius: 0.65rem;
+          padding: 0 0.75rem;
+          color: #6d28d9;
+          font-size: 0.78rem;
+          font-weight: 950;
+        }
+        .card-action-menu button:hover {
+          background: #f5f3ff;
+        }
         .card-detail-body {
           scroll-padding-top: 1rem;
         }
@@ -2584,6 +2808,58 @@ function App() {
           background: #fffbeb;
           border-color: #fde68a;
         }
+        .note-workspace {
+          display: grid;
+          gap: 1rem;
+        }
+        .note-context-panel {
+          border-radius: 1.1rem;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          padding: 1rem;
+        }
+        .note-context-panel h3 {
+          margin-top: 0.4rem;
+          color: #0f172a;
+          font-size: 1.05rem;
+          line-height: 1.55;
+          font-weight: 950;
+        }
+        .note-mini-formula {
+          margin-top: 0.8rem;
+          overflow-x: auto;
+          border-radius: 0.8rem;
+          border: 1px solid #e2e8f0;
+          background: white;
+          padding: 0.7rem;
+          color: #334155;
+          text-align: center;
+        }
+        .note-mini-answer {
+          margin-top: 0.8rem;
+          border-left: 4px solid #fb7185;
+          border-radius: 0 0.8rem 0.8rem 0;
+          background: #fff1f2;
+          padding: 0.85rem;
+          color: #334155;
+          font-size: 0.88rem;
+          line-height: 1.75;
+          font-weight: 800;
+        }
+        .note-reveal-button {
+          margin-top: 0.85rem;
+          min-height: 2.55rem;
+          width: 100%;
+          border-radius: 0.85rem;
+          background: #0f172a;
+          color: white;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.45rem;
+          font-size: 0.82rem;
+          font-weight: 950;
+        }
         .sketch-tool {
           min-height: 2.25rem;
           border-radius: 0.75rem;
@@ -2643,14 +2919,54 @@ function App() {
           touch-action: none;
           cursor: crosshair;
         }
+        .sketch-canvas-fullscreen {
+          flex: 1;
+          min-height: 0;
+          height: auto;
+          border-radius: 1.15rem;
+          border-color: rgba(255, 255, 255, 0.42);
+        }
+        .fullscreen-tool {
+          background: rgba(255,255,255,0.10);
+          border-color: rgba(255,255,255,0.18);
+          color: white;
+        }
+        .fullscreen-tool.is-active {
+          background: white;
+          color: #0f172a;
+          border-color: white;
+        }
+        .sketch-close-button {
+          min-height: 2.35rem;
+          border-radius: 0.8rem;
+          padding: 0 0.9rem;
+          background: white;
+          color: #0f172a;
+          font-size: 0.8rem;
+          font-weight: 950;
+        }
+        @media (min-width: 860px) and (orientation: landscape) {
+          .note-workspace {
+            grid-template-columns: minmax(17rem, 0.85fr) minmax(0, 1.45fr);
+            align-items: start;
+          }
+          .note-context-panel {
+            position: sticky;
+            top: 0.75rem;
+          }
+          .sketch-canvas {
+            height: 420px;
+          }
+        }
         @media (max-width: 640px) {
           main {
             padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
           }
-          header { max-height: 72vh; overflow-y: auto; }
+          header { max-height: 56vh; overflow-y: auto; }
           .study-card {
             min-height: 0;
             border-radius: 18px;
+            padding: 0.9rem;
           }
           .study-card h3 {
             font-size: 1.02rem;
