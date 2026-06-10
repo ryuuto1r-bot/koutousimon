@@ -714,6 +714,32 @@ function App() {
     };
   }, [currentDayRecord]);
 
+  const modeQuizData = useMemo(() => {
+    return mergedQuizData.filter(q => appMode === 'oral' ? q.category !== "0. 志望理由・面接" : q.category === "0. 志望理由・面接");
+  }, [appMode, mergedQuizData]);
+
+  const focusRecommendation = useMemo(() => {
+    const availableData = modeQuizData.filter(q => !hiddenCards[q.id] && (showAdvanced || q.rank !== 'B'));
+    const weakCount = availableData.filter(q => weaknessStats.ids.has(q.id)).length;
+    const dueCount = availableData.filter(q => dueCardIds.has(q.id)).length;
+    const untouchedCount = availableData.filter(q => !touchedIds.has(q.id)).length;
+    const importantCount = availableData.filter(q => q.rank !== 'B' && !allMasteredIds.has(q.id)).length;
+
+    if (weakCount > 0) {
+      return { type: 'weak', label: '弱点を先に潰す', count: weakCount, tone: 'rose', description: '詰まった履歴が多い問題を優先表示します。', button: '弱点から始める' };
+    }
+    if (dueCount > 0) {
+      return { type: 'due', label: '今日の復習を片付ける', count: dueCount, tone: 'purple', description: '間隔復習のタイミングに来ている問題があります。', button: '復習を始める' };
+    }
+    if (importantCount > 0) {
+      return { type: 'important', label: '重要問題を固める', count: importantCount, tone: 'amber', description: 'S/Aランクを優先して、口頭で言える状態に近づけます。', button: '重要問題を見る' };
+    }
+    if (untouchedCount > 0) {
+      return { type: 'untouched', label: '未着手を進める', count: untouchedCount, tone: 'blue', description: 'まだ触れていない問題を減らします。', button: '未着手を始める' };
+    }
+    return { type: 'mock', label: '仕上げの模擬面接', count: todaySummary.total, tone: 'emerald', description: '一通り進んでいます。声に出して本番形式で確認しましょう。', button: '模擬面接へ' };
+  }, [allMasteredIds, appMode, dueCardIds, hiddenCards, modeQuizData, showAdvanced, todaySummary.total, touchedIds, weaknessStats]);
+
   const filteredData = useMemo(() => {
     let data = [...mergedQuizData];
     
@@ -1060,6 +1086,40 @@ function App() {
     setTimeout(() => searchInputRef.current?.focus(), 220);
   };
 
+  const clearFilters = () => {
+    setSearchQuery("");
+    setActiveCategory("すべて");
+    setShowHiddenOnly(false);
+    setShowDueOnly(false);
+    setShowWeakOnly(false);
+    setShowUntouchedOnly(false);
+  };
+
+  const startRecommendedFocus = () => {
+    clearFilters();
+    if (focusRecommendation.type === 'weak') {
+      setShowWeakOnly(true);
+    } else if (focusRecommendation.type === 'due') {
+      setShowDueOnly(true);
+    } else if (focusRecommendation.type === 'important') {
+      setShowAdvanced(false);
+    } else if (focusRecommendation.type === 'untouched') {
+      setShowUntouchedOnly(true);
+    } else {
+      startMockExam(appMode);
+    }
+  };
+
+  const activeFilterLabels = [
+    activeCategory !== "すべて" ? activeCategory.replace(/^\d+\.\s*/, '') : null,
+    showWeakOnly ? "弱点" : null,
+    showDueOnly ? "復習" : null,
+    showUntouchedOnly ? "未着手" : null,
+    showHiddenOnly ? "非表示中" : null,
+    showAdvanced ? "B含む" : null,
+    searchQuery ? `検索: ${searchQuery}` : null
+  ].filter(Boolean);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-rose-200 app-shell">
       <header className="bg-white/90 backdrop-blur-xl border-b border-white/70 sticky top-0 z-10 shadow-sm transition-all duration-300">
@@ -1164,6 +1224,23 @@ function App() {
           </button>
         </div>
 
+        <section className={`focus-card focus-${focusRecommendation.tone} mb-5 sm:mb-6`}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-wider opacity-70 mb-1">今日のおすすめ</div>
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">{focusRecommendation.label}</h2>
+              <p className="text-xs sm:text-sm font-bold text-slate-500 mt-1">{focusRecommendation.description}</p>
+            </div>
+            <div className="focus-count shrink-0">
+              <span>{focusRecommendation.count}</span>
+              <small>問</small>
+            </div>
+          </div>
+          <button onClick={startRecommendedFocus} className="focus-action">
+            {focusRecommendation.button}
+          </button>
+        </section>
+
         <div className="mb-6 sm:mb-8">
           <button 
             onClick={() => startMockExam(appMode)}
@@ -1238,6 +1315,18 @@ function App() {
           </div>
         </div>
 
+        {activeFilterLabels.length > 0 && (
+          <div className="mb-5 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">表示条件</span>
+            {activeFilterLabels.map(label => (
+              <span key={label} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{label}</span>
+            ))}
+            <button onClick={clearFilters} className="ml-auto rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black text-white hover:bg-slate-700">
+              解除
+            </button>
+          </div>
+        )}
+
         {showHiddenOnly && (
            <div className="mb-4 p-4 bg-slate-800 text-white rounded-xl font-bold flex items-center justify-between shadow-md">
              <div className="flex items-center gap-2">
@@ -1306,8 +1395,15 @@ function App() {
             );
           })}
           {filteredData.length === 0 && (
-            <div className="col-span-1 md:col-span-2 text-center py-16 text-slate-400 font-bold">
-              該当する問題がありません。
+            <div className="col-span-1 md:col-span-2 rounded-3xl border border-dashed border-slate-300 bg-white/80 px-6 py-14 text-center shadow-sm">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                <Search className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-slate-700">該当する問題がありません</h3>
+              <p className="mt-2 text-sm font-bold text-slate-400">検索語や絞り込みを少し緩めると見つかります。</p>
+              <button onClick={clearFilters} className="mt-5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-black text-white hover:bg-slate-700">
+                条件をリセット
+              </button>
             </div>
           )}
         </div>
@@ -2074,6 +2170,71 @@ function App() {
         }
         .tap-target { min-height: 52px; }
         .mobile-bottom-nav { display: none; }
+        .focus-card {
+          position: relative;
+          overflow: hidden;
+          border-radius: 1.35rem;
+          border: 1px solid rgba(255, 255, 255, 0.86);
+          padding: 1.05rem;
+          background: rgba(255, 255, 255, 0.92);
+          box-shadow: 0 14px 36px rgba(15, 23, 42, 0.075);
+        }
+        .focus-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0.72;
+        }
+        .focus-card > * {
+          position: relative;
+          z-index: 1;
+        }
+        .focus-rose::before { background: linear-gradient(135deg, rgba(244, 63, 94, 0.14), transparent 55%); }
+        .focus-purple::before { background: linear-gradient(135deg, rgba(124, 58, 237, 0.13), transparent 55%); }
+        .focus-amber::before { background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), transparent 55%); }
+        .focus-blue::before { background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 55%); }
+        .focus-emerald::before { background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), transparent 55%); }
+        .focus-count {
+          min-width: 4.1rem;
+          height: 4.1rem;
+          border-radius: 1.25rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          background: rgba(15, 23, 42, 0.88);
+          color: white;
+          box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+        }
+        .focus-count span {
+          font-size: 1.45rem;
+          line-height: 1;
+          font-weight: 950;
+        }
+        .focus-count small {
+          margin-top: 0.15rem;
+          font-size: 0.66rem;
+          font-weight: 900;
+          opacity: 0.76;
+        }
+        .focus-action {
+          width: 100%;
+          margin-top: 0.95rem;
+          min-height: 2.75rem;
+          border-radius: 0.95rem;
+          background: #0f172a;
+          color: white;
+          font-weight: 950;
+          box-shadow: 0 12px 26px rgba(15, 23, 42, 0.18);
+          transition: transform 150ms ease, background 150ms ease;
+        }
+        .focus-action:active {
+          transform: scale(0.985);
+        }
+        .focus-action:hover {
+          background: #1e293b;
+        }
         .stat-tile {
           transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
         }
