@@ -367,6 +367,8 @@ const categoryRankMap = {
 const DEFAULT_SKETCH_PAPER_HEIGHT = 820;
 const SKETCH_PAPER_INCREMENT = 620;
 const MAX_SKETCH_PAPER_HEIGHT = 3300;
+const MAX_MATERIAL_IMAGE_SIDE = 1600;
+const MATERIAL_IMAGE_QUALITY = 0.78;
 
 function App() {
   const [appMode, setAppMode] = useState('oral');
@@ -443,6 +445,7 @@ function App() {
   const sketchDrawingRef = useRef({ drawing: false, lastX: 0, lastY: 0, pointerId: null, touchId: null });
   const sketchHistoryRef = useRef([]);
   const sketchSaveTimerRef = useRef(null);
+  const materialFileInputRef = useRef(null);
   const cardSwipeRef = useRef(null);
 
   const todayStr = useMemo(() => {
@@ -1194,6 +1197,67 @@ function App() {
     e.stopPropagation();
     sketchDrawingRef.current = { drawing: false, lastX: 0, lastY: 0, pointerId: null, touchId: null };
     scheduleSketchSave();
+  };
+
+  const compressMaterialImage = (file) => new Promise((resolve, reject) => {
+    if (!file.type?.startsWith("image/")) {
+      reject(new Error("画像ファイルを選んでください。"));
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, MAX_MATERIAL_IMAGE_SIDE / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      resolve({
+        imageData: canvas.toDataURL("image/jpeg", MATERIAL_IMAGE_QUALITY),
+        width,
+        height
+      });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("画像を読み込めませんでした。別の画像を試してください。"));
+    };
+    img.src = url;
+  });
+
+  const handleAddMaterialImages = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!selectedCard || files.length === 0) return;
+    try {
+      setMaterialError("");
+      clearPendingSketchSave();
+      const compressed = [];
+      for (const file of files.slice(0, 8)) {
+        const image = await compressMaterialImage(file);
+        compressed.push({
+          id: `image-${selectedCard.id}-${Date.now()}-${compressed.length}`,
+          type: "image",
+          title: file.name || "資料画像",
+          imageData: image.imageData,
+          width: image.width,
+          height: image.height,
+          createdAt: new Date().toISOString()
+        });
+      }
+      const currentMaterials = getCardMaterials(selectedCard.id);
+      const sketch = currentMaterials.find(item => item.type === "sketch");
+      const legacy = currentMaterials.filter(item => item.type !== "sketch");
+      await saveStudyMaterials(selectedCard.id, sketch ? [sketch, ...compressed, ...legacy] : [...compressed, ...legacy]);
+    } catch (err) {
+      setMaterialError(err.message || "画像を保存できませんでした。別の画像を試してください。");
+    }
   };
 
   const handleDeleteMaterial = async (id, materialId) => {
@@ -1960,6 +2024,8 @@ function App() {
                         <button type="button" onClick={extendSketchPaper} disabled={sketchPaperHeight >= MAX_SKETCH_PAPER_HEIGHT} className="sketch-tool"><Plus className="w-4 h-4" />紙を追加</button>
                         <button type="button" onClick={() => scrollSketchPaper(-520)} className="sketch-tool"><ChevronUp className="w-4 h-4" />上へ</button>
                         <button type="button" onClick={() => scrollSketchPaper(520)} className="sketch-tool"><ChevronDown className="w-4 h-4" />下へ</button>
+                        <button type="button" onClick={() => materialFileInputRef.current?.click()} className="sketch-tool text-cyan-700"><ImageIcon className="w-4 h-4" />画像追加</button>
+                        <input ref={materialFileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddMaterialImages} />
                         <span className="sketch-paper-badge">紙 {Math.round((sketchPaperHeight / DEFAULT_SKETCH_PAPER_HEIGHT) * 10) / 10}枚分</span>
                         <button type="button" onClick={() => setSketchMode('pen')} className={`sketch-tool ${sketchMode === 'pen' ? 'is-active' : ''}`}><PenIcon className="w-4 h-4" />ペン</button>
                         <button type="button" onClick={() => setSketchMode('eraser')} className={`sketch-tool ${sketchMode === 'eraser' ? 'is-active' : ''}`}><EraserIcon className="w-4 h-4" />消す</button>
@@ -1994,7 +2060,7 @@ function App() {
                       onTouchEnd={endTouchSketchStroke}
                       onTouchCancel={endTouchSketchStroke}
                     />
-                    <p className="mt-2 text-[11px] font-bold text-slate-400">Apple Pencilだけで書けます。描画中は勝手にスクロールしません。紙の移動は「上へ/下へ」を使ってください。</p>
+                    <p className="mt-2 text-[11px] font-bold text-slate-400">Apple Pencilだけで書けます。資料やスクショは「画像追加」から保存できます。</p>
                   </section>
 
                   {getLegacyMaterials(selectedCard.id).length > 0 && (
