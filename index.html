@@ -555,6 +555,93 @@ const interviewGuideSections = [
   }
 ];
 
+const GUIDE_COMMON_FOLLOWUPS = [
+  { q: "なぜそう考えたのですか？", a: "自分の経験を1つ挙げ、その経験から何を感じ、九大経済工学で何を学びたいと思ったのかまでつなげます。" },
+  { q: "具体例を1つ挙げてください。", a: "学生会、SENKAY、仮想通貨分析ツール、卒業研究の中から、質問に一番近い経験を選んで具体化します。" },
+  { q: "それは九州大学でなければならない理由になりますか？", a: "数理・経済・情報を融合し、ゲーム理論、メカニズムデザイン、計量経済学を体系的に学べる経済工学科の環境につなげます。" }
+];
+
+const interviewPracticeCardOverrides = {
+  "admission-policy": {
+    title: "アドミッションポリシーのどこに自分が当てはまるか説明してください",
+    oral30: "私は特に、主体性を持って多様な人々と協働して学ぶ態度に当てはまると考えています。学生会長として校則見直しや制服変更に取り組む中で、学生、先生方、制服会社など多様な立場の意見を調整しながら物事を進めてきました。これらの経験を通して、主体的に課題を見つけ、周囲と協働して解決する姿勢を培いました。",
+    followups: [
+      { q: "知識・技能の面ではどう当てはまりますか？", a: "高専で微積分、線形代数、統計、制御、プログラミングを学び、経済工学に必要な数理的基盤を身につけてきた点を話します。" },
+      { q: "表現力はどこで培いましたか？", a: "学生会長として校則改定を説明した経験や、ビジネスコンテストで提案を伝えた経験につなげます。" },
+      ...GUIDE_COMMON_FOLLOWUPS
+    ]
+  },
+  "motivation-script": {
+    title: "5分の志望理由を1分で要約してください",
+    oral30: "私が九州大学経済工学科を志望する理由は、高専で培った数理的な設計力に、経済システムを設計する理論を掛け合わせ、世界規模で価値を生み出す起業家になるためです。ロボットアイデア甲子園や仮想通貨分析ツール、SENKAYの経験を通して、技術を社会に実装するには、人や企業の行動を踏まえた仕組みの設計が不可欠だと感じました。だからこそ、ゲーム理論、メカニズムデザイン、計量経済学を九大で体系的に学びたいです。",
+    followups: [
+      { q: "なぜ機械工学から経済工学へ進むのですか？", a: "機械工学を捨てるのではなく、工学で培った設計・検証・実装力を、社会や市場の仕組みの設計に広げたいと説明します。" },
+      { q: "他大学ではなく九大である理由は？", a: "数理・経済・情報を融合した経済工学科で、ゲーム理論、メカニズムデザイン、計量経済学を体系的に学べる点を押し出します。" },
+      ...GUIDE_COMMON_FOLLOWUPS
+    ]
+  },
+  "graduation-research": {
+    title: "卒業研究の内容を面接官に説明してください",
+    oral30: "卒業研究では、剣道の素振りや打突動作をカメラ映像から分析するWebアプリを開発しています。従来は先生の感覚に頼っていたフォーム改善を、姿勢推定技術で打突時間、右肘角度、体幹の軸、刃筋などとして数値化し、練習者が客観的に振り返れるようにする研究です。現在はMediaPipeの精度課題を踏まえ、YOLOへの移行も進めています。",
+    followups: [
+      { q: "この研究は経済工学とどうつながりますか？", a: "作った技術をどう社会に普及させ、ユーザーに使われる仕組みにするかを学びたい、という接続で答えます。" },
+      { q: "技術的な一番の課題は何ですか？", a: "剣道の動作が高速なため、打突の瞬間に手首座標を見失いやすい点。それをYOLO移行で改善していると説明します。" },
+      ...GUIDE_COMMON_FOLLOWUPS
+    ]
+  },
+  "personal-pr": {
+    title: "あなたの強みと短所を説明してください",
+    oral30: "私の強みは、挑戦する姿勢とそれを最後まで形にする実行力です。学業で上位5%を維持しながら、学生会長、ビジネスコンテスト、ロボットアイデア甲子園、個人ビジネスにも挑戦してきました。一方で短所は、多くのタスクを抱えやすい点です。現在はToDoリストで優先順位を整理し、計画的に進めることを意識しています。",
+    followups: [
+      { q: "その強みが一番出た経験は？", a: "学生会長として制服変更や校則見直しを、関係者と調整しながら形にした経験を話します。" },
+      { q: "短所で失敗した経験は？", a: "複数活動を抱えすぎて優先順位が曖昧になった経験を話し、現在はToDo管理で改善しているとつなげます。" },
+      ...GUIDE_COMMON_FOLLOWUPS
+    ]
+  },
+  "deep-questions": {
+    title: "メカニズムデザイン・ゲーム理論・データサイエンスを説明してください",
+    oral30: "メカニズムデザインは、人それぞれの利害や行動を前提に、全体として望ましい結果になるようなルールや仕組みを設計する考え方です。ゲーム理論は、複数の主体が互いの行動を考えながら意思決定する状況を分析する理論です。データサイエンスは、データから傾向や関係性を見つけ、意思決定や予測に活かす手法だと理解しています。",
+    followups: [
+      { q: "メカニズムデザインとゲーム理論の違いは？", a: "ゲーム理論は与えられたルールの下で行動を分析する。メカニズムデザインは望ましい結果を得るためのルール自体を設計する、と説明します。" },
+      { q: "あなたの経験とどう関係しますか？", a: "SENKAYや仮想通貨分析ツールで、技術だけでなく価格設定、導入しやすさ、ユーザー行動を考える必要があった経験につなげます。" },
+      ...GUIDE_COMMON_FOLLOWUPS
+    ]
+  },
+  "background-fit": {
+    title: "高専の機械工学で学んだことを経済工学にどう活かしますか",
+    oral30: "高専では、材料力学、設計、制御、実験、プログラミングを通じて、課題を数理的に捉え、仮説を立て、設計し、検証する工学的な考え方を学びました。この姿勢は、経済現象をモデル化し、データで検証し、制度や市場の仕組みを設計する経済工学にも活かせると考えています。",
+    followups: [
+      { q: "経済学と経済工学の違いは？", a: "経済学は経済現象の理解・分析が中心。経済工学は数理・情報科学を使って分析し、仕組みとして設計するところまで扱う、と答えます。" },
+      { q: "価値を生み出すとは何ですか？", a: "新しいものを作るだけでなく、人や社会の課題を解決し、より良い仕組みや選択肢を生み出すことだと説明します。" },
+      ...GUIDE_COMMON_FOLLOWUPS
+    ]
+  },
+  "study-plan": {
+    title: "入学後の学習計画を説明してください",
+    oral30: "編入後は、ミクロ経済学、マクロ経済学、計量経済学、基礎計量経済学、数理統計学などを重点的に学び、経済工学の理論的基盤を固めたいです。特にゲーム理論、メカニズムデザイン、データサイエンスに関心があり、4年次にはそれらを活かして、社会の仕組みや市場行動を数理的に分析・設計する研究に取り組みたいです。",
+    followups: [
+      { q: "入学後に足りない知識は何ですか？", a: "高専で数理と実装は学んだ一方、経済理論や計量経済学の体系的理解はこれから深めたいと答えます。" },
+      { q: "どの分野を研究したいですか？", a: "ゲーム理論、メカニズムデザイン、計量経済学、投資家心理や企業価値設計などに関心があると説明します。" },
+      ...GUIDE_COMMON_FOLLOWUPS
+    ]
+  }
+};
+
+const interviewPracticeCards = interviewGuideSections.map(section => {
+  const override = interviewPracticeCardOverrides[section.id] || {};
+  const fallbackAnswer = (section.body || []).slice(0, 2).join(" ");
+  return {
+    id: `guide-practice-${section.id}`,
+    sectionId: section.id,
+    category: "面接資料",
+    rank: "S",
+    title: override.title || `${section.title}について面接で説明してください`,
+    oral30: override.oral30 || fallbackAnswer || section.title,
+    explanation: [...(section.body || []), ...(section.bullets || [])].join("\n"),
+    followups: override.followups || GUIDE_COMMON_FOLLOWUPS
+  };
+});
+
 const DEFAULT_SKETCH_PAPER_HEIGHT = 820;
 const SKETCH_PAPER_INCREMENT = 620;
 const MAX_SKETCH_PAPER_HEIGHT = 3300;
@@ -584,6 +671,7 @@ function App() {
   const [mockIndex, setMockIndex] = useState(0);
   const [mockTimeLeft, setMockTimeLeft] = useState(60);
   const [showMockAnswer, setShowMockAnswer] = useState(false);
+  const [mockFollowupIndex, setMockFollowupIndex] = useState(0);
 
   const [revealedAnswers, setRevealedAnswers] = useState({});
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
@@ -623,6 +711,7 @@ function App() {
   const [dailyHistory, setDailyHistory] = useState({}); 
   const [userNotes, setUserNotes] = useState({}); 
   const [studyMaterials, setStudyMaterials] = useState({});
+  const [guideMarks, setGuideMarks] = useState({});
   const [checklists, setChecklists] = useState({}); 
   const [hiddenCards, setHiddenCards] = useState({}); 
   const [isLoading, setIsLoading] = useState(true);
@@ -727,6 +816,7 @@ function App() {
         setDailyHistory(data.dailyHistory || {});
         setUserNotes(data.userNotes || {}); 
         setStudyMaterials(data.studyMaterials || {});
+        setGuideMarks(data.guideMarks || {});
         setChecklists(data.checklists || {});
         setHiddenCards(data.hiddenCards || {}); 
         setCustomQuestions(data.customQuestions || []); 
@@ -1017,16 +1107,18 @@ function App() {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     if (!normalizedQuery) return interviewGuideSections;
     return interviewGuideSections.filter(section => {
+      const markLabel = guideMarks[section.id] === 'must' ? '本番で言う' : guideMarks[section.id] === 'weak' ? 'まだ弱い' : guideMarks[section.id] === 'fix' ? '言い回し修正' : '';
       const target = [
         section.title,
         section.label,
         section.tag,
+        markLabel,
         ...(section.body || []),
         ...(section.bullets || [])
       ].filter(Boolean).join(' ').toLowerCase();
       return target.includes(normalizedQuery);
     });
-  }, [searchQuery]);
+  }, [guideMarks, searchQuery]);
 
   const selectedCardIndex = selectedCard ? filteredData.findIndex(item => item.id === selectedCard.id) : -1;
   const hasPrevCard = selectedCardIndex > 0;
@@ -1041,6 +1133,7 @@ function App() {
     dailyHistory,
     userNotes,
     studyMaterials,
+    guideMarks,
     checklists,
     hiddenCards,
     customQuestions,
@@ -1140,6 +1233,26 @@ function App() {
       await setDoc(docRef, { studyMaterials: newMaterials }, { merge: true });
     }
   };
+
+  const toggleGuideMark = async (id, mark) => {
+    const nextMarks = { ...guideMarks };
+    if (nextMarks[id] === mark) {
+      delete nextMarks[id];
+    } else {
+      nextMarks[id] = mark;
+    }
+    setGuideMarks(nextMarks);
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, { guideMarks: nextMarks }, { merge: true });
+    }
+  };
+
+  const guideMarkCounts = useMemo(() => ({
+    must: Object.values(guideMarks).filter(mark => mark === 'must').length,
+    weak: Object.values(guideMarks).filter(mark => mark === 'weak').length,
+    fix: Object.values(guideMarks).filter(mark => mark === 'fix').length
+  }), [guideMarks]);
 
   const drawSketchBackground = (ctx, width, height) => {
     ctx.fillStyle = "#ffffff";
@@ -1681,6 +1794,22 @@ function App() {
     setRevealedAnswers(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
+  const startGuidePractice = (sectionId = null) => {
+    const source = sectionId
+      ? interviewPracticeCards.filter(card => card.sectionId === sectionId)
+      : interviewPracticeCards;
+    const shuffled = [...source].sort(() => 0.5 - Math.random());
+    const selected = sectionId ? shuffled : shuffled.slice(0, 5);
+    if (selected.length === 0) return;
+    setMockQuestions(selected);
+    setMockExamMode('guide');
+    setMockIndex(0);
+    setMockTimeLeft(60);
+    setShowMockAnswer(false);
+    setMockFollowupIndex(0);
+    setRevealedAnswers({});
+  };
+
   const startMockExam = (type) => {
     if (type === 'oral') {
       const shibou = mergedQuizData.filter(q => q.category === "0. 志望理由・面接" && !hiddenCards[q.id]);
@@ -1692,12 +1821,16 @@ function App() {
       const shibou = mergedQuizData.filter(q => q.category === "0. 志望理由・面接" && !hiddenCards[q.id]);
       const shuffledShibou = shibou.sort(() => 0.5 - Math.random()).slice(0, 4);
       setMockQuestions(shuffledShibou);
+    } else if (type === 'guide') {
+      startGuidePractice();
+      return;
     }
     
     setMockExamMode(type);
     setMockIndex(0);
     setMockTimeLeft(60);
     setShowMockAnswer(false);
+    setMockFollowupIndex(0);
     setRevealedAnswers({});
   };
 
@@ -1714,6 +1847,7 @@ function App() {
       setMockIndex(mockIndex + 1);
       setMockTimeLeft(60);
       setShowMockAnswer(false);
+      setMockFollowupIndex(0);
       setRevealedAnswers({}); 
     } else {
       setMockExamMode(null);
@@ -1866,10 +2000,23 @@ function App() {
                   <p className="mt-2 text-sm sm:text-base font-bold leading-relaxed text-slate-600">
                     志望動機、願書版、卒研、自己PR、深掘り問答、履修計画を別タブで見返せます。
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button onClick={() => startGuidePractice()} className="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-cyan-800">
+                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 資料からランダム練習
+                    </button>
+                    <button onClick={() => setSearchQuery("本番")} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-cyan-700 shadow-sm border border-cyan-100 hover:bg-cyan-50">
+                      本番用を探す
+                    </button>
+                  </div>
                 </div>
                 <div className="rounded-2xl bg-white/85 px-4 py-3 text-center shadow-sm border border-white">
                   <div className="text-[10px] font-black text-slate-400">表示中</div>
                   <div className="text-2xl font-black text-cyan-700">{filteredInterviewSections.length}<span className="text-sm text-slate-400 ml-1">件</span></div>
+                  <div className="mt-2 flex justify-center gap-1 text-[10px] font-black text-slate-400">
+                    <span>本番 {guideMarkCounts.must}</span>
+                    <span>弱い {guideMarkCounts.weak}</span>
+                    <span>修正 {guideMarkCounts.fix}</span>
+                  </div>
                 </div>
               </div>
             </section>
@@ -1891,13 +2038,32 @@ function App() {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {filteredInterviewSections.map(section => (
-                <article key={section.id} className="rounded-3xl border border-white bg-white/95 p-5 sm:p-6 shadow-sm">
+              {filteredInterviewSections.map(section => {
+                const guideMark = guideMarks[section.id];
+                return (
+                <article key={section.id} className={`rounded-3xl border bg-white/95 p-5 sm:p-6 shadow-sm ${guideMark === 'must' ? 'border-rose-200 ring-2 ring-rose-100' : guideMark === 'weak' ? 'border-amber-200 ring-2 ring-amber-100' : guideMark === 'fix' ? 'border-violet-200 ring-2 ring-violet-100' : 'border-white'}`}>
                   <div className="mb-4 flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-black text-cyan-700">{section.label}</span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{section.tag}</span>
+                    {guideMark === 'must' && <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-black text-rose-700">本番で言う</span>}
+                    {guideMark === 'weak' && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">まだ弱い</span>}
+                    {guideMark === 'fix' && <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-black text-violet-700">言い回し修正</span>}
                   </div>
                   <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">{section.title}</h3>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button onClick={() => startGuidePractice(section.id)} className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-black text-white hover:bg-slate-700">
+                      <Mic className="w-3 h-3 mr-1 inline-flex" /> この資料で練習
+                    </button>
+                    <button onClick={() => toggleGuideMark(section.id, 'must')} className={`rounded-xl px-3 py-2 text-xs font-black border ${guideMark === 'must' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'}`}>
+                      本番で言う
+                    </button>
+                    <button onClick={() => toggleGuideMark(section.id, 'weak')} className={`rounded-xl px-3 py-2 text-xs font-black border ${guideMark === 'weak' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50'}`}>
+                      まだ弱い
+                    </button>
+                    <button onClick={() => toggleGuideMark(section.id, 'fix')} className={`rounded-xl px-3 py-2 text-xs font-black border ${guideMark === 'fix' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-violet-700 border-violet-200 hover:bg-violet-50'}`}>
+                      言い回し修正
+                    </button>
+                  </div>
                   <div className="mt-4 space-y-3">
                     {(section.body || []).map((paragraph, idx) => (
                       <p key={idx} className="text-sm sm:text-base font-medium leading-7 text-slate-700 whitespace-pre-line">
@@ -1916,7 +2082,8 @@ function App() {
                     </ul>
                   )}
                 </article>
-              ))}
+                );
+              })}
               {filteredInterviewSections.length === 0 && (
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 px-6 py-14 text-center shadow-sm">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
@@ -2663,11 +2830,13 @@ function App() {
               <div className="flex items-center gap-3">
                 {mockExamMode === 'oral' ? (
                   <Mic className="w-6 h-6 text-rose-500 animate-pulse" />
+                ) : mockExamMode === 'guide' ? (
+                  <FileText className="w-6 h-6 text-cyan-400 animate-pulse" />
                 ) : (
                   <User className="w-6 h-6 text-emerald-500 animate-pulse" />
                 )}
                 <span className="font-bold text-lg">
-                  {mockExamMode === 'oral' ? '模擬口頭試問（数学・経済）' : '模擬一般面接（人物・志望動機）'}
+                  {mockExamMode === 'oral' ? '模擬口頭試問（数学・経済）' : mockExamMode === 'guide' ? '面接資料 練習カード' : '模擬一般面接（人物・志望動機）'}
                 </span>
               </div>
               <div className="flex items-center gap-4">
@@ -2690,22 +2859,53 @@ function App() {
               {!showMockAnswer ? (
                 <div className="w-full text-center space-y-6 mt-8">
                   <div className="w-16 h-16 rounded-full border-4 border-rose-500 border-t-transparent animate-spin mx-auto opacity-20"></div>
-                  <p className="text-slate-500 font-bold">自分の言葉で、声に出して説明してください。</p>
+                  <p className="text-slate-500 font-bold">{mockExamMode === 'guide' ? '資料を見ずに、自分の言葉で回答してください。' : '自分の言葉で、声に出して説明してください。'}</p>
                   <button 
                     onClick={() => setShowMockAnswer(true)}
                     className="px-8 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 border border-slate-300 transition-colors"
                   >
-                    解答・追撃を確認する
+                    {mockExamMode === 'guide' ? '回答の軸と追撃へ' : '解答・追撃を確認する'}
                   </button>
                 </div>
               ) : (
                 <div className="w-full bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-fade-in text-left max-h-[50vh] overflow-y-auto custom-scrollbar">
-                  <h4 className="text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> 30秒回答例</h4>
+                  <h4 className="text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> {mockExamMode === 'guide' ? '回答の軸' : '30秒回答例'}</h4>
                   <p className="text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                     「{renderTextWithMath(mockQuestions[mockIndex].oral30)}」
                   </p>
                   
-                  {mockQuestions[mockIndex].followups && mockQuestions[mockIndex].followups.length > 0 && (
+                  {mockExamMode === 'guide' && (() => {
+                    const followups = mockQuestions[mockIndex].followups || [];
+                    const currentFollowup = followups[mockFollowupIndex % followups.length];
+                    if (!currentFollowup) return null;
+                    const answerKey = `guide-followup-${mockFollowupIndex}`;
+                    return (
+                      <div className="mb-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-black text-cyan-800 flex items-center"><Sparkles className="w-4 h-4 mr-2"/> 面接官の追撃モード</h4>
+                          <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-cyan-700">{mockFollowupIndex + 1} / {followups.length}</span>
+                        </div>
+                        <p className="rounded-xl bg-white p-4 text-base font-black leading-relaxed text-slate-900 shadow-sm">
+                          Q. {renderTextWithMath(currentFollowup.q)}
+                        </p>
+                        {revealedAnswers[answerKey] && (
+                          <p className="mt-3 rounded-xl border border-cyan-100 bg-white/80 p-4 text-sm font-bold leading-relaxed text-slate-700 animate-fade-in">
+                            A. {renderTextWithMath(currentFollowup.a)}
+                          </p>
+                        )}
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <button onClick={() => setRevealedAnswers(prev => ({ ...prev, [answerKey]: !prev[answerKey] }))} className="rounded-xl bg-white px-4 py-2 text-xs font-black text-cyan-700 border border-cyan-100 hover:bg-cyan-100">
+                            {revealedAnswers[answerKey] ? '回答例を隠す' : '回答例を見る'}
+                          </button>
+                          <button onClick={() => setMockFollowupIndex(prev => (prev + 1) % followups.length)} className="rounded-xl bg-cyan-700 px-4 py-2 text-xs font-black text-white hover:bg-cyan-800">
+                            次の追撃
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {mockExamMode !== 'guide' && mockQuestions[mockIndex].followups && mockQuestions[mockIndex].followups.length > 0 && (
                     <>
                       <h4 className="text-sm font-bold text-amber-600 mb-3 flex items-center"><Sparkles className="w-4 h-4 mr-2"/> 追撃への備え</h4>
                       <ul className="space-y-3 mb-4">
@@ -2732,7 +2932,7 @@ function App() {
                     </>
                   )}
 
-                  {mockQuestions[mockIndex].category !== "0. 志望理由・面接" && (
+                  {mockExamMode === 'oral' && mockQuestions[mockIndex].category !== "0. 志望理由・面接" && (
                     <p className="text-xs font-bold text-slate-400 mt-4">
                       ※さらに「数式で書くと？」「図で説明すると？」と聞かれる可能性にも備えておきましょう。
                     </p>
@@ -2749,7 +2949,7 @@ function App() {
                 onClick={nextMockQuestion}
                 className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow-lg flex items-center transition-transform hover:-translate-y-0.5"
               >
-                {mockIndex < mockQuestions.length - 1 ? '次の問題へ' : '面接を終了する'} <ChevronRight className="w-5 h-5 ml-1" />
+                {mockIndex < mockQuestions.length - 1 ? (mockExamMode === 'guide' ? '次の資料問題へ' : '次の問題へ') : (mockExamMode === 'guide' ? '資料練習を終了する' : '面接を終了する')} <ChevronRight className="w-5 h-5 ml-1" />
               </button>
             </div>
           </div>
@@ -3036,7 +3236,7 @@ function App() {
           <span>復習</span>
           {dueCardIds.size > 0 && <b>{dueCardIds.size}</b>}
         </button>
-        <button type="button" onClick={() => startMockExam(isGuideMode ? 'general' : appMode)} className="mobile-nav-item mobile-nav-primary">
+        <button type="button" onClick={() => isGuideMode ? startGuidePractice() : startMockExam(appMode)} className="mobile-nav-item mobile-nav-primary">
           <Mic className="mobile-nav-icon" />
           <span>面接</span>
         </button>
