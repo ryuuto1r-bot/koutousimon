@@ -372,6 +372,60 @@ const categoryRankMap = {
   "9. 経済基礎": ""
 };
 
+const comparisonCards = [
+  {
+    id: "vector-calculus",
+    title: "グリーン・ストークス・ガウスの比較",
+    subtitle: "境界と内部を結びつける定理",
+    formula: "\\oint_C = \\iint_D, \\quad \\oint_C = \\iint_S, \\quad \\iint_S = \\iiint_V",
+    keyTakeaway: "全部「境界で見える量」と「内部に分布する量」を結ぶ定理。次元と積分の種類で区別する。",
+    items: [
+      { name: "グリーン", scope: "2次元平面", left: "閉曲線の線積分", right: "内部領域の二重積分", cue: "2D・線から面" },
+      { name: "ストークス", scope: "3次元の曲面", left: "境界曲線の線積分", right: "曲面上の回転の面積分", cue: "3D・線から面" },
+      { name: "ガウス", scope: "3次元の立体", left: "閉曲面の面積分", right: "内部の発散の体積積分", cue: "3D・面から体" }
+    ]
+  },
+  {
+    id: "optimization-conditions",
+    title: "最適化条件の比較",
+    subtitle: "全微分・ヘッセ・ラグランジュ",
+    formula: "df=\\sum_i f_i dx_i, \\quad \\nabla f=0, \\quad H, \\quad \\frac{\\partial L}{\\partial x}=\\frac{\\partial L}{\\partial y}=\\frac{\\partial L}{\\partial \\lambda}=0",
+    keyTakeaway: "全微分は変化の合計、ヘッセ行列は極値判定、ラグランジュは制約付き最適化の必要条件。",
+    items: [
+      { name: "全微分", scope: "多変数の微小変化", left: "偏微分×変化量", right: "関数全体の変化", cue: "変化を足し合わせる" },
+      { name: "勾配0", scope: "制約なし最適化", left: "1階条件", right: "停留点の候補", cue: "まず候補を探す" },
+      { name: "ヘッセ行列", scope: "2階偏微分", left: "曲がり方", right: "最大・最小・鞍点判定", cue: "本当に極値か判定" },
+      { name: "ラグランジュ", scope: "制約付き最適化", left: "目的関数+制約", right: "必要条件の連立方程式", cue: "制約がある時" }
+    ]
+  },
+  {
+    id: "statistics-core",
+    title: "統計の基礎指標の比較",
+    subtitle: "分散・共分散・相関・中心極限定理",
+    formula: "V[X], \\quad \\operatorname{Cov}(X,Y), \\quad \\rho_{XY}, \\quad \\frac{\\bar{X}_n-\\mu}{\\sigma/\\sqrt{n}} \\xrightarrow{d} N(0,1)",
+    keyTakeaway: "分散は1変数の散らばり、共分散は2変数の同時変動、相関係数は標準化、中心極限定理は標本平均の分布。",
+    items: [
+      { name: "分散", scope: "1変数", left: "平均との差の二乗平均", right: "散らばり・リスク", cue: "ばらつき" },
+      { name: "共分散", scope: "2変数", left: "同じ方向に動くか", right: "単位に依存", cue: "一緒に動く量" },
+      { name: "相関係数", scope: "2変数", left: "共分散を標準化", right: "-1から1", cue: "比較しやすい" },
+      { name: "中心極限定理", scope: "標本平均", left: "標準化", right: "正規分布へ近づく", cue: "平均の形" }
+    ]
+  },
+  {
+    id: "series-transform",
+    title: "展開・級数・変換の比較",
+    subtitle: "テイラー・等比級数・フーリエ・ラプラス",
+    formula: "\\sum ar^n, \\quad f(x)\\approx P_n(x), \\quad \\mathcal{F}\\{f\\}, \\quad \\mathcal{L}\\{f\\}",
+    keyTakeaway: "複雑な関数や時間変化を、扱いやすい形へ変換する道具として整理する。",
+    items: [
+      { name: "テイラー展開", scope: "局所近似", left: "多項式", right: "近くで近似", cue: "近くを多項式化" },
+      { name: "等比級数", scope: "無限和", left: "一定比率の和", right: "|r|<1で収束", cue: "割引現在価値" },
+      { name: "フーリエ変換", scope: "周波数分析", left: "波に分解", right: "周期・ノイズ", cue: "波に分ける" },
+      { name: "ラプラス変換", scope: "微分方程式", left: "時間領域からs領域", right: "微分を代数化", cue: "解きやすく変換" }
+    ]
+  }
+];
+
 const INTERVIEW_GUIDE_SOURCE_VERSION = "2026-06-14-raw-pasted-text";
 const INTERVIEW_GUIDE_RAW_TEXT = "面接対策\nアドミッションポリシー\n・知識・技能\n高等学校等における基礎的教科・科目の履修を通して獲得される知識・技能。\n\n・思考力・判断力・表現力等の能力\n多面的に考え、客観的に批判し、自分の言葉で人に伝える資質。\n\n・主体性を持って多様な人々と協働して学ぶ態度\n現代社会に対する多様な関心、好奇心・多様性を尊重する態度、異なる考えに共感する寛容性。常に自らを向上させようとする意欲。\n\n願書\n私が九州大学経済工学科を志望する理由は、高専で培った「数理的な設計力」に、貴学で学べる「経済システムを設計する理論」を掛け合わせ、世界規模で新たな価値を生み出す起業家になるためです。その実現のためには、数理・経済・情報を融合し社会の仕組みを設計する力を養える貴学経済工学科こそが、最も合致した環境です。\n　私は高専三年時の全国ロボットアイデア甲子園出場を機に、技術を社会へ実装するための「経済の仕組み」に興味を持ちました。\n高専では機械工学を学び、微分積分や線形代数、統計学を深く学ぶとともに、プログラミングによるアルゴリズムの実装力を磨きました。特に膨大なデータ処理能力と、制御工学で学んだ「動的なシステムの安定性」を評価する数理的視点は、経済工学の複雑なモデル構築に直結する強固な基盤になると確信しています。実際にこの技術を活かし、独自のビジネスとして仮想通貨分析ツールを開発・販売する経験も積んできました。\n　また、クラスメイトとのビジネスチーム「SENKAY」で、ピーマン選別機や農業用スマートグラスの事業モデルを構想した際は、競合他社との差別化や個人農家が無理なく導入できる仕組みを考案しました。加えて、学生会長として制服変更や校則見直しを主導し、合意形成を通じて組織を動かす難しさも経験しています。これらの実践から、技術を社会に普及させるには、人や企業の戦略的行動を数理的に捉える「ゲーム理論」や、ルールを構築する「メカニズムデザイン」の視点を用いた「仕組みの設計」が不可欠だと痛感しました。\n　貴学に入学後は、ゲーム理論やメカニズムデザイン、計量経済学を徹底的に学びます。中でも、M&Aや企業統治を通じた企業価値の設計や、投資家心理が株価形成に与える影響の分析、数理モデルを用いて主体間の戦略的行動を解明する研究に関心を持っています。これらはいずれも私が実践で直面した課題と直結しており、貴学でその理論的基盤を確実なものにします。将来は、高専5年間の実践を土台として、貴学で身につける経済システムの理論を掛け合わせ、世界を舞台に新たなビジネスを仕掛ける起業家を目指します。\n \nアドミッションポリシーに当てはまるもの\n『主体性を持って多様な人々と協働して学ぶ態度：現代社会に対する多様な関心、好奇心。多様性を尊重する態度、異なる考えに共感する寛容性。常に自らを向上させようとする意欲。』\n\nに特に当てはまっていると思います。高専では\n学生会長としてジェンダーレス制服への制服変更や校則の見直しに取り組む中で、学生だけでなく先生方や制服会社の方とも意見交換を行い、多様な立場の考えを調整しながら物事を進めてきました。\nまた、ビジネスコンテストやビジネスチームSENKAYで、自分とは異なる考え方に触れ新しい分野にも積極的に挑戦しながら自ら成長し続けることを意識してきました。\nこれらの経験を通して、多様な人と協働しながら課題解決に取り組む力と、主体的に学び続ける姿勢を培ってきたと考えています。\n\n\n\n\n\n卒研の内容\n\n私の卒業研究は、剣道の自主練習で行う素振りや打突動作を、カメラ映像から分析するWebアプリの開発です。\n近年、剣道に限らず武道全般で指導者が減少しており、技術の継承・普及が困難になっています。\nそこで、これまで熟練指導者の「感覚」に依存していた打突動作を、工学的に定量化することで、剣道技術の向上と継承を支援することがこの研究の目的です\n従来、剣道のフォーム改善は先生の目や本人の感覚に頼る部分が大きいですが、私の研究ではmediapipeやyoloなどの姿勢推定技術を使って、打突時間、右肘角度、体幹の軸、刃筋などを数値化し、練習者が自分の動きを客観的に振り返れるようにしています。\n特に、リアルタイム分析は練習中の確認用、動画解析は開始・終了フレームを補正して正式な測定に近づける用途として分けています。最終的には、個人練習でも自分の打突動作を見直し、改善点を把握できる技術向上支援ツールを目指しています。\n\n具体的にどんなことをしているの？\n5月に始めた開発の初期段階では、カメラ映像から全身の骨格33箇所を追跡できる「MediaPipe」を採用しました。これによって、打突速度の測定や各軸の角度のずれなどの計測をできるようになりました。 \nただ、実際に検証を進めると、剣道のスイングは非常に高速なため、MediaPipeでは打突の瞬間に手首の座標を見失ってしまい、データにノイズが乗るという課題にぶつかりました。\nこの精度問題を解決するため、現在はよりトラッキング性能が高い「YOLO」という姿勢推定モデルへの移行を進めています。YOLOは人間全体を捉え続けるため、激しい動きでも手首の軌道を正確に追うことができより、に数値化できるようになりました。\nこれらはサイトとして運用しており、ゆくゆくは日本の剣道全体に普及できるようなサイトになることが目標です。\n\n\n\n\n卒研の内容を大学でどう活かすか\n大学では、この研究を通して得た「モノを作る力」を基盤にしつつ、それをどう社会に普及させていくのかというプロセスを学びたいです。卒業研究でも、単にものを作って満足するのではなく、実際に社会で価値を生み出し、ユーザーに使ってもらうまでの流れを見据えています。\n貴学で市場のメカニズムやデータサイエンスを学ぶことで、このような自作の技術を社会に実装し、ビジネスとして成立させるための具体的なアプローチを探求したいです。\n\n大学進学後の進路\n大学在学中さらに卒業後は、留学などを通してシリコンバレーのような起業家や投資家が集まる最前線の環境に身を置き、仲間を見つけ、自ら起業家としてビジネスを展開する予定です。高専で培った技術力と御校で学ぶ経済工学の知識を武器に、国内市場にとどまらず、世界規模で価値を生み出す事業を立ち上げたいです。\n\n楽しみな強化\nはい。私はメカニズムデザインやゲーム理論、データサイエンスに興味を持っていますが、その中でも特にゲーム理論を深く学びたいです。自身のビジネスでは、\n販売、価格設定や、どうすれば相手に興味を持ってもらえるかなど、戦略を立てる難しさを感じました。感覚ではなぬ市場の考えや駆け引きを数学的に捉えるゲーム理論は、将来ビジネスを仕掛ける上で絶対に必要になる力だと思っています。\n\n長所\n私の長所は、挑戦する姿勢とそれを成し遂げる実行力です\n高専生活では、ビジネスコンテストやロボットアイデア甲子園への挑戦、　\n個人でのビジネスの経験など、新しいことに積極的に取り組み、それを形にすることを意識してきました。\nまた、現在は学生会長として学校行事の運営や組織改革に携わり、合意形成を通じて組織をまとめる経験をしています。\nこうした経験で培った行動力や実行力を御校での学業や課外活動、そして新たな挑戦にも活かしていきたいです。\n\n\n短所\n私の短所は、一度に多くのタスクを抱えてしまうことです。様々なことに挑戦したいという意志が強く、複数の活動を同時に進めてしまうことがあります。\n実際過去の活動でも、リソースが分散してしまい、非効率になってしまうことがありました。\n現在は、自ら作成したタスク管理アプリを用いて、ToDoリストの習慣化を図り、\n作業の優先順位を整理し、計画的に物事を進めることを意識しています。\n\n高専で力を入れたこと\n私が高専生活で最も力を入れてきたのは、新しいことに挑戦し、それを実際に「形」にする経験です。\nこれまで、外部のビジネスコンテストやロボットアイデア甲子園、個人事業主としてのビジネス、学内でも文化祭実行委員や部活動の部長など、幅広く挑戦してきました。\nその中で特に力を入れたのが、現在務めている学生会長としての活動です。\n私は「学生ファースト」を掲げ立候補し、就任後は長年変わらなかった校則の見直しに取り組みました。\n中でも「学ランから多様性を配慮したジェンダーレス制服への変更」については、昨年12月の就任直後から制服会社の方を招き協議を始め、本格導入に向けた道筋を組むことができました。単に要望を出すだけでなく、新たなルールの設計から教員や役員との議論を重ね、校則改定までを一貫して取りまとめました。\n \nこれらの経験を通して、挑戦はただ新しいことを始めるだけでなく、最後までやり切り、結果として形にしてこそ本当の価値があることを学びました。\n\n\nアピールポイント\n私の行動力、そして実践力は誰にも負けない自信があります。学業では編入目標のために1年生から今まで継続して上位５%の成績を取り続けてきました。その中で学生会会長としての組織運営や、ビジネスコンテスト、全国ロボットアイデア甲子園の出場なども経験してきました。さらに長期休暇中では個人でビジネスを展開し、ゼロから実際に価値を生み出す流れまで一貫して成し遂げました。このように様々なものに挑戦し確実に結果として形にする力は私の武器だと自負しています。\n\n\n\n\n自己紹介　自己PR １分version\n宮崎県都城市出身、都城高専機械工学科5年の西村瑠翔です。\n本日はよろしくお願いします。\n \n私の最大の強みとして、行動力、そしてそれを成し遂げる実行力です。\n \n実際、学業では大学編入という目標に向けて、1年生から継続して上位5%の成績を維持してきました。それと並行して、学生会長としての組織運営や校則改定、ビジネスコンテストや全国ロボットアイデア甲子園での入賞など、幅広く全力で挑んできました。\nさらに長期休暇には、個人のビジネスとして仮想通貨の分析ツールを開発し、集客から販売権の譲渡まで、ゼロから価値を生み出す流れを一貫して成し遂げました。\nこうした活動の中で、私は技術が社会の中でどのように価値を生み出していくのかという経済の仕組みに強く興味を惹かました。\nだからこそ、貴学の経済工学科でメカニズムデザインやゲーム理論、データサイエンスを体系的に学び、将来は世界規模で価値を生み出す起業家になりたいと決意しています\n\n趣味\n「私は多趣味で、興味を持ったことには積極的に挑戦する性格ですが、最近は主に2つのことに注力しています。\n1つ目は、アプリ開発とその展開です。直近では、タスクを『マトリョーシカ構造』のように細分化し、こなしていくと画面上の植物が育っていくというタスク管理アプリを開発しました。現在はSNSでマーケティングを行い、実際にユーザーを集める活動もしています。\n2つ目は、10月の体育祭に向けた体づくりです。今回、機械工学科の団長という大役を務めることになったため、組織を先頭で引っ張るために、ジムにでの筋トレを継続しています。」\n\n（大きなタスクの中に中くらいのタスクがあり、その中にさらに今すぐ実行できる小さなタスクが入っている『入れ子構造』のことです。\n例えば、『編入試験の対策』という大きなタスクを作ると、その中に『数学』や『面接』というタスクを作成でき、面接を開くとさらに『自己PRを考える』といった具体的なアクションに細分化できる仕組みです。\n自分そうですが、タスクを先延ばしにしてしまうのは、課題が大きすぎて何から手をつければいいか分からないからだと考えました。そこで、タスクをマトリョーシカのように細かく分解し、一番小さな『今すぐできること』だけを目の前に提示するアルゴリズムを組むことで、行動のハードルを下げる工夫をしています。」\n）\n\n失敗経験\nこれまでの挑戦の中で、失敗はいくつも経験してきました。\n高専での学生会活動やビジコン、そして個人でのビジネスでも、\n意見のずれや技術的・戦略的な壁にぶつかることは何度もありました。しかし、その都度、なんでそうなるかを意識しながら『どうすれば解決できるか』を考え抜き、必ずアプローチを見つけ出して解決してきました。\n\n\nゲーム理論（Game Theory）\nゲーム理論とは\n複数の主体が互いの行動を考えながら意思決定行う状況でそれぞれにとって最適な分析をする考え方だと理解しています\n\n（お互いが自分の利益を追求して合理的に行動した結果、全体としては損をしてしまう状態（ナッシュ均衡）」を論理的に証明するのがゲーム理論\n\n・メカニズムデザインとは\nメカニズムデザインとは、人それぞれの利害や行動を前提にして、全体として望ましい結果になるようにルールや仕組みを設計する考え方だと理解しています \n\nデータサイエンス（Data Science）\nデータサイエンスとは\nデータをもとに現状を分析し、意思決定や予測に活かすための手法だと理解しています。\n単にデータを見るだけでなく、そこから傾向や関係性を見つけて、判断に活かすことが重要だと考えています\n\n計量経済学（エコノメトリックス）\n計量経済学（Econometrics）とは、一言でいうと「経済学の理論が現実社会で本当に成り立っているのかを、実際のデータと統計学・数学を使って検証・分析する学問」\n\n経済システムとは\n経済システムとは、市場や価格、ルールや制度などを通して、人や企業がどのように行動し、価値や資源がどのように配分されるかを決める仕組み全体のことだと理解しています。\n\nミクロ経済学（Micro）： 個人（消費者）や一つの企業がどう意思決定して、価格や取引量がどう決まるかを分析する分野。（メカニズムデザイン）など\n \nマクロ経済学（Macro）： 国全体のGDP、インフレ率、失業率など、経済全体の大きな動きを分析する分野。\n\n囚人のジレンマ / ナッシュ均衡（Nash Equilibrium） \nゲーム理論の基本です。全員が自分の利益だけを追求して合理的に動いた結果、社会全体としては（損）になってしまう状態のこと。フードロス問題もこれに当てはまると理解しています。\n\nサンクコスト（埋没費用） / 機会費用 \nすでに支払ってしまって取り戻せないコスト（サンクコスト）と、ある選択をしたことで諦めた別の選択肢の価値（機会費用）\n\n\n\n \n・高専で学んできたこと\n高専では、微積や線形代数、応用数学、４力といわれる材料力学や設計、制御などの専門知識に加えて、課題に対して仮説を立て、設計、検証する工学的な考え方を学んできました。\nまた、実験や設計製作を通して、課題に対して多方面から捉える力やそれを形にする実践力も培ってきました。\n \n \n・経済学と経済工学の違い\n経済学が市場や人の行動などの経済現象を理解、分析する学問だとすると、経済工学は数理的手法や情報科学などを使って、それを分析し、さらに仕組みとして設計するところまで扱う点に違いがあると考えています。\n \n \n・経済工学の理由\n高専の機械工学で培った土台である数学を用いた思考を活かしながら、編入という形で数理と経済の両面から経済工学を本格的に学べる場として、非常に魅力を感じています。\n中でも御校の経済工学科は、数理的な分析手法を日本トップクラスの環境で学べるだけでなく、起業やビジネスの実装を見据えた多様な学生が集まる環境があると思っています。将来の目標に向けこれ以上ない唯一の環境だと考え、志望いたしました。\n \n・あなたにとって、価値を生み出すとは\n私にとって価値を生み出すとは、単に新しいものを作ることではなく、人や社会の課題を解決し、これまでより良い仕組みや選択肢を生み出すことだと考えています\n\n・なぜすぐ起業しないのか\nはい、先ほど申し上げました通りいくつかビジネスを行なっていますが、\n私自身、実践しているからこそ、知識や理論の必要性を感じました。純粋に興味があるから学びたいのはもちろんですが、経済工学科で学べる理論や設計力を身につけることで自分自身の土台をさらに高めていきたいというのが理由です。\n\n・英語力について\n現状TOEICが600点弱であり、勉強中です。\n高専卒業までには750点を目指し勉強をしており、TOEICだけでなく、コミュニケーション能力を付けるためオンラインの英会話での勉強を始めています。\n「現在のTOEICスコアは600点弱であり、高専卒業までに750点取得という目標に向けて学習を継続しています。 点数向上はもちろんですが、先日の海外研修などで現地の熱量や企業の見学の経験から『対話力』が重要だと感じました。そのため、現在はオンライン英会話も並行して活用し勉強に取り組んでいます。\n\n・ロボットアイデア甲子園でのアイデア\n私が考案したロボットアイデア甲子園でのアイデアは、高齢者などが使うシルバーカーをベースとしたロボットです\n２本の協働ロボットアーム、コミュニケーション機能など走行アシスト行機能がついておりシルバーカーとしてだけでなく身近な相棒として高齢者の生活を支援するロボットです。\n\n\n・それを終えて変わったこと\n一番は挑戦の視野が広がったということです。全国大会では各地区の代表が集まっており非常にハイレベルな同級生や後輩がいました。その中で都城高専で過ごしてきていた自分の視野やビジョンのスケールに刺激をもらいました。そこから自分の持っている武器でさらに可能性を広げるにはどうすればいいかを考え始め、文化祭実行委員、学生会長、ビジネスをやったりと様々なことに挑戦をしてきました。";
 
@@ -437,6 +491,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef(null);
   const isGuideMode = appMode === 'guide';
+  const isComparisonMode = appMode === 'compare';
   
   const [showHeaderControls, setShowHeaderControls] = useState(false);
 
@@ -825,7 +880,7 @@ function App() {
   }, [currentDayRecord]);
 
   const modeQuizData = useMemo(() => {
-    if (appMode === 'guide') return [];
+    if (appMode === 'guide' || appMode === 'compare') return [];
     return mergedQuizData.filter(q => appMode === 'oral' ? q.category !== "0. 志望理由・面接" : q.category === "0. 志望理由・面接");
   }, [appMode, mergedQuizData]);
 
@@ -852,7 +907,7 @@ function App() {
   }, [allMasteredIds, appMode, dueCardIds, hiddenCards, modeQuizData, showAdvanced, todaySummary.total, touchedIds, weaknessStats]);
 
   const filteredData = useMemo(() => {
-    if (appMode === 'guide') return [];
+    if (appMode === 'guide' || appMode === 'compare') return [];
     let data = [...mergedQuizData];
     
     if (appMode === 'oral') {
@@ -921,6 +976,21 @@ function App() {
       return target.includes(normalizedQuery);
     });
   }, [editableInterviewSections, guideMarks, searchQuery]);
+
+  const filteredComparisonCards = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) return comparisonCards;
+    return comparisonCards.filter(card => {
+      const target = [
+        card.title,
+        card.subtitle,
+        card.formula,
+        card.keyTakeaway,
+        ...card.items.flatMap(item => [item.name, item.scope, item.left, item.right, item.cue])
+      ].filter(Boolean).join(' ').toLowerCase();
+      return target.includes(normalizedQuery);
+    });
+  }, [searchQuery]);
 
   const selectedCardIndex = selectedCard ? filteredData.findIndex(item => item.id === selectedCard.id) : -1;
   const hasPrevCard = selectedCardIndex > 0;
@@ -1817,7 +1887,7 @@ function App() {
               <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 min-h-[16px]">
                 {isLoading ? <Loader2 className="w-3 h-3 animate-spin text-slate-400" /> : (
                   <span className="font-bold text-slate-400">
-                    {isGuideMode ? `面接資料 ${filteredInterviewSections.length}件 / 全${editableInterviewSections.length}件` : `表示中 ${filteredData.length}問 / 全${mergedQuizData.length}問`}
+                    {isComparisonMode ? `比較カード ${filteredComparisonCards.length}件 / 全${comparisonCards.length}件` : isGuideMode ? `面接資料 ${filteredInterviewSections.length}件 / 全${editableInterviewSections.length}件` : `表示中 ${filteredData.length}問 / 全${mergedQuizData.length}問`}
                   </span>
                 )}
               </div>
@@ -1851,6 +1921,12 @@ function App() {
                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'guide' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   <FileText className="w-4 h-4" /> 面接資料
+                </button>
+                <button
+                  onClick={() => { setAppMode('compare'); setActiveCategory('すべて'); setShowHiddenOnly(false); setShowDueOnly(false); setShowWeakOnly(false); setShowUntouchedOnly(false); }}
+                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'compare' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <Sigma className="w-4 h-4" /> 比較
                 </button>
               </div>
 
@@ -2017,6 +2093,95 @@ function App() {
               )}
             </div>
           </div>
+        ) : isComparisonMode ? (
+          <div className="space-y-5 sm:space-y-6">
+            <section className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-rose-50 p-5 sm:p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div>
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-[10px] font-black text-indigo-700 shadow-sm">
+                    <Sigma className="w-3 h-3" /> 混ざりやすい概念を横並び
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">比較カード</h2>
+                  <p className="mt-2 text-sm sm:text-base font-bold leading-relaxed text-slate-600">
+                    「何が同じで、何が違うか」を先に押さえる暗記用カードです。
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button onClick={() => { clearFilters(); setAppMode('oral'); }} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-slate-700">
+                      数学カードへ戻る
+                    </button>
+                    <button onClick={() => setSearchQuery("最適化")} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-indigo-700 shadow-sm border border-indigo-100 hover:bg-indigo-50">
+                      最適化を探す
+                    </button>
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-white/85 px-4 py-3 text-center shadow-sm border border-white">
+                  <div className="text-[10px] font-black text-slate-400">比較カード</div>
+                  <div className="text-2xl font-black text-indigo-700">{filteredComparisonCards.length}<span className="text-sm text-slate-400 ml-1">枚</span></div>
+                  <div className="mt-1 text-[10px] font-black text-slate-400">全 {comparisonCards.length} 枚</div>
+                </div>
+              </div>
+            </section>
+
+            <div className="bg-white/90 border border-white/80 rounded-2xl shadow-sm p-3 sm:p-4">
+              <label className="flex items-center gap-3">
+                <Search className="w-5 h-5 text-slate-400" />
+                <input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="グリーン・ラグランジュ・相関などを検索"
+                  className="w-full bg-transparent outline-none text-slate-800 placeholder:text-slate-400 font-bold"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery("")} className="px-2 py-1 rounded-lg bg-slate-100 text-slate-500 font-bold hover:bg-slate-200">×</button>
+                )}
+              </label>
+            </div>
+
+            <div className="space-y-4">
+              {filteredComparisonCards.map(card => (
+                <article key={card.id} className="comparison-card">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="min-w-0">
+                      <span className="comparison-eyebrow">{card.subtitle}</span>
+                      <h3 className="mt-2 text-xl sm:text-2xl font-black text-slate-900 leading-tight">{card.title}</h3>
+                    </div>
+                    <div className="comparison-takeaway">{card.keyTakeaway}</div>
+                  </div>
+
+                  {card.formula && (
+                    <div className="comparison-formula">
+                      {renderFormula(card.formula, false)}
+                    </div>
+                  )}
+
+                  <div className="comparison-grid">
+                    {card.items.map(item => (
+                      <div className="comparison-row" key={item.name}>
+                        <div className="comparison-name">{item.name}</div>
+                        <div><span>対象</span><b>{item.scope}</b></div>
+                        <div><span>入口</span><b>{item.left}</b></div>
+                        <div><span>出口</span><b>{item.right}</b></div>
+                        <div><span>覚え方</span><b>{item.cue}</b></div>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ))}
+              {filteredComparisonCards.length === 0 && (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 px-6 py-14 text-center shadow-sm">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                    <Search className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-lg font-black text-slate-700">該当する比較カードがありません</h3>
+                  <p className="mt-2 text-sm font-bold text-slate-400">検索語を少し変えると見つかります。</p>
+                  <button onClick={() => setSearchQuery("")} className="mt-5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-black text-white hover:bg-slate-700">
+                    検索をリセット
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           <>
         <div className="mb-5 sm:mb-6 grid grid-cols-4 gap-2 sm:gap-3">
@@ -2067,6 +2232,14 @@ function App() {
             <Mic className="w-6 h-6 animate-pulse" /> 
             {appMode === 'oral' ? '模擬口頭試問（数学・経済）をスタート' : '模擬一般面接（志望動機・人物）をスタート'}
           </button>
+          {appMode === 'oral' && (
+            <button
+              onClick={() => { clearFilters(); setAppMode('compare'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl border border-indigo-100 bg-white/90 px-5 py-3 text-sm font-black text-indigo-700 shadow-sm hover:bg-indigo-50"
+            >
+              <Sigma className="w-4 h-4" /> 比較カードで整理する
+            </button>
+          )}
         </div>
 
         <div className="mb-4 bg-white/90 border border-white/80 rounded-2xl shadow-sm p-3 sm:p-4">
@@ -3324,7 +3497,7 @@ function App() {
           <span>復習</span>
           {dueCardIds.size > 0 && <b>{dueCardIds.size}</b>}
         </button>
-        <button type="button" onClick={() => isGuideMode ? startGuidePractice() : startMockExam(appMode)} className="mobile-nav-item mobile-nav-primary">
+        <button type="button" onClick={() => isGuideMode ? startGuidePractice() : startMockExam(isComparisonMode ? 'oral' : appMode)} className="mobile-nav-item mobile-nav-primary">
           <Mic className="mobile-nav-icon" />
           <span>面接</span>
         </button>
@@ -3415,6 +3588,83 @@ function App() {
         }
         .focus-action:hover {
           background: #1e293b;
+        }
+        .comparison-card {
+          border-radius: 1.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.86);
+          background: rgba(255, 255, 255, 0.96);
+          padding: 1.1rem;
+          box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+        }
+        .comparison-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          border-radius: 999px;
+          background: #eef2ff;
+          color: #4338ca;
+          padding: 0.34rem 0.75rem;
+          font-size: 0.68rem;
+          font-weight: 950;
+        }
+        .comparison-takeaway {
+          max-width: 20rem;
+          border-radius: 1rem;
+          background: #0f172a;
+          color: white;
+          padding: 0.85rem 0.95rem;
+          font-size: 0.82rem;
+          line-height: 1.65;
+          font-weight: 850;
+          box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+        }
+        .comparison-formula {
+          margin-top: 1rem;
+          overflow-x: auto;
+          border-radius: 1rem;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          padding: 0.9rem;
+          color: #334155;
+          text-align: center;
+          font-weight: 800;
+        }
+        .comparison-grid {
+          margin-top: 1rem;
+          display: grid;
+          gap: 0.65rem;
+        }
+        .comparison-row {
+          display: grid;
+          grid-template-columns: minmax(6.5rem, 0.85fr) repeat(4, minmax(0, 1fr));
+          gap: 0.55rem;
+          align-items: stretch;
+          padding: 0.75rem;
+          border-radius: 1rem;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+        }
+        .comparison-row > div {
+          min-width: 0;
+        }
+        .comparison-name {
+          display: flex;
+          align-items: center;
+          color: #0f172a;
+          font-weight: 950;
+          line-height: 1.45;
+        }
+        .comparison-row span {
+          display: block;
+          margin-bottom: 0.18rem;
+          color: #94a3b8;
+          font-size: 0.62rem;
+          font-weight: 950;
+        }
+        .comparison-row b {
+          display: block;
+          color: #334155;
+          font-size: 0.82rem;
+          line-height: 1.45;
         }
         .stat-tile {
           transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
@@ -3750,6 +4000,22 @@ function App() {
           .study-card h3 {
             font-size: 1.02rem;
             line-height: 1.55;
+          }
+          .comparison-card {
+            border-radius: 1.25rem;
+            padding: 0.9rem;
+          }
+          .comparison-takeaway {
+            max-width: none;
+            width: 100%;
+          }
+          .comparison-row {
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+          }
+          .comparison-row > div:not(.comparison-name) {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 0.55rem;
           }
           .card-detail-body {
             padding: 1rem;
