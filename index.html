@@ -1138,6 +1138,7 @@ const GUIDE_MEMORY_META = {
   shaky: { label: "あいまい", short: "△", tone: "amber" },
   review: { label: "要復習", short: "復", tone: "rose" }
 };
+const GUIDE_LOW_MEMORY_STATUSES = new Set(['shaky', 'review']);
 
 const interviewPracticeCardOverrides = {
   "interview-raw-source": {
@@ -1255,6 +1256,7 @@ function App() {
   const [hiddenCards, setHiddenCards] = useState({}); 
   const [isLoading, setIsLoading] = useState(true);
   const [revealedGuideSections, setRevealedGuideSections] = useState({});
+  const [showGuideWeakOnly, setShowGuideWeakOnly] = useState(false);
   
   const [editingNote, setEditingNote] = useState("");
   const [materialError, setMaterialError] = useState("");
@@ -1658,8 +1660,15 @@ function App() {
 
   const filteredInterviewSections = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    if (!normalizedQuery) return editableInterviewSections;
-    return editableInterviewSections.filter(section => {
+    let sections = editableInterviewSections;
+
+    if (showGuideWeakOnly) {
+      sections = sections.filter(section => GUIDE_LOW_MEMORY_STATUSES.has(guideMemory[section.id]));
+    }
+
+    if (!normalizedQuery) return sections;
+
+    return sections.filter(section => {
       const markLabel = guideMarks[section.id] === 'must' ? '本番で言う' : guideMarks[section.id] === 'weak' ? 'まだ弱い' : guideMarks[section.id] === 'fix' ? '言い回し修正' : '';
       const memoryLabel = GUIDE_MEMORY_META[guideMemory[section.id]]?.label || '未チェック';
       const target = [
@@ -1674,7 +1683,7 @@ function App() {
       ].filter(Boolean).join(' ').toLowerCase();
       return target.includes(normalizedQuery);
     });
-  }, [editableInterviewSections, guideMarks, guideMemory, searchQuery]);
+  }, [editableInterviewSections, guideMarks, guideMemory, searchQuery, showGuideWeakOnly]);
 
   const filteredComparisonCards = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -1853,6 +1862,7 @@ function App() {
       memorized,
       shaky,
       review,
+      low: shaky + review,
       unchecked: Math.max(0, total - checked),
       progress: total > 0 ? Math.round((memorized / total) * 100) : 0
     };
@@ -2578,6 +2588,7 @@ function App() {
     setShowHiddenOnly(false);
     setShowDueOnly(false);
     setShowWeakOnly(false);
+    setShowGuideWeakOnly(false);
     setShowUntouchedOnly(false);
   };
 
@@ -2726,12 +2737,15 @@ function App() {
 	                    <button onClick={() => startGuidePractice()} className="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-cyan-800">
 	                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 資料からランダム練習
 	                    </button>
-                    <button onClick={() => setRevealedGuideSections({})} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-rose-700 shadow-sm border border-rose-100 hover:bg-rose-50">
-                      表示中の回答を隠す
-                    </button>
-                    <button onClick={() => setSearchQuery("本番")} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-cyan-700 shadow-sm border border-cyan-100 hover:bg-cyan-50">
-                      本番用を探す
-                    </button>
+	                    <button onClick={() => setRevealedGuideSections({})} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-rose-700 shadow-sm border border-rose-100 hover:bg-rose-50">
+	                      表示中の回答を隠す
+	                    </button>
+	                    <button onClick={() => setShowGuideWeakOnly(prev => !prev)} className={`rounded-xl px-4 py-2 text-sm font-black shadow-sm border transition-colors ${showGuideWeakOnly ? 'bg-rose-600 text-white border-rose-600 hover:bg-rose-700' : 'bg-white text-rose-700 border-rose-100 hover:bg-rose-50'}`}>
+	                      低理解のみ ({guideMemoryCounts.low})
+	                    </button>
+	                    <button onClick={() => setSearchQuery("本番")} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-cyan-700 shadow-sm border border-cyan-100 hover:bg-cyan-50">
+	                      本番用を探す
+	                    </button>
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/85 px-4 py-3 shadow-sm border border-white min-w-[180px]">
@@ -2767,13 +2781,25 @@ function App() {
                   placeholder="志望動機・卒研・用語などを検索"
                   className="w-full bg-transparent outline-none text-slate-800 placeholder:text-slate-400 font-bold"
                 />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="px-2 py-1 rounded-lg bg-slate-100 text-slate-500 font-bold hover:bg-slate-200">×</button>
-                )}
-              </label>
-            </div>
+	                {searchQuery && (
+	                  <button onClick={() => setSearchQuery("")} className="px-2 py-1 rounded-lg bg-slate-100 text-slate-500 font-bold hover:bg-slate-200">×</button>
+	                )}
+	              </label>
+	            </div>
 
-            <div className="grid grid-cols-1 gap-4">
+	            {showGuideWeakOnly && (
+	              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 shadow-sm sm:flex sm:items-center sm:justify-between">
+	                <div className="text-sm font-black text-rose-800">
+	                  低理解（あいまい・要復習）の資料だけ表示中
+	                  <span className="ml-2 text-xs text-rose-500">{filteredInterviewSections.length}件</span>
+	                </div>
+	                <button onClick={() => setShowGuideWeakOnly(false)} className="mt-3 rounded-xl bg-white px-4 py-2 text-xs font-black text-rose-700 border border-rose-100 hover:bg-rose-100 sm:mt-0">
+	                  全て表示
+	                </button>
+	              </div>
+	            )}
+
+	            <div className="grid grid-cols-1 gap-4">
               {filteredInterviewSections.map(section => {
                 const guideMark = guideMarks[section.id];
                 const guideMemoryStatus = guideMemory[section.id];
@@ -2864,16 +2890,16 @@ function App() {
               })}
               {filteredInterviewSections.length === 0 && (
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 px-6 py-14 text-center shadow-sm">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                    <Search className="w-7 h-7" />
-                  </div>
-                  <h3 className="text-lg font-black text-slate-700">該当する資料がありません</h3>
-                  <p className="mt-2 text-sm font-bold text-slate-400">検索語を少し変えると見つかります。</p>
-                  <button onClick={() => setSearchQuery("")} className="mt-5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-black text-white hover:bg-slate-700">
-                    検索をリセット
-                  </button>
-                </div>
-              )}
+	                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+	                    <Search className="w-7 h-7" />
+	                  </div>
+	                  <h3 className="text-lg font-black text-slate-700">{showGuideWeakOnly ? '低理解の資料はありません' : '該当する資料がありません'}</h3>
+	                  <p className="mt-2 text-sm font-bold text-slate-400">{showGuideWeakOnly ? 'あいまい・要復習にした資料がここに集まります。' : '検索語を少し変えると見つかります。'}</p>
+	                  <button onClick={() => { setSearchQuery(""); setShowGuideWeakOnly(false); }} className="mt-5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-black text-white hover:bg-slate-700">
+	                    {showGuideWeakOnly ? '全て表示に戻す' : '検索をリセット'}
+	                  </button>
+	                </div>
+	              )}
             </div>
           </div>
         ) : isComparisonMode ? (
@@ -4270,10 +4296,20 @@ function App() {
           <Search className="mobile-nav-icon" />
           <span>検索</span>
         </button>
-        <button type="button" onClick={() => { setAppMode('oral'); setShowHiddenOnly(false); setShowDueOnly(false); setShowUntouchedOnly(false); setShowWeakOnly(prev => !prev); }} className={`mobile-nav-item ${showWeakOnly ? 'is-active' : ''}`}>
+        <button type="button" onClick={() => {
+          if (isGuideMode) {
+            setShowGuideWeakOnly(prev => !prev);
+            return;
+          }
+          setAppMode('oral');
+          setShowHiddenOnly(false);
+          setShowDueOnly(false);
+          setShowUntouchedOnly(false);
+          setShowWeakOnly(prev => !prev);
+        }} className={`mobile-nav-item ${isGuideMode ? showGuideWeakOnly ? 'is-active' : '' : showWeakOnly ? 'is-active' : ''}`}>
           <Target className="mobile-nav-icon" />
-          <span>弱点</span>
-          {weaknessStats.count > 0 && <b>{weaknessStats.count}</b>}
+          <span>{isGuideMode ? '低理解' : '弱点'}</span>
+          {isGuideMode ? guideMemoryCounts.low > 0 && <b>{guideMemoryCounts.low}</b> : weaknessStats.count > 0 && <b>{weaknessStats.count}</b>}
         </button>
         <button type="button" onClick={() => { setAppMode('oral'); setShowWeakOnly(false); setShowHiddenOnly(false); setShowDueOnly(prev => !prev); }} className={`mobile-nav-item ${showDueOnly ? 'is-active' : ''}`}>
           <Clock className="mobile-nav-icon" />
