@@ -1173,6 +1173,16 @@ const GUIDE_MEMORY_META = {
   review: { label: "要復習", short: "復", tone: "rose" }
 };
 const GUIDE_LOW_MEMORY_STATUSES = new Set(['shaky', 'review']);
+const GUIDE_READINESS_RANKS = [
+  { key: "final", min: 5, label: "本番候補", hint: "5回以上", badgeClass: "bg-rose-100 text-rose-700 border-rose-200" },
+  { key: "stable", min: 3, label: "安定", hint: "3〜4回", badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  { key: "check", min: 1, label: "要確認", hint: "1〜2回", badgeClass: "bg-amber-100 text-amber-700 border-amber-200" },
+  { key: "untouched", min: 0, label: "未着手", hint: "0回", badgeClass: "bg-slate-100 text-slate-500 border-slate-200" }
+];
+const getGuideReadinessRank = (count = 0) => {
+  const safeCount = Number(count) || 0;
+  return GUIDE_READINESS_RANKS.find(rank => safeCount >= rank.min) || GUIDE_READINESS_RANKS[GUIDE_READINESS_RANKS.length - 1];
+};
 
 const interviewPracticeCardOverrides = {
   "interview-raw-source": {
@@ -1286,6 +1296,7 @@ function App() {
   const [guideMarks, setGuideMarks] = useState({});
   const [guideMemory, setGuideMemory] = useState({});
   const [guideMemorizedCounts, setGuideMemorizedCounts] = useState({});
+  const [guideCoreNotes, setGuideCoreNotes] = useState({});
   const [guideEdits, setGuideEdits] = useState({});
   const [hiddenGuideSections, setHiddenGuideSections] = useState({});
   const [checklists, setChecklists] = useState({}); 
@@ -1398,6 +1409,7 @@ function App() {
         setGuideMarks(data.guideMarks || {});
         setGuideMemory(data.guideMemory || {});
         setGuideMemorizedCounts(data.guideMemorizedCounts || {});
+        setGuideCoreNotes(data.guideCoreNotes || {});
         setGuideEdits(data.guideEdits || {});
         setHiddenGuideSections(data.hiddenGuideSections || {});
         setChecklists(data.checklists || {});
@@ -1426,8 +1438,11 @@ function App() {
   }, [guideEdits]);
 
   const mergedInterviewPracticeCards = useMemo(() => {
-    return buildInterviewPracticeCards(editableInterviewSections);
-  }, [editableInterviewSections]);
+    return buildInterviewPracticeCards(editableInterviewSections).map(card => {
+      const coreNote = (guideCoreNotes[card.sectionId] || '').trim();
+      return coreNote ? { ...card, coreNote } : card;
+    });
+  }, [editableInterviewSections, guideCoreNotes]);
 
   const allMasteredIds = useMemo(() => {
     const ids = new Set();
@@ -1719,6 +1734,8 @@ function App() {
       const memoryLabel = GUIDE_MEMORY_META[memoryStatus]?.label || '未チェック';
       const memoryAlias = GUIDE_LOW_MEMORY_STATUSES.has(memoryStatus) ? '低理解 理解低い 苦手 復習 あいまい 要復習' : memoryStatus === 'memorized' ? '覚えた 暗記済み 理解済み' : '未チェック 未確認';
       const memorizedCount = Number(guideMemorizedCounts[section.id]) || 0;
+      const readinessRank = getGuideReadinessRank(memorizedCount);
+      const coreNote = guideCoreNotes[section.id] || '';
       const target = [
         section.title,
         section.label,
@@ -1728,12 +1745,25 @@ function App() {
         memoryLabel,
         memoryAlias,
         memorizedCount > 0 ? `覚えた回数 ${memorizedCount}回 暗記回数` : '',
+        readinessRank.label,
+        readinessRank.hint,
+        coreNote,
+        coreNote ? '核の一文 絶対言う一文' : '',
         ...(section.body || []),
         ...(section.bullets || [])
       ].filter(Boolean).join(' ').toLowerCase();
       return target.includes(normalizedQuery);
     });
-  }, [editableInterviewSections, guideMarks, guideMemory, guideMemorizedCounts, hiddenGuideSections, searchQuery, showGuideWeakOnly, showHiddenGuideOnly]);
+  }, [editableInterviewSections, guideCoreNotes, guideMarks, guideMemory, guideMemorizedCounts, hiddenGuideSections, searchQuery, showGuideWeakOnly, showHiddenGuideOnly]);
+
+  const weakGuidePracticeCards = useMemo(() => {
+    return mergedInterviewPracticeCards.filter(card => {
+      const sectionId = card.sectionId;
+      if (!sectionId || hiddenGuideSections[sectionId]) return false;
+      const count = Number(guideMemorizedCounts[sectionId]) || 0;
+      return GUIDE_LOW_MEMORY_STATUSES.has(guideMemory[sectionId]) || count <= 2;
+    });
+  }, [guideMemory, guideMemorizedCounts, hiddenGuideSections, mergedInterviewPracticeCards]);
 
   const filteredComparisonCards = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -1766,6 +1796,7 @@ function App() {
     guideMarks,
     guideMemory,
     guideMemorizedCounts,
+    guideCoreNotes,
     guideEdits,
     hiddenGuideSections,
     checklists,
@@ -1907,6 +1938,32 @@ function App() {
     }
   };
 
+  const updateGuideCoreDraft = (id, text) => {
+    setGuideCoreNotes(prev => {
+      const next = { ...prev };
+      if (text.trim()) {
+        next[id] = text;
+      } else {
+        delete next[id];
+      }
+      return next;
+    });
+  };
+
+  const saveGuideCoreNote = async (id, text) => {
+    const nextCoreNotes = { ...guideCoreNotes };
+    if (text.trim()) {
+      nextCoreNotes[id] = text.trim();
+    } else {
+      delete nextCoreNotes[id];
+    }
+    setGuideCoreNotes(nextCoreNotes);
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, { guideCoreNotes: nextCoreNotes }, { merge: true });
+    }
+  };
+
   const toggleGuideHidden = async (id, e) => {
     if (e) e.stopPropagation();
     const nextHidden = { ...hiddenGuideSections };
@@ -1938,6 +1995,11 @@ function App() {
     const shaky = ids.filter(id => guideMemory[id] === 'shaky').length;
     const review = ids.filter(id => guideMemory[id] === 'review').length;
     const memorizedTotal = ids.reduce((sum, id) => sum + (Number(guideMemorizedCounts[id]) || 0), 0);
+    const readinessCounts = { untouched: 0, check: 0, stable: 0, final: 0 };
+    ids.forEach(id => {
+      const rank = getGuideReadinessRank(Number(guideMemorizedCounts[id]) || 0);
+      readinessCounts[rank.key] = (readinessCounts[rank.key] || 0) + 1;
+    });
     const checked = memorized + shaky + review;
     const total = ids.length;
     return {
@@ -1946,6 +2008,7 @@ function App() {
       shaky,
       review,
       memorizedTotal,
+      readinessCounts,
       low: shaky + review,
       unchecked: Math.max(0, total - checked),
       progress: total > 0 ? Math.round((memorized / total) * 100) : 0
@@ -2601,13 +2664,18 @@ function App() {
     setRevealedAnswers(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  const startGuidePractice = (sectionId = null) => {
+  const startGuidePractice = (sectionId = null, options = {}) => {
     const source = sectionId
       ? mergedInterviewPracticeCards.filter(card => card.sectionId === sectionId)
-      : mergedInterviewPracticeCards;
+      : options.weakOnly
+        ? weakGuidePracticeCards
+        : mergedInterviewPracticeCards.filter(card => !hiddenGuideSections[card.sectionId]);
     const shuffled = [...source].sort(() => 0.5 - Math.random());
     const selected = sectionId ? shuffled : shuffled.slice(0, 5);
-    if (selected.length === 0) return;
+    if (selected.length === 0) {
+      if (options.weakOnly) window.alert?.("弱い資料はありません。");
+      return;
+    }
     setMockQuestions(selected);
     setMockExamMode('guide');
     setMockIndex(0);
@@ -2815,11 +2883,14 @@ function App() {
 	                    <button onClick={openMotivationTimer} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-slate-700">
 	                      <Timer className="w-4 h-4 mr-1 inline-flex" /> 5分志望理由タイマー
 	                    </button>
-	                    <button onClick={() => startGuidePractice()} className="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-cyan-800">
-	                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 資料からランダム練習
-	                    </button>
-	                    <button onClick={() => setRevealedGuideSections({})} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-rose-700 shadow-sm border border-rose-100 hover:bg-rose-50">
-	                      表示中の回答を隠す
+		                    <button onClick={() => startGuidePractice()} className="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-cyan-800">
+		                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 資料からランダム練習
+		                    </button>
+		                    <button onClick={() => startGuidePractice(null, { weakOnly: true })} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-rose-700">
+		                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 弱い資料だけ練習 ({weakGuidePracticeCards.length})
+		                    </button>
+		                    <button onClick={() => setRevealedGuideSections({})} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-rose-700 shadow-sm border border-rose-100 hover:bg-rose-50">
+		                      表示中の回答を隠す
 	                    </button>
 		                    <button onClick={() => setShowGuideWeakOnly(prev => !prev)} className={`rounded-xl px-4 py-2 text-sm font-black shadow-sm border transition-colors ${showGuideWeakOnly ? 'bg-rose-600 text-white border-rose-600 hover:bg-rose-700' : 'bg-white text-rose-700 border-rose-100 hover:bg-rose-50'}`}>
 		                      低理解のみ ({guideMemoryCounts.low})
@@ -2840,10 +2911,11 @@ function App() {
                     </div>
 	                    <div className="text-right text-[10px] font-black text-slate-400">
 	                      <div>表示 {filteredInterviewSections.length} / {guideMemoryCounts.total}</div>
-	                      <div className="text-emerald-600">覚えた {guideMemoryCounts.memorized}</div>
-	                      <div className="text-cyan-700">累計 {guideMemoryCounts.memorizedTotal}回</div>
-	                      <div className="text-rose-600">要復習 {guideMemoryCounts.review}</div>
-	                    </div>
+		                      <div className="text-emerald-600">覚えた {guideMemoryCounts.memorized}</div>
+		                      <div className="text-cyan-700">累計 {guideMemoryCounts.memorizedTotal}回</div>
+		                      <div className="text-rose-600">本番候補 {guideMemoryCounts.readinessCounts.final}</div>
+		                      <div className="text-rose-600">要復習 {guideMemoryCounts.review}</div>
+		                    </div>
                   </div>
                   <div className="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
                     <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${guideMemoryCounts.progress}%` }}></div>
@@ -2919,10 +2991,12 @@ function App() {
 	                const guideMark = guideMarks[section.id];
 	                const guideMemoryStatus = guideMemory[section.id];
 	                const guideMemoryMeta = GUIDE_MEMORY_META[guideMemoryStatus];
-	                const isGuideBodyRevealed = !!revealedGuideSections[section.id];
-	                const isGuideHidden = !!hiddenGuideSections[section.id];
-	                const guideMemorizedCount = Number(guideMemorizedCounts[section.id]) || 0;
-	                const hasGuideBody = (section.body || []).length > 0 || (section.bullets || []).length > 0;
+		                const isGuideBodyRevealed = !!revealedGuideSections[section.id];
+		                const isGuideHidden = !!hiddenGuideSections[section.id];
+		                const guideMemorizedCount = Number(guideMemorizedCounts[section.id]) || 0;
+		                const guideReadiness = getGuideReadinessRank(guideMemorizedCount);
+		                const guideCoreNote = guideCoreNotes[section.id] || "";
+		                const hasGuideBody = (section.body || []).length > 0 || (section.bullets || []).length > 0;
 	                return (
 	                <article key={section.id} className={`rounded-3xl border bg-white/95 p-5 sm:p-6 shadow-sm ${isGuideHidden ? 'border-slate-300 bg-slate-50/90 opacity-85' : guideMemoryStatus === 'memorized' ? 'border-emerald-200 ring-2 ring-emerald-50' : guideMemoryStatus === 'shaky' ? 'border-amber-200 ring-2 ring-amber-50' : guideMemoryStatus === 'review' ? 'border-rose-200 ring-2 ring-rose-50' : guideMark === 'must' ? 'border-rose-200 ring-2 ring-rose-100' : guideMark === 'weak' ? 'border-amber-200 ring-2 ring-amber-100' : guideMark === 'fix' ? 'border-violet-200 ring-2 ring-violet-100' : 'border-white'}`}>
 	                  <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -2932,16 +3006,30 @@ function App() {
                       {guideMemoryMeta?.label || '未チェック'}
                     </span>
 	                    {section.isEdited && <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-black text-violet-700">編集済み</span>}
-			                    <span className={`rounded-full px-3 py-1 text-xs font-black border ${guideMemorizedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-			                      覚えた {guideMemorizedCount}回
-			                    </span>
-			                    {guideMark === 'must' && <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-black text-rose-700">本番で言う</span>}
+				                    <span className={`rounded-full px-3 py-1 text-xs font-black border ${guideMemorizedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+				                      覚えた {guideMemorizedCount}回
+				                    </span>
+				                    <span className={`rounded-full px-3 py-1 text-xs font-black border ${guideReadiness.badgeClass}`}>
+				                      {guideReadiness.label}
+				                    </span>
+				                    {guideMark === 'must' && <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-black text-rose-700">本番で言う</span>}
 		                    {guideMark === 'weak' && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">まだ弱い</span>}
 		                    {guideMark === 'fix' && <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-black text-violet-700">言い回し修正</span>}
 		                    {isGuideHidden && <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-black text-white">非表示中</span>}
+		                  </div>
+	                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">{section.title}</h3>
+	                  <div className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50/50 p-3">
+	                    <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-cyan-700">核の一文</label>
+	                    <input
+	                      type="text"
+	                      value={guideCoreNote}
+	                      onChange={(e) => updateGuideCoreDraft(section.id, e.target.value)}
+	                      onBlur={(e) => saveGuideCoreNote(section.id, e.target.value)}
+	                      placeholder="この質問で絶対言う一文を入れる"
+	                      className="w-full rounded-xl border border-cyan-100 bg-white px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-cyan-400 placeholder:text-slate-400"
+	                    />
 	                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">{section.title}</h3>
-                  <div className="mt-4 flex flex-wrap gap-2">
+	                  <div className="mt-4 flex flex-wrap gap-2">
 	                    <button onClick={() => startGuidePractice(section.id)} className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-black text-white hover:bg-slate-700">
 	                      <Mic className="w-3 h-3 mr-1 inline-flex" /> この資料で練習
 	                    </button>
@@ -3897,10 +3985,16 @@ function App() {
                 </div>
               ) : (
                 <div className="w-full bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-fade-in text-left max-h-[50vh] overflow-y-auto custom-scrollbar">
-                  <h4 className="text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> {mockExamMode === 'guide' ? '回答の軸' : '30秒回答例'}</h4>
-                  <p className="text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                    「{renderTextWithMath(mockQuestions[mockIndex].oral30)}」
-                  </p>
+	                  <h4 className="text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> {mockExamMode === 'guide' ? '回答の軸' : '30秒回答例'}</h4>
+	                  {mockExamMode === 'guide' && mockQuestions[mockIndex].coreNote && (
+	                    <div className="mb-4 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+	                      <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-700">核の一文</div>
+	                      <p className="text-base font-black leading-relaxed text-slate-900">{renderTextWithMath(mockQuestions[mockIndex].coreNote)}</p>
+	                    </div>
+	                  )}
+	                  <p className="text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+	                    「{renderTextWithMath(mockQuestions[mockIndex].oral30)}」
+	                  </p>
                   
                   {mockExamMode === 'guide' && (() => {
                     const followups = mockQuestions[mockIndex].followups || [];
