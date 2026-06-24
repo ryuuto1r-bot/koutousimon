@@ -1297,6 +1297,7 @@ function App() {
   const [guideMemory, setGuideMemory] = useState({});
   const [guideMemorizedCounts, setGuideMemorizedCounts] = useState({});
   const [guideCoreNotes, setGuideCoreNotes] = useState({});
+  const [interviewAnswerHistory, setInterviewAnswerHistory] = useState([]);
   const [guideEdits, setGuideEdits] = useState({});
   const [hiddenGuideSections, setHiddenGuideSections] = useState({});
   const [checklists, setChecklists] = useState({}); 
@@ -1305,6 +1306,12 @@ function App() {
   const [revealedGuideSections, setRevealedGuideSections] = useState({});
   const [showGuideWeakOnly, setShowGuideWeakOnly] = useState(false);
   const [showHiddenGuideOnly, setShowHiddenGuideOnly] = useState(false);
+  const [interviewCoachActive, setInterviewCoachActive] = useState(false);
+  const [interviewCoachQuestions, setInterviewCoachQuestions] = useState([]);
+  const [interviewCoachIndex, setInterviewCoachIndex] = useState(0);
+  const [interviewCoachAnswer, setInterviewCoachAnswer] = useState("");
+  const [interviewCoachResult, setInterviewCoachResult] = useState(null);
+  const [interviewCoachListening, setInterviewCoachListening] = useState(false);
   
   const [editingNote, setEditingNote] = useState("");
   const [materialError, setMaterialError] = useState("");
@@ -1318,6 +1325,7 @@ function App() {
   const sketchSaveTimerRef = useRef(null);
   const materialFileInputRef = useRef(null);
   const cardSwipeRef = useRef(null);
+  const interviewRecognitionRef = useRef(null);
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -1410,6 +1418,7 @@ function App() {
         setGuideMemory(data.guideMemory || {});
         setGuideMemorizedCounts(data.guideMemorizedCounts || {});
         setGuideCoreNotes(data.guideCoreNotes || {});
+        setInterviewAnswerHistory(data.interviewAnswerHistory || []);
         setGuideEdits(data.guideEdits || {});
         setHiddenGuideSections(data.hiddenGuideSections || {});
         setChecklists(data.checklists || {});
@@ -1797,6 +1806,7 @@ function App() {
     guideMemory,
     guideMemorizedCounts,
     guideCoreNotes,
+    interviewAnswerHistory,
     guideEdits,
     hiddenGuideSections,
     checklists,
@@ -1961,6 +1971,57 @@ function App() {
     if (user && db) {
       const docRef = getProgressDocRef();
       await setDoc(docRef, { guideCoreNotes: nextCoreNotes }, { merge: true });
+    }
+  };
+
+  const saveInterviewAnswerHistory = async (nextHistory) => {
+    setInterviewAnswerHistory(nextHistory);
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, { interviewAnswerHistory: nextHistory }, { merge: true });
+    }
+  };
+
+  const evaluateInterviewAnswer = (question, answer) => {
+    const trimmed = answer.trim();
+    const normalized = trimmed.replace(/\s+/g, "");
+    const length = normalized.length;
+    const hasConclusion = /(考えています|考えました|感じました|理由です|からです|志望しています|学びたい|活かしたい|目指しています|決意しました)/.test(normalized);
+    const hasExample = /(例えば|具体的には|高専|学生会|SENKAY|ビジコン|仮想通貨|分析ツール|ロボット|甲子園|CAREPAL|AgriHead|卒研|卒業研究|ソフトテニス|大会|開発)/i.test(normalized);
+    const hasKyudai = /(九大|九州大学|御校|貴学|経済工学|経済工学科|ゲーム理論|メカニズムデザイン|計量経済|データサイエンス)/.test(normalized);
+    const lengthOk = length >= 80 && length <= 420;
+    const coreNote = question?.coreNote?.trim();
+    const coreHit = coreNote ? normalized.includes(coreNote.replace(/\s+/g, "").slice(0, Math.min(18, coreNote.replace(/\s+/g, "").length))) : true;
+    const checks = [
+      { key: "conclusion", label: "結論", ok: hasConclusion, advice: "最初か最後に「だから何をしたいのか」を言い切る。" },
+      { key: "example", label: "具体例", ok: hasExample, advice: "SENKAY、ロボットアイデア甲子園、仮想通貨分析ツールなど実体験を1つ入れる。" },
+      { key: "kyudai", label: "九大接続", ok: hasKyudai, advice: "九大経済工学で学ぶ内容に必ず接続する。" },
+      { key: "length", label: "長さ", ok: lengthOk, advice: length < 80 ? "短すぎるので、理由と具体例を足す。" : "長すぎるので、結論・経験・九大接続の3文に圧縮する。" },
+      { key: "core", label: "核の一文", ok: coreHit, advice: "登録した核の一文を回答の中に入れる。" }
+    ];
+    const weakPoints = checks.filter(check => !check.ok).map(check => check.advice);
+    const score = Math.max(0, Math.min(100, 40 + checks.filter(check => check.ok).length * 12));
+    const nextFollowup = weakPoints.length > 0
+      ? weakPoints[0].replace("。", "点について、もう少し具体的に説明できますか？")
+      : "その経験を、入学後の研究テーマにどうつなげますか？";
+    return {
+      score,
+      checks,
+      weakPoints,
+      nextFollowup,
+      savedAt: new Date().toISOString()
+    };
+  };
+
+  const saveGuideWeaknessFromCoach = async (sectionId) => {
+    if (!sectionId) return;
+    const nextMemory = { ...guideMemory, [sectionId]: 'review' };
+    const nextMarks = { ...guideMarks, [sectionId]: 'weak' };
+    setGuideMemory(nextMemory);
+    setGuideMarks(nextMarks);
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, { guideMemory: nextMemory, guideMarks: nextMarks }, { merge: true });
     }
   };
 
@@ -2685,6 +2746,103 @@ function App() {
     setRevealedAnswers({});
   };
 
+  const stopInterviewSpeech = () => {
+    if (interviewRecognitionRef.current) {
+      try { interviewRecognitionRef.current.stop(); } catch (e) {}
+      interviewRecognitionRef.current = null;
+    }
+    setInterviewCoachListening(false);
+  };
+
+  const startInterviewSpeech = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      window.alert?.("このブラウザは音声入力に対応していません。文字入力を使ってください。");
+      return;
+    }
+    stopInterviewSpeech();
+    const recognition = new SpeechRecognition();
+    const baseAnswer = interviewCoachAnswer.trim();
+    let finalTranscript = "";
+    recognition.lang = "ja-JP";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const transcript = event.results[i][0]?.transcript || "";
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      setInterviewCoachAnswer([baseAnswer, finalTranscript, interimTranscript].filter(Boolean).join(" "));
+    };
+    recognition.onerror = () => setInterviewCoachListening(false);
+    recognition.onend = () => setInterviewCoachListening(false);
+    interviewRecognitionRef.current = recognition;
+    setInterviewCoachListening(true);
+    recognition.start();
+  };
+
+  const startInterviewCoach = (options = {}) => {
+    const source = options.weakOnly
+      ? weakGuidePracticeCards
+      : mergedInterviewPracticeCards.filter(card => !hiddenGuideSections[card.sectionId]);
+    const selected = [...source].sort(() => 0.5 - Math.random()).slice(0, 5);
+    if (selected.length === 0) {
+      window.alert?.(options.weakOnly ? "弱点対象の面接資料がありません。" : "面接資料がありません。");
+      return;
+    }
+    stopInterviewSpeech();
+    setInterviewCoachQuestions(selected);
+    setInterviewCoachIndex(0);
+    setInterviewCoachAnswer("");
+    setInterviewCoachResult(null);
+    setInterviewCoachActive(true);
+  };
+
+  const closeInterviewCoach = () => {
+    stopInterviewSpeech();
+    setInterviewCoachActive(false);
+    setInterviewCoachResult(null);
+    setInterviewCoachAnswer("");
+  };
+
+  const evaluateCurrentInterviewAnswer = async () => {
+    const question = interviewCoachQuestions[interviewCoachIndex];
+    if (!question || !interviewCoachAnswer.trim()) {
+      window.alert?.("回答を入力してから評価してください。");
+      return;
+    }
+    stopInterviewSpeech();
+    const result = evaluateInterviewAnswer(question, interviewCoachAnswer);
+    setInterviewCoachResult(result);
+    const record = {
+      id: Date.now(),
+      sectionId: question.sectionId,
+      title: question.title,
+      answer: interviewCoachAnswer.trim(),
+      score: result.score,
+      weakPoints: result.weakPoints,
+      checks: result.checks.map(check => ({ key: check.key, label: check.label, ok: check.ok })),
+      savedAt: result.savedAt
+    };
+    await saveInterviewAnswerHistory([record, ...interviewAnswerHistory].slice(0, 80));
+  };
+
+  const nextInterviewCoachQuestion = () => {
+    stopInterviewSpeech();
+    if (interviewCoachIndex < interviewCoachQuestions.length - 1) {
+      setInterviewCoachIndex(prev => prev + 1);
+      setInterviewCoachAnswer("");
+      setInterviewCoachResult(null);
+    } else {
+      closeInterviewCoach();
+    }
+  };
+
   const startMockExam = (type) => {
     if (type === 'oral') {
       const shibou = mergedQuizData.filter(q => q.category === "0. 志望理由・面接" && !hiddenCards[q.id]);
@@ -2795,7 +2953,7 @@ function App() {
             </button>
           </div>
 
-          <div className={`transition-all duration-300 overflow-hidden ${showHeaderControls ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
+          <div className={`transition-all duration-300 overflow-hidden ${showHeaderControls ? 'max-h-[500px] opacity-100 mt-4 pointer-events-auto' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
             <div className="w-full flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
               <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1 rounded-xl">
                 <button
@@ -2889,6 +3047,12 @@ function App() {
 		                    <button onClick={() => startGuidePractice(null, { weakOnly: true })} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-rose-700">
 		                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 弱い資料だけ練習 ({weakGuidePracticeCards.length})
 		                    </button>
+		                    <button onClick={() => startInterviewCoach()} className="rounded-xl bg-indigo-700 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-indigo-800">
+		                      <MessageSquare className="w-4 h-4 mr-1 inline-flex" /> 模擬面接官
+		                    </button>
+		                    <button onClick={() => startInterviewCoach({ weakOnly: true })} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-indigo-700 shadow-sm border border-indigo-100 hover:bg-indigo-50">
+		                      弱点面接 ({weakGuidePracticeCards.length})
+		                    </button>
 		                    <button onClick={() => setRevealedGuideSections({})} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-rose-700 shadow-sm border border-rose-100 hover:bg-rose-50">
 		                      表示中の回答を隠す
 	                    </button>
@@ -2914,6 +3078,7 @@ function App() {
 		                      <div className="text-emerald-600">覚えた {guideMemoryCounts.memorized}</div>
 		                      <div className="text-cyan-700">累計 {guideMemoryCounts.memorizedTotal}回</div>
 		                      <div className="text-rose-600">本番候補 {guideMemoryCounts.readinessCounts.final}</div>
+		                      <div className="text-indigo-600">面接履歴 {interviewAnswerHistory.length}</div>
 		                      <div className="text-rose-600">要復習 {guideMemoryCounts.review}</div>
 		                    </div>
                   </div>
@@ -2959,10 +3124,34 @@ function App() {
 	                    検索結果 {filteredInterviewSections.length}件
 	                  </span>
 	                )}
-	              </div>
-	            </div>
+		              </div>
+		            </div>
 
-		            {showGuideWeakOnly && (
+		            {interviewAnswerHistory.length > 0 && (
+		              <div className="rounded-2xl border border-indigo-100 bg-white/90 p-4 shadow-sm">
+		                <div className="mb-3 flex items-center justify-between gap-3">
+		                  <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+		                    <MessageSquare className="w-4 h-4 text-indigo-600" /> 直近の模擬面接履歴
+		                  </h3>
+		                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-black text-indigo-700">全{interviewAnswerHistory.length}件</span>
+		                </div>
+		                <div className="space-y-2">
+		                  {interviewAnswerHistory.slice(0, 3).map(item => (
+		                    <div key={item.id} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+		                      <div className="flex items-center justify-between gap-3">
+		                        <span className="truncate text-xs font-black text-slate-700">{item.title}</span>
+		                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${item.score >= 80 ? 'bg-emerald-100 text-emerald-700' : item.score >= 65 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>{item.score}点</span>
+		                      </div>
+		                      {item.weakPoints?.length > 0 && (
+		                        <p className="mt-1 line-clamp-1 text-[11px] font-bold text-slate-500">{item.weakPoints[0]}</p>
+		                      )}
+		                    </div>
+		                  ))}
+		                </div>
+		              </div>
+		            )}
+
+			            {showGuideWeakOnly && (
 		              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 shadow-sm sm:flex sm:items-center sm:justify-between">
 		                <div className="text-sm font-black text-rose-800">
 	                  低理解（あいまい・要復習）の資料だけ表示中
@@ -3937,6 +4126,150 @@ function App() {
           </div>
         </div>
       )}
+
+      {interviewCoachActive && interviewCoachQuestions.length > 0 && (() => {
+        const currentQuestion = interviewCoachQuestions[interviewCoachIndex];
+        const sectionId = currentQuestion?.sectionId;
+        const coreNote = currentQuestion?.coreNote;
+        const memorizedCount = Number(guideMemorizedCounts[sectionId]) || 0;
+        const readiness = getGuideReadinessRank(memorizedCount);
+        return (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-6 h-6 text-indigo-300" />
+                <div>
+                  <div className="text-lg font-black">模擬面接官モード</div>
+                  <div className="text-[11px] font-bold text-slate-400">AIなし簡易評価・音声入力対応</div>
+                </div>
+              </div>
+              <button onClick={closeInterviewCoach} className="text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
+            </div>
+
+            <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar space-y-5">
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-indigo-700 shadow-sm">Question {interviewCoachIndex + 1} / {interviewCoachQuestions.length}</span>
+                  <span className={`rounded-full border px-3 py-1 text-xs font-black ${readiness.badgeClass}`}>{readiness.label}</span>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500">覚えた {memorizedCount}回</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black leading-tight text-slate-900">
+                  {renderTextWithMath(currentQuestion.title)}
+                </h2>
+                <p className="mt-3 text-sm font-bold leading-6 text-indigo-700">
+                  まず資料を見ずに声に出して答えてください。回答後に評価すると、弱点と追撃質問が出ます。
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <label className="text-sm font-black text-slate-700">あなたの回答</label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={interviewCoachListening ? stopInterviewSpeech : startInterviewSpeech}
+                      className={`rounded-xl px-4 py-2 text-xs font-black border ${interviewCoachListening ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'}`}
+                    >
+                      <Mic className="w-3 h-3 mr-1 inline-flex" /> {interviewCoachListening ? '音声入力を停止' : '音声入力'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInterviewCoachAnswer("")}
+                      className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-200"
+                    >
+                      クリア
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  value={interviewCoachAnswer}
+                  onChange={(e) => setInterviewCoachAnswer(e.target.value)}
+                  placeholder="ここに回答を入力。音声入力も使えます。"
+                  className="h-44 w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold leading-7 text-slate-800 outline-none custom-scrollbar focus:bg-white focus:ring-2 focus:ring-indigo-400"
+                />
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-[11px] font-bold text-slate-400">
+                    目安: 80〜420文字。結論、具体例、九大との接続を入れる。
+                  </div>
+                  <button
+                    type="button"
+                    onClick={evaluateCurrentInterviewAnswer}
+                    className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-black text-white shadow-sm hover:bg-slate-700"
+                  >
+                    回答を評価する
+                  </button>
+                </div>
+              </div>
+
+              {interviewCoachResult && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm animate-fade-in">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">評価</div>
+                      <div className={`text-4xl font-black ${interviewCoachResult.score >= 80 ? 'text-emerald-600' : interviewCoachResult.score >= 65 ? 'text-amber-600' : 'text-rose-600'}`}>
+                        {interviewCoachResult.score}<span className="text-base text-slate-400">点</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {interviewCoachResult.checks.map(check => (
+                        <span key={check.key} className={`rounded-full px-3 py-1 text-xs font-black ${check.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                          {check.ok ? 'OK' : '弱い'}: {check.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {interviewCoachResult.weakPoints.length > 0 ? (
+                    <div className="mb-4 rounded-2xl border border-rose-100 bg-white p-4">
+                      <h4 className="mb-2 text-sm font-black text-rose-700">改善ポイント</h4>
+                      <ul className="space-y-2">
+                        {interviewCoachResult.weakPoints.map((point, idx) => (
+                          <li key={idx} className="text-sm font-bold leading-6 text-slate-700">・{point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-700">
+                      基本形はかなり良いです。追撃への具体化まで練習してください。
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="rounded-2xl border border-indigo-100 bg-white p-4">
+                      <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-indigo-700">次の追撃質問</h4>
+                      <p className="text-base font-black leading-7 text-slate-900">{interviewCoachResult.nextFollowup}</p>
+                    </div>
+                    <div className="rounded-2xl border border-cyan-100 bg-white p-4">
+                      <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-cyan-700">回答の軸</h4>
+                      {coreNote && <p className="mb-3 rounded-xl bg-cyan-50 p-3 text-sm font-black leading-6 text-slate-800">核: {coreNote}</p>}
+                      <p className="text-sm font-bold leading-6 text-slate-600">{renderTextWithMath(currentQuestion.oral30)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 bg-white px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button onClick={closeInterviewCoach} className="rounded-xl px-5 py-2.5 text-sm font-black text-slate-500 hover:bg-slate-100">
+                終了
+              </button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {interviewCoachResult && sectionId && (
+                  <button onClick={() => saveGuideWeaknessFromCoach(sectionId)} className="rounded-xl bg-rose-50 px-5 py-2.5 text-sm font-black text-rose-700 border border-rose-100 hover:bg-rose-100">
+                    弱点に保存
+                  </button>
+                )}
+                <button onClick={nextInterviewCoachQuestion} className="rounded-xl bg-indigo-700 px-6 py-2.5 text-sm font-black text-white shadow-sm hover:bg-indigo-800">
+                  {interviewCoachIndex < interviewCoachQuestions.length - 1 ? '次の質問へ' : '面接を終了'}
+                  <ChevronRight className="w-4 h-4 ml-1 inline-flex" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
 
       {mockExamMode !== null && mockQuestions.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-md">
