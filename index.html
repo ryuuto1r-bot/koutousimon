@@ -1265,6 +1265,7 @@ function App() {
   const [showAdvanced, setShowAdvanced] = useState(false); 
   const [showNonSOnly, setShowNonSOnly] = useState(false);
   const [showUntouchedOnly, setShowUntouchedOnly] = useState(false);
+  const [showUnmasteredOnly, setShowUnmasteredOnly] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const [showDueOnly, setShowDueOnly] = useState(false);
   const [showWeakOnly, setShowWeakOnly] = useState(false);
@@ -1649,6 +1650,10 @@ function App() {
     return stats;
   }, [allMasteredIds, mergedQuizData]);
 
+  const unmasteredItems = useMemo(() => {
+    return mergedQuizData.filter(q => !allMasteredIds.has(q.id));
+  }, [allMasteredIds, mergedQuizData]);
+
   const last7DaysStats = useMemo(() => {
     const stats = [];
     let maxCount = 0;
@@ -1752,11 +1757,12 @@ function App() {
     } else {
       data = data.filter(q => !hiddenCards[q.id]);
       
-      if (!showAdvanced && !showNonSOnly) data = data.filter(q => q.rank !== 'B');
+      if (!showAdvanced && !showNonSOnly && !showUnmasteredOnly) data = data.filter(q => q.rank !== 'B');
       if (showNonSOnly) data = data.filter(q => q.rank !== 'S');
       if (showDueOnly) data = data.filter(q => dueCardIds.has(q.id));
       if (showWeakOnly) data = data.filter(q => weaknessStats.ids.has(q.id));
       if (showUntouchedOnly) data = data.filter(q => !touchedIds.has(q.id));
+      if (showUnmasteredOnly) data = data.filter(q => !allMasteredIds.has(q.id));
       if (activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
     }
 
@@ -1781,7 +1787,7 @@ function App() {
     }
 
     return data;
-  }, [appMode, activeCategory, showAdvanced, showNonSOnly, showUntouchedOnly, showDueOnly, showWeakOnly, touchedIds, dueCardIds, weaknessStats, shuffleSeed, hiddenCards, showHiddenOnly, mergedQuizData, searchQuery]);
+  }, [appMode, activeCategory, showAdvanced, showNonSOnly, showUntouchedOnly, showUnmasteredOnly, showDueOnly, showWeakOnly, allMasteredIds, touchedIds, dueCardIds, weaknessStats, shuffleSeed, hiddenCards, showHiddenOnly, mergedQuizData, searchQuery]);
 
   const filteredInterviewSections = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -2980,6 +2986,7 @@ function App() {
     setShowGuideWeakOnly(false);
     setShowNonSOnly(false);
     setShowUntouchedOnly(false);
+    setShowUnmasteredOnly(false);
   };
 
   const startRecommendedFocus = () => {
@@ -3002,6 +3009,7 @@ function App() {
     showWeakOnly ? "弱点" : null,
     showDueOnly ? "復習" : null,
     showUntouchedOnly ? "未着手" : null,
+    showUnmasteredOnly ? "未習得" : null,
     showHiddenOnly ? "非表示中" : null,
     showNonSOnly ? "S以外" : null,
     showAdvanced ? "B含む" : null,
@@ -3606,6 +3614,9 @@ function App() {
             <button onClick={() => setShowUntouchedOnly(!showUntouchedOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showUntouchedOnly ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-white text-slate-500 border-slate-200'}`}>
               <CircleDashed className="w-4 h-4" /> 未着手
             </button>
+            <button onClick={() => { setShowHiddenOnly(false); setShowAdvanced(true); setShowUnmasteredOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showUnmasteredOnly ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+              <CheckCircle className="w-4 h-4" /> 未習得のみ ({unmasteredItems.length})
+            </button>
             <button onClick={() => { setShowWeakOnly(false); setShowDueOnly(!showDueOnly); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showDueOnly ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-500 border-slate-200'}`}>
               <Clock className="w-4 h-4" /> 復習 ({dueCardIds.size})
             </button>
@@ -4080,6 +4091,63 @@ function App() {
                   <div className="text-3xl font-black text-blue-700">{progressDetails.rankB.total > 0 ? Math.round((progressDetails.rankB.mastered / progressDetails.rankB.total) * 100) : 0}<span className="text-lg">%</span></div>
                   <div className="text-[10px] text-blue-400 font-bold mt-1">{progressDetails.rankB.mastered} / {progressDetails.rankB.total}問</div>
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 shadow-sm">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="text-sm font-black text-emerald-800 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" /> 残りの未習得
+                    </h4>
+                    <p className="mt-1 text-xs font-bold text-emerald-700">
+                      まだ「余裕で言えた！」になっていない問題です。
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowProgressModal(false);
+                      setAppMode('oral');
+                      setShowHiddenOnly(false);
+                      setShowAdvanced(true);
+                      setShowUnmasteredOnly(true);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-emerald-800"
+                  >
+                    未習得だけ表示
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {['S', 'A', 'B'].map(rank => {
+                    const items = unmasteredItems.filter(item => item.rank === rank);
+                    return (
+                      <div key={rank} className={`rounded-xl border bg-white px-3 py-2 ${rank === 'S' ? 'border-rose-100' : rank === 'A' ? 'border-amber-100' : 'border-blue-100'}`}>
+                        <div className={`text-xs font-black ${rank === 'S' ? 'text-rose-600' : rank === 'A' ? 'text-amber-600' : 'text-blue-600'}`}>{rank}</div>
+                        <div className="text-xl font-black text-slate-800">{items.length}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 max-h-56 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                  {unmasteredItems.length > 0 ? unmasteredItems.slice(0, 40).map(item => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-xs shadow-sm">
+                      <div className="min-w-0">
+                        <div className="truncate font-black text-slate-800">{item.title}</div>
+                        <div className="mt-0.5 truncate font-bold text-slate-400">{item.category}</div>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${item.rank === 'S' ? 'bg-rose-100 text-rose-700' : item.rank === 'A' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {item.rank}
+                      </span>
+                    </div>
+                  )) : (
+                    <div className="rounded-xl bg-white px-4 py-6 text-center text-sm font-black text-emerald-700">
+                      全問習得済みです。
+                    </div>
+                  )}
+                </div>
+                {unmasteredItems.length > 40 && (
+                  <p className="mt-3 text-right text-[10px] font-black text-emerald-700">ほか {unmasteredItems.length - 40}問あります。未習得だけ表示で確認できます。</p>
+                )}
               </div>
 
               {/* ▼ 新規：日別レコードと推移グラフを統合したUI */}
