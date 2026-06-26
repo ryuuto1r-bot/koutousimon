@@ -2986,9 +2986,18 @@ function App() {
     setShowDueOnly(false);
     setShowWeakOnly(false);
     setShowGuideWeakOnly(false);
+    setShowAdvanced(false);
     setShowNonSOnly(false);
     setShowUntouchedOnly(false);
     setShowUnmasteredOnly(false);
+  };
+
+  const showUnmasteredCards = () => {
+    clearFilters();
+    setAppMode('oral');
+    setShowAdvanced(true);
+    setShowUnmasteredOnly(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const startRecommendedFocus = () => {
@@ -3548,15 +3557,10 @@ function App() {
               <p className="mt-1 text-xs font-bold text-slate-500">習得率にまだ入っていない問題です。タップすると直接開けます。</p>
             </div>
             <button
-              onClick={() => {
-                clearFilters();
-                setShowAdvanced(true);
-                setShowUnmasteredOnly(true);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-emerald-800"
+              onClick={() => showUnmasteredOnly ? clearFilters() : showUnmasteredCards()}
+              className={`rounded-xl px-4 py-2 text-xs font-black shadow-sm ${showUnmasteredOnly ? 'bg-slate-900 text-white hover:bg-slate-700' : 'bg-emerald-700 text-white hover:bg-emerald-800'}`}
             >
-              未習得だけ表示
+              {showUnmasteredOnly ? '全カードに戻す' : '未習得だけ表示'}
             </button>
           </div>
           <div className="mb-3 grid grid-cols-3 gap-2 text-center">
@@ -3590,7 +3594,14 @@ function App() {
             <div className="rounded-xl bg-emerald-50 px-4 py-5 text-center text-sm font-black text-emerald-700">全問習得済みです。</div>
           )}
           {unmasteredItems.length > 8 && (
-            <p className="mt-3 text-right text-[10px] font-black text-slate-400">ほか {unmasteredItems.length - 8}問あります。未習得だけ表示で全部見られます。</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[10px] font-black text-slate-400">ほか {unmasteredItems.length - 8}問あります。未習得だけ表示で全部見られます。</p>
+              {showUnmasteredOnly && (
+                <button onClick={clearFilters} className="rounded-full bg-slate-900 px-3 py-1.5 text-[10px] font-black text-white hover:bg-slate-700">
+                  全カードに戻す
+                </button>
+              )}
+            </div>
           )}
         </section>
 
@@ -4155,15 +4166,11 @@ function App() {
                   <button
                     onClick={() => {
                       setShowProgressModal(false);
-                      setAppMode('oral');
-                      setShowHiddenOnly(false);
-                      setShowAdvanced(true);
-                      setShowUnmasteredOnly(true);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      showUnmasteredOnly ? clearFilters() : showUnmasteredCards();
                     }}
                     className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-emerald-800"
                   >
-                    未習得だけ表示
+                    {showUnmasteredOnly ? '全カードに戻す' : '未習得だけ表示'}
                   </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
