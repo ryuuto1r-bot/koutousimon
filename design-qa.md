@@ -20,6 +20,7 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - No actionable P0, P1, or P2 findings remain.
 - The concept's sample question list was intentionally not adopted because the user requested that the current question format remain unchanged.
 - Weak and review practice buttons are disabled when no eligible questions exist, preventing empty practice sessions.
+- Daily review and weakness metrics open their matching card lists directly; zero-count metrics are disabled.
 
 ## Required Fidelity Surfaces
 
@@ -34,6 +35,8 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - Replaced only the oral-exam top menu with the selected compact dashboard.
 - Added important, weak-only, and due-review four-question launchers.
 - Added daily progress metrics and an S/A/B unmastered summary.
+- Connected review and weakness metrics to their existing card filters.
+- Shortened practice descriptions so they remain fully readable on mobile.
 - Connected the unmastered summary to the existing unmastered-card filter.
 - Preserved the existing question cards and study interactions.
 
@@ -41,6 +44,7 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 
 - Important practice launches the existing mock modal with `Question 1 / 4`.
 - Unmastered summary switches to the existing unmastered-card view and can return to all cards.
+- Marking one card for review enables the weakness metric; selecting it shows exactly that weak card.
 - Existing question cards still expose their original answer-review controls.
 - Desktop and mobile layouts have no horizontal overflow.
 - Browser console contains no errors.

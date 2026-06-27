@@ -3150,6 +3150,17 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const showOralFilteredCards = (mode) => {
+    clearFilters();
+    setAppMode('oral');
+    setShowAdvanced(true);
+    if (mode === 'due') setShowDueOnly(true);
+    if (mode === 'weak') setShowWeakOnly(true);
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const jumpToStudyQuestion = (item) => {
     setShowProgressModal(false);
     clearFilters();
@@ -3786,12 +3797,19 @@ function App() {
               <div className="grid grid-cols-[auto_repeat(4,1fr)] items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white">
                 <div className="flex items-center px-3 py-3 text-sm font-black text-slate-900 sm:px-4">今日の学習</div>
                 {[
-                  { label: '今日', value: todaySummary.total, unit: '問', color: 'text-cyan-700' },
-                  { label: '復習', value: dueCardIds.size, unit: '問', color: 'text-indigo-700' },
-                  { label: '弱点', value: weaknessStats.count, unit: '問', color: 'text-amber-600' },
-                  { label: '習得', value: progress, unit: '%', color: 'text-slate-700' }
+                  { label: '今日', value: todaySummary.total, unit: '問', color: 'text-cyan-700', action: () => setShowProgressModal(true), active: false },
+                  { label: '復習', value: dueCardIds.size, unit: '問', color: 'text-indigo-700', action: () => showOralFilteredCards('due'), active: showDueOnly, disabled: dueCardIds.size === 0 },
+                  { label: '弱点', value: weaknessStats.count, unit: '問', color: 'text-amber-600', action: () => showOralFilteredCards('weak'), active: showWeakOnly, disabled: weaknessStats.count === 0 },
+                  { label: '習得', value: progress, unit: '%', color: 'text-slate-700', action: () => setShowProgressModal(true), active: false }
                 ].map(stat => (
-                  <button key={stat.label} type="button" onClick={() => setShowProgressModal(true)} className="border-l border-slate-200 px-2 py-2 text-center hover:bg-slate-50">
+                  <button
+                    key={stat.label}
+                    type="button"
+                    disabled={stat.disabled}
+                    aria-label={`${stat.label} ${stat.value}${stat.unit}`}
+                    onClick={stat.action}
+                    className={`border-l border-slate-200 px-2 py-2 text-center transition-colors ${stat.active ? 'bg-cyan-50' : stat.disabled ? 'cursor-default bg-slate-50/60' : 'hover:bg-slate-50'}`}
+                  >
                     <span className="block text-[9px] font-black text-slate-400">{stat.label}</span>
                     <span className={`mt-0.5 block text-lg font-black ${stat.color}`}>{stat.value}<small className="ml-0.5 text-[10px]">{stat.unit}</small></span>
                   </button>
@@ -3803,7 +3821,7 @@ function App() {
                   {
                     key: 'important',
                     title: '重要問題を4問',
-                    description: 'S・Aランクから厳選した問題に取り組みます。',
+                    description: 'S・Aランクからランダム出題',
                     count: studyQuizData.filter(q => q.rank !== 'B' && !hiddenCards[q.id]).length,
                     icon: Target,
                     tone: 'text-cyan-700 bg-cyan-50',
@@ -3812,7 +3830,7 @@ function App() {
                   {
                     key: 'weak',
                     title: '弱点だけを4問',
-                    description: '詰まった履歴がある問題を優先します。',
+                    description: '詰まった履歴から優先出題',
                     count: weaknessStats.count,
                     icon: AlertTriangle,
                     tone: 'text-amber-700 bg-amber-50'
@@ -3820,7 +3838,7 @@ function App() {
                   {
                     key: 'due',
                     title: '復習期限の問題',
-                    description: '間隔復習のタイミングに来た問題を出題します。',
+                    description: '復習時期の問題から出題',
                     count: dueCardIds.size,
                     icon: Clock,
                     tone: 'text-rose-700 bg-rose-50'
@@ -3833,7 +3851,7 @@ function App() {
                       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm ${item.tone}`}><ItemIcon /></span>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-black text-slate-900">{item.title}</h3>
-                        <p className="mt-0.5 truncate text-[10px] font-bold text-slate-500">{item.description}</p>
+                        <p className="mt-0.5 text-[10px] font-bold text-slate-500">{item.description}</p>
                       </div>
                       <span className="hidden shrink-0 text-sm font-black text-slate-500 sm:block">{item.key === 'important' ? '4問' : `${item.count}問`}</span>
                       <button
