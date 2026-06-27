@@ -51,5 +51,7 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - Mock interviewer, interview-card practice, and oral-exam practice all include a previous-question action.
 - Previous-question actions are disabled on the first question and reset answer, timer, and follow-up state when navigating back.
 - The mock interviewer footer remains within the `390 x 844` mobile viewport with no horizontal overflow.
+- Interview-guide mastery rows are actionable: memorized, shaky, review, and unchecked counts filter the card list to the selected status and scroll to the results.
+- Selecting the same mastery row again or using `全て表示` restores the full guide list.
 
 final result: passed
