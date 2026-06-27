@@ -51,6 +51,7 @@ const Circle = makeIcon('○');
 const BookOpen = makeIcon('本');
 const Target = makeIcon('◎');
 const MessageSquare = makeIcon('吹');
+const ChevronLeft = makeIcon('‹');
 const ChevronRight = makeIcon('›');
 const ChevronUp = makeIcon('⌃');
 const ChevronDown = makeIcon('⌄');
@@ -3052,6 +3053,14 @@ function App() {
     }
   };
 
+  const previousInterviewCoachQuestion = () => {
+    if (interviewCoachIndex === 0) return;
+    stopInterviewSpeech();
+    setInterviewCoachIndex(prev => prev - 1);
+    setInterviewCoachAnswer("");
+    setInterviewCoachResult(null);
+  };
+
   const startOralPracticeSet = (mode = 'important') => {
     const availableQuestions = studyQuizData.filter(q => !hiddenCards[q.id]);
     const source = mode === 'weak'
@@ -3110,6 +3119,15 @@ function App() {
     } else {
       setMockExamMode(null);
     }
+  };
+
+  const previousMockQuestion = () => {
+    if (mockIndex === 0) return;
+    setMockIndex(mockIndex - 1);
+    setMockTimeLeft(60);
+    setShowMockAnswer(false);
+    setMockFollowupIndex(0);
+    setRevealedAnswers({});
   };
 
   const markGuidePracticeAndAdvance = async (status) => {
@@ -4764,6 +4782,18 @@ function App() {
                 終了
               </button>
               <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  disabled={interviewCoachIndex === 0}
+                  onClick={previousInterviewCoachQuestion}
+                  className={`flex items-center justify-center rounded-xl border px-5 py-2.5 text-sm font-black transition-colors ${
+                    interviewCoachIndex === 0
+                      ? 'cursor-not-allowed border-slate-100 bg-slate-100 text-slate-300'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> 前の質問へ
+                </button>
                 {interviewCoachResult && sectionId && (
                   <button onClick={() => saveGuideWeaknessFromCoach(sectionId)} className="rounded-xl bg-rose-50 px-5 py-2.5 text-sm font-black text-rose-700 border border-rose-100 hover:bg-rose-100">
                     弱点に保存
@@ -4941,12 +4971,26 @@ function App() {
               )}
             </div>
 
-	            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
-	              <button onClick={() => setMockExamMode(null)} className="shrink-0 px-3 sm:px-5 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition-colors">
-	                中断する
-	              </button>
+	            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+	              <div className="flex shrink-0 items-center gap-2">
+	                <button onClick={() => setMockExamMode(null)} className="shrink-0 px-3 sm:px-5 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition-colors">
+	                  中断する
+	                </button>
+	                <button
+	                  type="button"
+	                  disabled={mockIndex === 0}
+	                  onClick={previousMockQuestion}
+	                  className={`flex shrink-0 items-center gap-1 rounded-xl border px-3 py-2.5 text-sm font-black transition-colors ${
+	                    mockIndex === 0
+	                      ? 'cursor-not-allowed border-slate-100 bg-slate-100 text-slate-300'
+	                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+	                  }`}
+	                >
+	                  <ChevronLeft className="w-4 h-4" /> 前へ
+	                </button>
+	              </div>
 	              {mockExamMode === 'guide' ? (
-	                <div className="flex min-w-0 flex-1 gap-2">
+	                <div className="order-3 flex w-full min-w-0 gap-2 sm:order-none sm:w-auto sm:flex-1">
 	                  <button
 	                    onClick={() => markGuidePracticeAndAdvance('review')}
 	                    className="min-w-0 flex-1 rounded-xl border-2 border-rose-200 bg-white px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-black text-rose-700 hover:bg-rose-50"
@@ -4961,12 +5005,12 @@ function App() {
 	                  </button>
                 </div>
               ) : (
-	                <button
-                  onClick={nextMockQuestion}
-                  className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow-lg flex items-center transition-transform hover:-translate-y-0.5"
-                >
-                  {mockIndex < mockQuestions.length - 1 ? '次の問題へ' : '面接を終了する'} <ChevronRight className="w-5 h-5 ml-1" />
-                </button>
+	              <button
+	                onClick={nextMockQuestion}
+	                className="flex items-center rounded-xl bg-slate-900 px-5 sm:px-8 py-3 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5 hover:bg-slate-800"
+	              >
+	                {mockIndex < mockQuestions.length - 1 ? '次の問題へ' : '面接を終了する'} <ChevronRight className="w-5 h-5 ml-1" />
+	              </button>
               )}
             </div>
           </div>
