@@ -1337,6 +1337,7 @@ const MAX_SKETCH_PAPER_HEIGHT = 3300;
 const MAX_MATERIAL_IMAGE_SIDE = 1600;
 const MATERIAL_IMAGE_QUALITY = 0.78;
 const RECENT_INTERVIEW_GUIDE_COUNT = 10;
+const GUIDE_PRACTICE_QUESTION_COUNT = 15;
 
 function App() {
   const [appMode, setAppMode] = useState('oral');
@@ -2110,7 +2111,7 @@ function App() {
     }
   };
 
-  const updateGuideMemory = async (id, status) => {
+  const updateGuideMemory = async (id, status, options = {}) => {
     const nextMemory = { ...guideMemory };
     let nextMemorizedCounts = guideMemorizedCounts;
     let shouldSaveMemorizedCounts = false;
@@ -2123,7 +2124,7 @@ function App() {
       };
       setGuideMemorizedCounts(nextMemorizedCounts);
       shouldSaveMemorizedCounts = true;
-    } else if (nextMemory[id] === status) {
+    } else if (nextMemory[id] === status && !options.force) {
       delete nextMemory[id];
     } else {
       nextMemory[id] = status;
@@ -2923,7 +2924,7 @@ function App() {
           ? laterGuidePracticeCards
         : mergedInterviewPracticeCards.filter(card => !hiddenGuideSections[card.sectionId]);
     const shuffled = [...source].sort(() => 0.5 - Math.random());
-    const selected = sectionId ? shuffled : shuffled.slice(0, 5);
+    const selected = sectionId ? shuffled : shuffled.slice(0, GUIDE_PRACTICE_QUESTION_COUNT);
     if (selected.length === 0) {
       if (options.weakOnly) window.alert?.("弱い資料はありません。");
       if (options.laterOnly) window.alert?.("後でチェックの資料はありません。");
@@ -3075,6 +3076,14 @@ function App() {
     }
   };
 
+  const markGuidePracticeAndAdvance = async (status) => {
+    const currentQuestion = mockQuestions[mockIndex];
+    if (currentQuestion?.sectionId) {
+      await updateGuideMemory(currentQuestion.sectionId, status, { force: true });
+    }
+    nextMockQuestion();
+  };
+
   const focusSearch = () => {
     searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => searchInputRef.current?.focus(), 220);
@@ -3152,6 +3161,15 @@ function App() {
     focusedQuestionId !== null ? "選択した1問" : null,
     searchQuery ? `検索: ${searchQuery}` : null
   ].filter(Boolean);
+  const guidePracticeMasteredCount = mockExamMode === 'guide'
+    ? mockQuestions.filter(question => guideMemory[question.sectionId] === 'memorized').length
+    : 0;
+  const guidePracticeProgress = mockQuestions.length > 0
+    ? Math.round((guidePracticeMasteredCount / mockQuestions.length) * 100)
+    : 0;
+  const currentGuidePracticeStatus = mockExamMode === 'guide'
+    ? guideMemory[mockQuestions[mockIndex]?.sectionId]
+    : null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-rose-200 app-shell">
@@ -3259,7 +3277,7 @@ function App() {
 	                      <Timer className="w-4 h-4 mr-1 inline-flex" /> 5分志望理由タイマー
 	                    </button>
 		                    <button onClick={() => startGuidePractice()} className="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-cyan-800">
-		                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 資料からランダム練習
+		                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 資料からランダム15問
 		                    </button>
 		                    <button onClick={() => startGuidePractice(null, { weakOnly: true })} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-rose-700">
 		                      <Mic className="w-4 h-4 mr-1 inline-flex" /> 弱い資料だけ練習 ({weakGuidePracticeCards.length})
@@ -4647,7 +4665,7 @@ function App() {
 
       {mockExamMode !== null && mockQuestions.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-md">
-          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
+	          <div className="bg-white w-full max-w-3xl max-h-[94vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
             
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -4656,9 +4674,17 @@ function App() {
                 ) : (
                   <Mic className="w-6 h-6 text-rose-500 animate-pulse" />
                 )}
-                <span className="font-bold text-lg">
-                  {mockExamMode === 'guide' ? '面接資料 練習カード' : '模擬口頭試問（数学・経済）'}
-                </span>
+                <div>
+                  <div className="font-bold text-lg">
+                    {mockExamMode === 'guide' ? '面接資料 練習カード' : '模擬口頭試問（数学・経済）'}
+                  </div>
+                  {mockExamMode === 'guide' && (
+                    <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-black text-slate-300">
+                      <span>全体習得率 {guideMemoryCounts.progress}%</span>
+                      <span>今回 {guidePracticeMasteredCount}/{mockQuestions.length}問</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className={`flex items-center font-mono text-xl font-bold px-3 py-1 rounded-lg ${mockTimeLeft <= 10 ? 'bg-red-500/20 text-red-400 animate-bounce' : 'bg-slate-800 text-emerald-400'}`}>
@@ -4668,10 +4694,40 @@ function App() {
               </div>
             </div>
 
-            <div className="p-8 sm:p-12 flex flex-col items-center justify-center min-h-[400px]">
+	            <div className="p-5 sm:p-12 flex flex-col items-center justify-start min-h-0 overflow-y-auto custom-scrollbar">
+              {mockExamMode === 'guide' && (
+                <div className="mb-6 w-full rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className="text-xs font-black text-cyan-800">今回の{mockQuestions.length}問 習得率</span>
+                    <span className="text-lg font-black text-cyan-700">{guidePracticeProgress}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-cyan-100">
+                    <div className="h-full rounded-full bg-cyan-600 transition-all duration-500" style={{ width: `${guidePracticeProgress}%` }}></div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-black text-cyan-700">
+                    <span>習得済み {guidePracticeMasteredCount}問</span>
+                    <span>残り {Math.max(0, mockQuestions.length - guidePracticeMasteredCount)}問</span>
+                  </div>
+                </div>
+              )}
               <div className="text-slate-400 font-bold mb-4 uppercase tracking-widest">
                 Question {mockIndex + 1} / {mockQuestions.length}
               </div>
+              {mockExamMode === 'guide' && (
+                <div className={`mb-4 rounded-full px-3 py-1 text-xs font-black ${
+                  currentGuidePracticeStatus === 'memorized'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : currentGuidePracticeStatus === 'review'
+                      ? 'bg-rose-100 text-rose-700'
+                      : currentGuidePracticeStatus === 'shaky'
+                        ? 'bg-amber-100 text-amber-700'
+                        : currentGuidePracticeStatus === 'later'
+                          ? 'bg-indigo-100 text-indigo-700'
+                          : 'bg-slate-100 text-slate-500'
+                }`}>
+                  このカード: {GUIDE_MEMORY_META[currentGuidePracticeStatus]?.label || '未チェック'}
+                </div>
+              )}
               
               <h2 className="text-3xl sm:text-4xl font-black text-slate-800 text-center mb-8 leading-tight">
                 「{renderTextWithMath(mockQuestions[mockIndex].title)}」
@@ -4768,16 +4824,33 @@ function App() {
               )}
             </div>
 
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
-              <button onClick={() => setMockExamMode(null)} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition-colors">
-                中断する
-              </button>
-              <button 
-                onClick={nextMockQuestion}
-                className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow-lg flex items-center transition-transform hover:-translate-y-0.5"
-              >
-                {mockIndex < mockQuestions.length - 1 ? (mockExamMode === 'guide' ? '次の資料問題へ' : '次の問題へ') : (mockExamMode === 'guide' ? '資料練習を終了する' : '面接を終了する')} <ChevronRight className="w-5 h-5 ml-1" />
-              </button>
+	            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
+	              <button onClick={() => setMockExamMode(null)} className="shrink-0 px-3 sm:px-5 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition-colors">
+	                中断する
+	              </button>
+	              {mockExamMode === 'guide' ? (
+	                <div className="flex min-w-0 flex-1 gap-2">
+	                  <button
+	                    onClick={() => markGuidePracticeAndAdvance('review')}
+	                    className="min-w-0 flex-1 rounded-xl border-2 border-rose-200 bg-white px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-black text-rose-700 hover:bg-rose-50"
+	                  >
+	                    要復習 → 次へ
+	                  </button>
+	                  <button
+	                    onClick={() => markGuidePracticeAndAdvance('memorized')}
+	                    className="min-w-0 flex-1 rounded-xl bg-emerald-600 px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-black text-white shadow-lg hover:bg-emerald-700"
+	                  >
+	                    覚えた → 次へ
+	                  </button>
+                </div>
+              ) : (
+	                <button
+                  onClick={nextMockQuestion}
+                  className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow-lg flex items-center transition-transform hover:-translate-y-0.5"
+                >
+                  {mockIndex < mockQuestions.length - 1 ? '次の問題へ' : '面接を終了する'} <ChevronRight className="w-5 h-5 ml-1" />
+                </button>
+              )}
             </div>
           </div>
         </div>
