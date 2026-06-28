@@ -1423,6 +1423,7 @@ function App() {
   const [studyMaterials, setStudyMaterials] = useState({});
   const [guideMarks, setGuideMarks] = useState({});
   const [guideMemory, setGuideMemory] = useState({});
+  const [guideDailyMemory, setGuideDailyMemory] = useState({});
   const [guideMemorizedCounts, setGuideMemorizedCounts] = useState({});
   const [guideCoreNotes, setGuideCoreNotes] = useState({});
   const [interviewAnswerHistory, setInterviewAnswerHistory] = useState([]);
@@ -1434,6 +1435,7 @@ function App() {
   const [revealedGuideSections, setRevealedGuideSections] = useState({});
   const [showGuideWeakOnly, setShowGuideWeakOnly] = useState(false);
   const [guideMemoryFilter, setGuideMemoryFilter] = useState(null);
+  const [guideMemoryView, setGuideMemoryView] = useState('cumulative');
   const [showGuideLaterOnly, setShowGuideLaterOnly] = useState(false);
   const [showGuideRecentOnly, setShowGuideRecentOnly] = useState(false);
   const [showHiddenGuideOnly, setShowHiddenGuideOnly] = useState(false);
@@ -1468,6 +1470,9 @@ function App() {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState(todayStr);
+  const activeGuideMemory = guideMemoryView === 'daily'
+    ? (guideDailyMemory[selectedDate] || {})
+    : guideMemory;
 
   useEffect(() => {
     if (!document.getElementById('katex-css')) {
@@ -1582,6 +1587,7 @@ function App() {
         setStudyMaterials(data.studyMaterials || {});
         setGuideMarks(data.guideMarks || {});
         setGuideMemory(data.guideMemory || {});
+        setGuideDailyMemory(data.guideDailyMemory || {});
         setGuideMemorizedCounts(data.guideMemorizedCounts || {});
         setGuideCoreNotes(data.guideCoreNotes || {});
         setInterviewAnswerHistory(data.interviewAnswerHistory || []);
@@ -1919,16 +1925,16 @@ function App() {
     }
 
     if (showGuideWeakOnly) {
-      sections = sections.filter(section => GUIDE_LOW_MEMORY_STATUSES.has(guideMemory[section.id]));
+      sections = sections.filter(section => GUIDE_LOW_MEMORY_STATUSES.has(activeGuideMemory[section.id]));
     }
     if (guideMemoryFilter) {
       sections = sections.filter(section => {
-        const status = guideMemory[section.id] || 'unchecked';
+        const status = activeGuideMemory[section.id] || 'unchecked';
         return status === guideMemoryFilter;
       });
     }
     if (showGuideLaterOnly) {
-      sections = sections.filter(section => guideMemory[section.id] === 'later');
+      sections = sections.filter(section => activeGuideMemory[section.id] === 'later');
     }
     if (showGuideRecentOnly) {
       sections = sections.filter(section => recentInterviewSectionIds.has(section.id));
@@ -1938,7 +1944,7 @@ function App() {
 
     return sections.filter(section => {
       const markLabel = guideMarks[section.id] === 'must' ? '本番で言う' : guideMarks[section.id] === 'weak' ? 'まだ弱い' : guideMarks[section.id] === 'fix' ? '言い回し修正' : '';
-      const memoryStatus = guideMemory[section.id];
+      const memoryStatus = activeGuideMemory[section.id];
       const memoryLabel = GUIDE_MEMORY_META[memoryStatus]?.label || '未チェック';
       const memoryAlias = GUIDE_LOW_MEMORY_STATUSES.has(memoryStatus) ? '低理解 理解低い 苦手 復習 あいまい 要復習' : memoryStatus === 'later' ? '後でチェック 後で見る 後で復習 チェック' : memoryStatus === 'memorized' ? '覚えた 暗記済み 理解済み' : '未チェック 未確認';
       const memorizedCount = Number(guideMemorizedCounts[section.id]) || 0;
@@ -1962,7 +1968,7 @@ function App() {
       ].filter(Boolean).join(' ').toLowerCase();
       return target.includes(normalizedQuery);
     });
-  }, [editableInterviewSections, guideCoreNotes, guideMarks, guideMemory, guideMemoryFilter, guideMemorizedCounts, hiddenGuideSections, recentInterviewSectionIds, searchQuery, showGuideLaterOnly, showGuideRecentOnly, showGuideWeakOnly, showHiddenGuideOnly]);
+  }, [activeGuideMemory, editableInterviewSections, guideCoreNotes, guideMarks, guideMemoryFilter, guideMemorizedCounts, hiddenGuideSections, recentInterviewSectionIds, searchQuery, showGuideLaterOnly, showGuideRecentOnly, showGuideWeakOnly, showHiddenGuideOnly]);
 
   const weakGuidePracticeCards = useMemo(() => {
     return mergedInterviewPracticeCards.filter(card => {
@@ -2010,6 +2016,7 @@ function App() {
     studyMaterials,
     guideMarks,
     guideMemory,
+    guideDailyMemory,
     guideMemorizedCounts,
     guideCoreNotes,
     interviewAnswerHistory,
@@ -2131,26 +2138,36 @@ function App() {
 
   const updateGuideMemory = async (id, status, options = {}) => {
     const nextMemory = { ...guideMemory };
+    const currentDailyRecord = guideDailyMemory[selectedDate] || {};
+    const nextDailyRecord = { ...currentDailyRecord };
     let nextMemorizedCounts = guideMemorizedCounts;
     let shouldSaveMemorizedCounts = false;
+    const comparisonMemory = guideMemoryView === 'daily' ? currentDailyRecord : guideMemory;
 
     if (status === 'memorized') {
       nextMemory[id] = status;
+      nextDailyRecord[id] = status;
       nextMemorizedCounts = {
         ...guideMemorizedCounts,
         [id]: (Number(guideMemorizedCounts[id]) || 0) + 1
       };
       setGuideMemorizedCounts(nextMemorizedCounts);
       shouldSaveMemorizedCounts = true;
-    } else if (nextMemory[id] === status && !options.force) {
-      delete nextMemory[id];
+    } else if (comparisonMemory[id] === status && !options.force) {
+      if (guideMemoryView === 'cumulative') delete nextMemory[id];
+      delete nextDailyRecord[id];
     } else {
       nextMemory[id] = status;
+      nextDailyRecord[id] = status;
     }
+    const nextDailyMemory = { ...guideDailyMemory, [selectedDate]: nextDailyRecord };
     setGuideMemory(nextMemory);
+    setGuideDailyMemory(nextDailyMemory);
     if (user && db) {
       const docRef = getProgressDocRef();
-      await setDoc(docRef, shouldSaveMemorizedCounts ? { guideMemory: nextMemory, guideMemorizedCounts: nextMemorizedCounts } : { guideMemory: nextMemory }, { merge: true });
+      await setDoc(docRef, shouldSaveMemorizedCounts
+        ? { guideMemory: nextMemory, guideDailyMemory: nextDailyMemory, guideMemorizedCounts: nextMemorizedCounts }
+        : { guideMemory: nextMemory, guideDailyMemory: nextDailyMemory }, { merge: true });
     }
   };
 
@@ -2221,13 +2238,12 @@ function App() {
 
   const saveGuideWeaknessFromCoach = async (sectionId) => {
     if (!sectionId) return;
-    const nextMemory = { ...guideMemory, [sectionId]: 'review' };
     const nextMarks = { ...guideMarks, [sectionId]: 'weak' };
-    setGuideMemory(nextMemory);
+    await updateGuideMemory(sectionId, 'review', { force: true });
     setGuideMarks(nextMarks);
     if (user && db) {
       const docRef = getProgressDocRef();
-      await setDoc(docRef, { guideMemory: nextMemory, guideMarks: nextMarks }, { merge: true });
+      await setDoc(docRef, { guideMarks: nextMarks }, { merge: true });
     }
   };
 
@@ -2258,10 +2274,10 @@ function App() {
 
   const guideMemoryCounts = useMemo(() => {
     const ids = editableInterviewSections.map(section => section.id);
-    const memorized = ids.filter(id => guideMemory[id] === 'memorized').length;
-    const shaky = ids.filter(id => guideMemory[id] === 'shaky').length;
-    const review = ids.filter(id => guideMemory[id] === 'review').length;
-    const later = ids.filter(id => guideMemory[id] === 'later').length;
+    const memorized = ids.filter(id => activeGuideMemory[id] === 'memorized').length;
+    const shaky = ids.filter(id => activeGuideMemory[id] === 'shaky').length;
+    const review = ids.filter(id => activeGuideMemory[id] === 'review').length;
+    const later = ids.filter(id => activeGuideMemory[id] === 'later').length;
     const memorizedTotal = ids.reduce((sum, id) => sum + (Number(guideMemorizedCounts[id]) || 0), 0);
     const readinessCounts = { untouched: 0, check: 0, stable: 0, final: 0 };
     ids.forEach(id => {
@@ -2282,7 +2298,7 @@ function App() {
       unchecked: Math.max(0, total - checked),
       progress: total > 0 ? Math.round((memorized / total) * 100) : 0
     };
-  }, [editableInterviewSections, guideMemory, guideMemorizedCounts]);
+  }, [activeGuideMemory, editableInterviewSections, guideMemorizedCounts]);
 
   const motivationTimerTotal = useMemo(() => MOTIVATION_TIMER_PHASES.reduce((sum, phase) => sum + phase.seconds, 0), []);
   const motivationElapsed = motivationTimerTotal - motivationTimeLeft;
@@ -3258,13 +3274,13 @@ function App() {
     searchQuery ? `検索: ${searchQuery}` : null
   ].filter(Boolean);
   const guidePracticeMasteredCount = mockExamMode === 'guide'
-    ? mockQuestions.filter(question => guideMemory[question.sectionId] === 'memorized').length
+    ? mockQuestions.filter(question => activeGuideMemory[question.sectionId] === 'memorized').length
     : 0;
   const guidePracticeProgress = mockQuestions.length > 0
     ? Math.round((guidePracticeMasteredCount / mockQuestions.length) * 100)
     : 0;
   const currentGuidePracticeStatus = mockExamMode === 'guide'
-    ? guideMemory[mockQuestions[mockIndex]?.sectionId]
+    ? activeGuideMemory[mockQuestions[mockIndex]?.sectionId]
     : null;
   const availableGuidePracticeCount = mergedInterviewPracticeCards.filter(card => !hiddenGuideSections[card.sectionId]).length;
 
@@ -3418,14 +3434,48 @@ function App() {
                 </div>
 
                 <div className="lg:pl-7">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-lg font-black text-slate-900">習得状況</h3>
+                    <div className="inline-grid grid-cols-2 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                      <button
+                        type="button"
+                        aria-pressed={guideMemoryView === 'cumulative'}
+                        onClick={() => { setGuideMemoryView('cumulative'); setGuideMemoryFilter(null); setSearchQuery(""); }}
+                        className={`px-3 py-1.5 text-xs font-black ${guideMemoryView === 'cumulative' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                      >
+                        累計
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={guideMemoryView === 'daily'}
+                        onClick={() => { setGuideMemoryView('daily'); setGuideMemoryFilter(null); setSearchQuery(""); }}
+                        className={`border-l border-slate-200 px-3 py-1.5 text-xs font-black ${guideMemoryView === 'daily' ? 'bg-cyan-700 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                      >
+                        日別
+                      </button>
+                    </div>
+                  </div>
+
+                  {guideMemoryView === 'daily' && (
+                    <label className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-cyan-100 bg-cyan-50 px-3 py-2">
+                      <span className="flex items-center gap-2 text-xs font-black text-cyan-800"><Calendar className="w-4 h-4" /> 日別チェック</span>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => { setSelectedDate(e.target.value); setGuideMemoryFilter(null); }}
+                        aria-label="面接資料の日別チェック日"
+                        className="min-w-0 bg-transparent text-xs font-black text-cyan-900 outline-none"
+                      />
+                    </label>
+                  )}
+
+                  <div className="mt-3 flex items-end justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-black text-slate-900">習得状況</h3>
-                      <div className="mt-3 flex items-end gap-1">
+                      <div className="flex items-end gap-1">
                         <span className="text-5xl font-black leading-none text-cyan-700">{guideMemoryCounts.progress}</span>
                         <span className="pb-1 text-lg font-black text-slate-400">%</span>
                       </div>
-                      <p className="mt-1 text-xs font-black text-slate-500">暗記率</p>
+                      <p className="mt-1 text-xs font-black text-slate-500">{guideMemoryView === 'daily' ? `${selectedDate} の理解度` : '累計暗記率'}</p>
                     </div>
                     <span className="text-xs font-black text-slate-400">表示 {filteredInterviewSections.length} / {guideMemoryCounts.total}</span>
                   </div>
@@ -3632,7 +3682,7 @@ function App() {
 		            <div id="guide-card-list" className="grid scroll-mt-4 grid-cols-1 gap-4">
 	              {filteredInterviewSections.map(section => {
 	                const guideMark = guideMarks[section.id];
-	                const guideMemoryStatus = guideMemory[section.id];
+	                const guideMemoryStatus = activeGuideMemory[section.id];
 	                const guideMemoryMeta = GUIDE_MEMORY_META[guideMemoryStatus];
 		                const isGuideBodyRevealed = !!revealedGuideSections[section.id];
 		                const isGuideHidden = !!hiddenGuideSections[section.id];

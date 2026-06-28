@@ -53,5 +53,8 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - The mock interviewer footer remains within the `390 x 844` mobile viewport with no horizontal overflow.
 - Interview-guide mastery rows are actionable: memorized, shaky, review, and unchecked counts filter the card list to the selected status and scroll to the results.
 - Selecting the same mastery row again or using `全て表示` restores the full guide list.
+- Interview-guide mastery can switch between cumulative and per-day views without deleting cumulative progress.
+- Daily guide status is stored by date, starts unchecked on dates without records, and remains available when returning to that date.
+- The cumulative/daily selector and date input fit within the `390 x 844` mobile viewport with no horizontal overflow.
 
 final result: passed
