@@ -88,6 +88,19 @@ const TrashIcon = makeIcon('削');
 
 const LOCAL_KEY = 'koutousimon4-progress-v1';
 const FIREBASE_CONFIG_KEY = 'koutousimon-firebase-config-v1';
+const GUIDE_RESTORE_MIGRATION_KEY = 'restore-guide-visible-2026-06-30';
+const GUIDE_RESTORE_SECTION_IDS = ['pdf-guide-20', 'pdf-guide-21', 'pdf-guide-42'];
+function restoreRequestedGuideSections(hiddenGuideSections = {}) {
+  const nextHidden = { ...hiddenGuideSections };
+  let changed = false;
+  GUIDE_RESTORE_SECTION_IDS.forEach(id => {
+    if (nextHidden[id]) {
+      delete nextHidden[id];
+      changed = true;
+    }
+  });
+  return { nextHidden, changed };
+}
 function readLocalData() {
   try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); } catch (e) { return {}; }
 }
@@ -1600,6 +1613,7 @@ function App() {
   const [guideEdits, setGuideEdits] = useState({});
   const [hiddenGuideSections, setHiddenGuideSections] = useState({});
   const [deletedGuideSections, setDeletedGuideSections] = useState({});
+  const [dataMigrations, setDataMigrations] = useState({});
   const [checklists, setChecklists] = useState({}); 
   const [hiddenCards, setHiddenCards] = useState({}); 
   const [isLoading, setIsLoading] = useState(true);
@@ -1763,7 +1777,17 @@ function App() {
         setGuideCoreNotes(data.guideCoreNotes || {});
         setInterviewAnswerHistory(data.interviewAnswerHistory || []);
         setGuideEdits(data.guideEdits || {});
-        setHiddenGuideSections(data.hiddenGuideSections || {});
+        const loadedMigrations = data.dataMigrations || {};
+        let nextMigrations = loadedMigrations;
+        let nextHiddenGuideSections = data.hiddenGuideSections || {};
+        if (!loadedMigrations[GUIDE_RESTORE_MIGRATION_KEY]) {
+          const restoreResult = restoreRequestedGuideSections(nextHiddenGuideSections);
+          nextHiddenGuideSections = restoreResult.nextHidden;
+          nextMigrations = { ...loadedMigrations, [GUIDE_RESTORE_MIGRATION_KEY]: true };
+          setDoc(docRef, { hiddenGuideSections: nextHiddenGuideSections, dataMigrations: nextMigrations }, { merge: true }).catch(console.error);
+        }
+        setDataMigrations(nextMigrations);
+        setHiddenGuideSections(nextHiddenGuideSections);
         setDeletedGuideSections(data.deletedGuideSections || {});
         setChecklists(data.checklists || {});
         setHiddenCards(data.hiddenCards || {}); 
@@ -2206,6 +2230,7 @@ function App() {
     guideEdits,
     hiddenGuideSections,
     deletedGuideSections,
+    dataMigrations,
     checklists,
     hiddenCards,
     customQuestions,

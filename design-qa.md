@@ -63,5 +63,6 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - The hidden-guide management banner now explicitly says users can either restore hidden cards or delete unnecessary ones.
 - Restoring a hidden interview-guide card from 資料管理 now changes the action to `元の一覧へ戻す`, exits hidden-only mode, clears guide filters, and returns the restored card to the normal list immediately.
 - Restoring a hidden oral-exam question from the hidden-only view now uses the same `元の一覧へ戻す` behavior and exits hidden-only mode after the modal closes.
+- A one-time guide-data migration restores `大学進学後の進路`, `院の進学は考えているか`, and `高専で学んできたこと` from hidden interview-guide sections for existing synced users, then records `restore-guide-visible-2026-06-30` so later manual hiding still works.
 
 final result: passed
