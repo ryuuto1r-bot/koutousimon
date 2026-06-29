@@ -1499,6 +1499,14 @@ const TODAY_GUIDE_REASON_META = {
   recent: { label: '最近追加', className: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
   fill: { label: '調整', className: 'bg-white text-slate-500 border-slate-100' }
 };
+const TODAY_ORAL_REASON_META = {
+  due: { label: '復習', className: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+  weak: { label: '弱点', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+  unmastered: { label: '未習得', className: 'bg-rose-50 text-rose-700 border-rose-100' },
+  untouched: { label: '未着手', className: 'bg-blue-50 text-blue-700 border-blue-100' },
+  important: { label: 'S/A', className: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
+  fill: { label: '調整', className: 'bg-white text-slate-500 border-slate-100' }
+};
 const GUIDE_READINESS_RANKS = [
   { key: "final", min: 5, label: "本番候補", hint: "5回以上", badgeClass: "bg-rose-100 text-rose-700 border-rose-200" },
   { key: "stable", min: 3, label: "安定", hint: "3〜4回", badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -2076,6 +2084,56 @@ function App() {
       total: statuses.length
     };
   }, [currentDayRecord, studyQuizIdSet]);
+
+  const visibleOralPracticeQuestions = useMemo(() => {
+    return studyQuizData.filter(q => !hiddenCards[q.id]);
+  }, [hiddenCards, studyQuizData]);
+
+  const todayOralPracticePlan = useMemo(() => {
+    const candidates = visibleOralPracticeQuestions.filter(q => currentDayRecord[q.id] !== 'mastered');
+    const selected = [];
+    const selectedIds = new Set();
+    const reasonCounts = { due: 0, weak: 0, unmastered: 0, untouched: 0, important: 0, fill: 0 };
+    const addQuestion = (question, reason) => {
+      if (!question?.id || selectedIds.has(question.id) || selected.length >= GUIDE_PRACTICE_QUESTION_COUNT) return false;
+      selected.push({ ...question, todayReason: reason });
+      selectedIds.add(question.id);
+      reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+      return true;
+    };
+    const pick = (questions, limit, reason) => {
+      seededShuffle(questions, `${selectedDate}:oral:${reason}`).forEach(question => {
+        if (reasonCounts[reason] >= limit) return;
+        addQuestion(question, reason);
+      });
+    };
+    const priorityScore = (question) => {
+      let score = 0;
+      if (dueCardIds.has(question.id)) score += 90;
+      if (weaknessStats.ids.has(question.id)) score += 80 + (weaknessStats.scores[question.id] || 0);
+      if (!allMasteredIds.has(question.id)) score += 38;
+      if (!touchedIds.has(question.id)) score += 26;
+      if (question.rank === 'S') score += 24;
+      if (question.rank === 'A') score += 14;
+      if (currentDayRecord[question.id] === 'review') score += 16;
+      return score;
+    };
+
+    pick(candidates.filter(q => dueCardIds.has(q.id)), 4, 'due');
+    pick(candidates.filter(q => weaknessStats.ids.has(q.id)), 4, 'weak');
+    pick(candidates.filter(q => !allMasteredIds.has(q.id) && q.rank !== 'B'), 7, 'unmastered');
+    pick(candidates.filter(q => !touchedIds.has(q.id)), 4, 'untouched');
+    pick(candidates.filter(q => q.rank !== 'B'), 4, 'important');
+
+    seededShuffle(candidates, `${selectedDate}:oral:fill`)
+      .sort((a, b) => priorityScore(b) - priorityScore(a))
+      .forEach(question => addQuestion(question, 'fill'));
+
+    return {
+      questions: selected.slice(0, GUIDE_PRACTICE_QUESTION_COUNT),
+      reasonCounts
+    };
+  }, [allMasteredIds, currentDayRecord, dueCardIds, selectedDate, touchedIds, visibleOralPracticeQuestions, weaknessStats]);
 
   const modeQuizData = useMemo(() => {
     if (appMode === 'guide' || appMode === 'compare') return [];
@@ -3479,7 +3537,7 @@ function App() {
   };
 
   const startOralPracticeSet = (mode = 'important') => {
-    const availableQuestions = studyQuizData.filter(q => !hiddenCards[q.id]);
+    const availableQuestions = visibleOralPracticeQuestions;
     const source = mode === 'weak'
       ? availableQuestions.filter(q => weaknessStats.ids.has(q.id))
       : mode === 'due'
@@ -3492,6 +3550,21 @@ function App() {
     }
 
     setMockQuestions([...source].sort(() => 0.5 - Math.random()).slice(0, 4));
+    setMockExamMode('oral');
+    setMockIndex(0);
+    setMockTimeLeft(60);
+    setShowMockAnswer(false);
+    setMockFollowupIndex(0);
+    setRevealedAnswers({});
+  };
+
+  const startTodayOralPractice = () => {
+    const selected = todayOralPracticePlan.questions;
+    if (selected.length === 0) {
+      window.alert?.("今日の口頭試問候補がありません。");
+      return;
+    }
+    setMockQuestions(selected);
     setMockExamMode('oral');
     setMockIndex(0);
     setMockTimeLeft(60);
@@ -3551,6 +3624,14 @@ function App() {
     const currentQuestion = mockQuestions[mockIndex];
     if (currentQuestion?.sectionId) {
       await updateGuideMemory(currentQuestion.sectionId, status, { force: true });
+    }
+    nextMockQuestion();
+  };
+
+  const markOralPracticeAndAdvance = async (status) => {
+    const currentQuestion = mockQuestions[mockIndex];
+    if (currentQuestion?.id) {
+      await updateStatus(currentQuestion.id, status, null, { force: true });
     }
     nextMockQuestion();
   };
@@ -3667,6 +3748,15 @@ function App() {
     : 0;
   const currentGuidePracticeStatus = mockExamMode === 'guide'
     ? activeGuideMemory[mockQuestions[mockIndex]?.sectionId]
+    : null;
+  const oralPracticeMasteredCount = mockExamMode === 'oral'
+    ? mockQuestions.filter(question => currentDayRecord[question.id] === 'mastered').length
+    : 0;
+  const oralPracticeProgress = mockQuestions.length > 0
+    ? Math.round((oralPracticeMasteredCount / mockQuestions.length) * 100)
+    : 0;
+  const currentOralPracticeStatus = mockExamMode === 'oral'
+    ? currentDayRecord[mockQuestions[mockIndex]?.id]
     : null;
   const availableGuidePracticeCount = visibleGuidePracticeCards.length;
   const mockTimerText = `${String(Math.floor(Math.max(0, mockTimeLeft) / 60)).padStart(2, '0')}:${String(Math.max(0, mockTimeLeft) % 60).padStart(2, '0')}`;
@@ -4376,6 +4466,52 @@ function App() {
                   </button>
                 ))}
               </div>
+
+              <article className="mt-3 rounded-xl border border-cyan-100 bg-cyan-50/70 p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Target className="text-cyan-700" />
+                      <h3 className="text-base font-black text-slate-950">今日やる口頭試問15問</h3>
+                    </div>
+                    <p className="mt-1 text-xs font-bold text-slate-500">{selectedDate} / 復習・弱点・未習得を優先</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {Object.entries(TODAY_ORAL_REASON_META).map(([key, meta]) => {
+                        const count = todayOralPracticePlan.reasonCounts[key] || 0;
+                        if (count === 0) return null;
+                        return (
+                          <span key={key} className={`rounded-full border px-2.5 py-1 text-[11px] font-black ${meta.className}`}>
+                            {meta.label} {count}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    {todayOralPracticePlan.questions.length > 0 && (
+                      <div className="mt-3 rounded-lg border border-white/80 bg-white/70 p-3">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-cyan-700">今日の先頭3問</p>
+                        <div className="mt-2 space-y-1.5">
+                          {todayOralPracticePlan.questions.slice(0, 3).map((question, index) => (
+                            <div key={question.id} className="flex items-start gap-2 text-xs font-bold leading-5 text-slate-700">
+                              <span className="mt-0.5 rounded-full bg-cyan-700 px-1.5 py-0.5 text-[10px] font-black text-white">{index + 1}</span>
+                              <span className="min-w-0 flex-1 truncate">{question.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="sm:w-48">
+                    <button
+                      type="button"
+                      onClick={startTodayOralPractice}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                    >
+                      <Mic className="text-cyan-300" /> 15問開始
+                    </button>
+                    <p className="mt-2 text-center text-[10px] font-bold text-slate-500">「覚えた → 次へ」で習得に反映</p>
+                  </div>
+                </div>
+              </article>
 
               <div className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white">
                 {[
@@ -5374,6 +5510,12 @@ function App() {
                       <span>今回 {guidePracticeMasteredCount}/{mockQuestions.length}問</span>
                     </div>
                   )}
+                  {mockExamMode === 'oral' && (
+                    <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-black text-slate-300">
+                      <span>今日の習得率 {progress}%</span>
+                      <span>今回 {oralPracticeMasteredCount}/{mockQuestions.length}問</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -5400,6 +5542,21 @@ function App() {
                   </div>
                 </div>
               )}
+              {mockExamMode === 'oral' && (
+                <div className="mb-6 w-full rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className="text-xs font-black text-emerald-800">今回の{mockQuestions.length}問 習得率</span>
+                    <span className="text-lg font-black text-emerald-700">{oralPracticeProgress}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-emerald-100">
+                    <div className="h-full rounded-full bg-emerald-600 transition-all duration-500" style={{ width: `${oralPracticeProgress}%` }}></div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-black text-emerald-700">
+                    <span>覚えた {oralPracticeMasteredCount}問</span>
+                    <span>残り {Math.max(0, mockQuestions.length - oralPracticeMasteredCount)}問</span>
+                  </div>
+                </div>
+              )}
               <div className="text-slate-400 font-bold mb-4 uppercase tracking-widest">
                 Question {mockIndex + 1} / {mockQuestions.length}
               </div>
@@ -5416,6 +5573,17 @@ function App() {
                           : 'bg-slate-100 text-slate-500'
                 }`}>
                   このカード: {GUIDE_MEMORY_META[currentGuidePracticeStatus]?.label || '未チェック'}
+                </div>
+              )}
+              {mockExamMode === 'oral' && (
+                <div className={`mb-4 rounded-full px-3 py-1 text-xs font-black ${
+                  currentOralPracticeStatus === 'mastered'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : currentOralPracticeStatus === 'review'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-slate-100 text-slate-500'
+                }`}>
+                  この問題: {currentOralPracticeStatus === 'mastered' ? '覚えた' : currentOralPracticeStatus === 'review' ? '要復習' : '未チェック'}
                 </div>
               )}
               
@@ -5542,6 +5710,21 @@ function App() {
 	                  </button>
 	                  <button
 	                    onClick={() => markGuidePracticeAndAdvance('memorized')}
+	                    className="min-w-0 flex-1 rounded-xl bg-emerald-600 px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-black text-white shadow-lg hover:bg-emerald-700"
+	                  >
+	                    覚えた → 次へ
+	                  </button>
+                </div>
+              ) : mockExamMode === 'oral' ? (
+	                <div className="order-3 flex w-full min-w-0 gap-2 sm:order-none sm:w-auto sm:flex-1">
+	                  <button
+	                    onClick={() => markOralPracticeAndAdvance('review')}
+	                    className="min-w-0 flex-1 rounded-xl border-2 border-amber-200 bg-white px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-black text-amber-700 hover:bg-amber-50"
+	                  >
+	                    詰まった → 次へ
+	                  </button>
+	                  <button
+	                    onClick={() => markOralPracticeAndAdvance('mastered')}
 	                    className="min-w-0 flex-1 rounded-xl bg-emerald-600 px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-black text-white shadow-lg hover:bg-emerald-700"
 	                  >
 	                    覚えた → 次へ

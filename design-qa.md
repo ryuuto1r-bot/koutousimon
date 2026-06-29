@@ -66,5 +66,6 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - A one-time guide-data migration restores `大学進学後の進路`, `院の進学は考えているか`, and `高専で学んできたこと` from hidden interview-guide sections for existing synced users, then records `restore-guide-visible-2026-06-30` so later manual hiding still works.
 - Interview-guide practice now shows a daily auto-generated 15-card set based on the selected date and current guide progress, prioritizing review, shaky, later, low-count, and recent cards while preserving the existing random mode as a secondary action.
 - The daily guide-practice start button opens the 15-question practice modal, and the mock timer now renders as minute-second text such as `01:00` / `00:59`.
+- Oral-exam practice now has a daily auto-generated 15-question set based on the selected date and current progress, prioritizing due, weak, unmastered, untouched, and important questions; oral mock buttons now mark questions as `review` or `mastered` before advancing.
 
 final result: passed
