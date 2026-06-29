@@ -59,5 +59,7 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - Interview-guide cards now render in topic order with visible section headers: 志望動機・自己紹介, 九大・学科理解, ロボットアイデア甲子園, SENKAY・ビジコン, 仮想通貨ツール・個人ビジネス, 卒研・技術実装, 学生会・人物面, 経済理論・興味分野, 数学・統計の説明, その他メモ.
 - All 90 guide cards are assigned to exactly one topic group with no duplicate or missing IDs, while existing card IDs remain unchanged for saved progress.
 - Mobile guide view at `390 x 844` still has no horizontal overflow after adding topic headers and sequential display labels.
+- Hidden interview-guide cards now show a rose `削除` action inside 資料管理; the action is persisted with `deletedGuideSections` and removes that card from the guide list, practice pool, and guide totals.
+- The hidden-guide management banner now explicitly says users can either restore hidden cards or delete unnecessary ones.
 
 final result: passed

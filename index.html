@@ -84,6 +84,7 @@ const FileText = makeIcon('資');
 const PenIcon = makeIcon('ペ');
 const EraserIcon = makeIcon('消');
 const NoteIcon = makeIcon('メ');
+const TrashIcon = makeIcon('削');
 
 const LOCAL_KEY = 'koutousimon4-progress-v1';
 const FIREBASE_CONFIG_KEY = 'koutousimon-firebase-config-v1';
@@ -1598,6 +1599,7 @@ function App() {
   const [interviewAnswerHistory, setInterviewAnswerHistory] = useState([]);
   const [guideEdits, setGuideEdits] = useState({});
   const [hiddenGuideSections, setHiddenGuideSections] = useState({});
+  const [deletedGuideSections, setDeletedGuideSections] = useState({});
   const [checklists, setChecklists] = useState({}); 
   const [hiddenCards, setHiddenCards] = useState({}); 
   const [isLoading, setIsLoading] = useState(true);
@@ -1762,6 +1764,7 @@ function App() {
         setInterviewAnswerHistory(data.interviewAnswerHistory || []);
         setGuideEdits(data.guideEdits || {});
         setHiddenGuideSections(data.hiddenGuideSections || {});
+        setDeletedGuideSections(data.deletedGuideSections || {});
         setChecklists(data.checklists || {});
         setHiddenCards(data.hiddenCards || {}); 
         setCustomQuestions(data.customQuestions || []); 
@@ -1789,12 +1792,12 @@ function App() {
   }, [studyQuizData]);
 
   const editableInterviewSections = useMemo(() => {
-    const sections = interviewGuideSections.map(section => {
+    const sections = interviewGuideSections.filter(section => !deletedGuideSections[section.id]).map(section => {
       const edit = guideEdits[section.id];
       return edit?.sourceVersion === INTERVIEW_GUIDE_SOURCE_VERSION ? { ...section, ...edit, isEdited: true } : section;
     });
     return buildOrderedInterviewGuideSections(sections);
-  }, [guideEdits]);
+  }, [deletedGuideSections, guideEdits]);
 
   const recentInterviewSectionIds = useMemo(() => {
     return new Set(interviewGuideSections.slice(-RECENT_INTERVIEW_GUIDE_COUNT).map(section => section.id));
@@ -2202,6 +2205,7 @@ function App() {
     interviewAnswerHistory,
     guideEdits,
     hiddenGuideSections,
+    deletedGuideSections,
     checklists,
     hiddenCards,
     customQuestions,
@@ -2439,6 +2443,30 @@ function App() {
     if (user && db) {
       const docRef = getProgressDocRef();
       await setDoc(docRef, { hiddenGuideSections: nextHidden }, { merge: true });
+    }
+  };
+
+  const deleteHiddenGuideSection = async (id, e) => {
+    if (e) e.stopPropagation();
+    const section = editableInterviewSections.find(item => item.id === id);
+    const ok = window.confirm?.(`「${section?.title || 'この面接資料'}」を削除しますか？\n削除すると一覧・ランダム練習・習得率から外れます。`);
+    if (ok === false) return;
+
+    const nextDeleted = { ...deletedGuideSections, [id]: true };
+    const nextHidden = { ...hiddenGuideSections };
+    delete nextHidden[id];
+
+    setDeletedGuideSections(nextDeleted);
+    setHiddenGuideSections(nextHidden);
+    setRevealedGuideSections(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, { deletedGuideSections: nextDeleted, hiddenGuideSections: nextHidden }, { merge: true });
     }
   };
 
@@ -3847,11 +3875,12 @@ function App() {
 			              </div>
 			            )}
 
-			            {showHiddenGuideOnly && (
+		            {showHiddenGuideOnly && (
 		              <div className="rounded-2xl border border-slate-200 bg-slate-900 px-4 py-3 shadow-sm sm:flex sm:items-center sm:justify-between">
 		                <div className="text-sm font-black text-white">
 		                  非表示にした面接資料だけ表示中
 		                  <span className="ml-2 text-xs text-slate-300">{filteredInterviewSections.length}件</span>
+		                  <div className="mt-1 text-xs font-bold text-slate-300">ここから非表示解除、または不要な資料の削除ができます。</div>
 		                </div>
 		                <button onClick={() => setShowHiddenGuideOnly(false)} className="mt-3 rounded-xl bg-white px-4 py-2 text-xs font-black text-slate-700 border border-white hover:bg-slate-100 sm:mt-0">
 		                  通常表示に戻す
@@ -3930,6 +3959,11 @@ function App() {
 		                    <button onClick={(e) => toggleGuideHidden(section.id, e)} className={`rounded-xl px-3 py-2 text-xs font-black border ${isGuideHidden ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-700' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
 		                      {isGuideHidden ? <><Eye className="w-3 h-3 mr-1 inline-flex" /> 非表示解除</> : <><EyeOff className="w-3 h-3 mr-1 inline-flex" /> 非表示</>}
 		                    </button>
+		                    {showHiddenGuideOnly && isGuideHidden && (
+		                      <button onClick={(e) => deleteHiddenGuideSection(section.id, e)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 hover:bg-rose-100">
+		                        <TrashIcon className="w-3 h-3 mr-1 inline-flex" /> 削除
+		                      </button>
+		                    )}
 		                    <button onClick={() => updateGuideMemory(section.id, 'memorized')} className={`rounded-xl px-3 py-2 text-xs font-black border ${guideMemoryStatus === 'memorized' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'}`}>
 		                      覚えた +1
 	                    </button>
@@ -3966,6 +4000,11 @@ function App() {
 	                        <button onClick={(e) => toggleGuideHidden(section.id, e)} className={`rounded-xl px-4 py-2 text-sm font-black border ${isGuideHidden ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-700' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
 	                          {isGuideHidden ? <><Eye className="w-4 h-4 mr-1 inline-flex" /> 非表示解除</> : <><EyeOff className="w-4 h-4 mr-1 inline-flex" /> 非表示</>}
 	                        </button>
+	                        {showHiddenGuideOnly && isGuideHidden && (
+	                          <button onClick={(e) => deleteHiddenGuideSection(section.id, e)} className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-black text-rose-700 hover:bg-rose-100">
+	                            <TrashIcon className="w-4 h-4 mr-1 inline-flex" /> 削除
+	                          </button>
+	                        )}
 	                      </div>
 	                    </div>
                   ) : hasGuideBody ? (
