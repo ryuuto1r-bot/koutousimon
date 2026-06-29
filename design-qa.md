@@ -61,5 +61,7 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - Mobile guide view at `390 x 844` still has no horizontal overflow after adding topic headers and sequential display labels.
 - Hidden interview-guide cards now show a rose `削除` action inside 資料管理; the action is persisted with `deletedGuideSections` and removes that card from the guide list, practice pool, and guide totals.
 - The hidden-guide management banner now explicitly says users can either restore hidden cards or delete unnecessary ones.
+- Restoring a hidden interview-guide card from 資料管理 now changes the action to `元の一覧へ戻す`, exits hidden-only mode, clears guide filters, and returns the restored card to the normal list immediately.
+- Restoring a hidden oral-exam question from the hidden-only view now uses the same `元の一覧へ戻す` behavior and exits hidden-only mode after the modal closes.
 
 final result: passed
