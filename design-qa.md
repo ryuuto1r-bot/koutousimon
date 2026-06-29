@@ -56,5 +56,8 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - Interview-guide mastery can switch between cumulative and per-day views without deleting cumulative progress.
 - Daily guide status is stored by date, starts unchecked on dates without records, and remains available when returning to that date.
 - The cumulative/daily selector and date input fit within the `390 x 844` mobile viewport with no horizontal overflow.
+- Interview-guide cards now render in topic order with visible section headers: 志望動機・自己紹介, 九大・学科理解, ロボットアイデア甲子園, SENKAY・ビジコン, 仮想通貨ツール・個人ビジネス, 卒研・技術実装, 学生会・人物面, 経済理論・興味分野, 数学・統計の説明, その他メモ.
+- All 90 guide cards are assigned to exactly one topic group with no duplicate or missing IDs, while existing card IDs remain unchanged for saved progress.
+- Mobile guide view at `390 x 844` still has no horizontal overflow after adding topic headers and sequential display labels.
 
 final result: passed

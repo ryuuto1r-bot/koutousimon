@@ -1282,7 +1282,176 @@ const interviewGuideSections = [
   }
 ];
 
-const INTERVIEW_GUIDE_RAW_TEXT = interviewGuideSections.map(section => [section.title, ...(section.body || []), ...(section.bullets || [])].join("\n")).join("\n\n");
+const INTERVIEW_GUIDE_TOPIC_GROUPS = [
+  {
+    topic: "志望動機・自己紹介",
+    ids: [
+      "motivation-script",
+      "pdf-guide-28",
+      "pdf-guide-62",
+      "pdf-guide-63",
+      "pdf-guide-79",
+      "pdf-guide-54",
+      "pdf-guide-89",
+      "pdf-guide-42",
+      "pdf-guide-86",
+      "pdf-guide-43",
+      "pdf-guide-44",
+      "pdf-guide-01"
+    ]
+  },
+  {
+    topic: "九大・学科理解",
+    ids: [
+      "pdf-guide-90",
+      "pdf-guide-13",
+      "pdf-guide-91",
+      "pdf-guide-93",
+      "pdf-guide-22",
+      "pdf-guide-52",
+      "pdf-guide-53",
+      "pdf-guide-92",
+      "pdf-guide-02",
+      "pdf-guide-03",
+      "pdf-guide-04",
+      "pdf-guide-05",
+      "pdf-guide-16"
+    ]
+  },
+  {
+    topic: "ロボットアイデア甲子園",
+    ids: [
+      "pdf-guide-82",
+      "pdf-guide-85",
+      "pdf-guide-84",
+      "pdf-guide-83",
+      "pdf-guide-48",
+      "pdf-guide-88",
+      "pdf-guide-49"
+    ]
+  },
+  {
+    topic: "SENKAY・ビジコン",
+    ids: [
+      "pdf-guide-80",
+      "pdf-guide-81",
+      "pdf-guide-95"
+    ]
+  },
+  {
+    topic: "仮想通貨ツール・個人ビジネス",
+    ids: [
+      "pdf-guide-07",
+      "pdf-guide-87",
+      "pdf-guide-94",
+      "pdf-guide-15",
+      "pdf-guide-46",
+      "pdf-guide-08",
+      "pdf-guide-09",
+      "pdf-guide-10",
+      "pdf-guide-11",
+      "pdf-guide-12"
+    ]
+  },
+  {
+    topic: "卒研・技術実装",
+    ids: [
+      "pdf-guide-17",
+      "pdf-guide-18",
+      "pdf-guide-19",
+      "pdf-guide-76",
+      "pdf-guide-77",
+      "pdf-guide-78"
+    ]
+  },
+  {
+    topic: "学生会・人物面",
+    ids: [
+      "pdf-guide-23",
+      "pdf-guide-27",
+      "pdf-guide-26",
+      "pdf-guide-25",
+      "pdf-guide-24",
+      "pdf-guide-29",
+      "pdf-guide-30",
+      "pdf-guide-47",
+      "pdf-guide-55",
+      "pdf-guide-56",
+      "pdf-guide-57",
+      "pdf-guide-59",
+      "pdf-guide-60",
+      "pdf-guide-20",
+      "pdf-guide-21"
+    ]
+  },
+  {
+    topic: "経済理論・興味分野",
+    ids: [
+      "pdf-guide-31",
+      "pdf-guide-32",
+      "pdf-guide-40",
+      "pdf-guide-33",
+      "pdf-guide-35",
+      "pdf-guide-34",
+      "pdf-guide-36",
+      "pdf-guide-37",
+      "pdf-guide-38",
+      "pdf-guide-39",
+      "pdf-guide-41",
+      "pdf-guide-45",
+      "pdf-guide-50",
+      "pdf-guide-51",
+      "pdf-guide-65"
+    ]
+  },
+  {
+    topic: "数学・統計の説明",
+    ids: [
+      "pdf-guide-70",
+      "pdf-guide-71",
+      "pdf-guide-72",
+      "pdf-guide-73",
+      "pdf-guide-74",
+      "pdf-guide-75"
+    ]
+  },
+  {
+    topic: "その他メモ",
+    ids: [
+      "pdf-guide-14",
+      "pdf-guide-61",
+      "pdf-guide-69"
+    ]
+  }
+];
+
+const INTERVIEW_GUIDE_ORDER_INDEX = new Map();
+const INTERVIEW_GUIDE_TOPIC_BY_ID = new Map();
+INTERVIEW_GUIDE_TOPIC_GROUPS.forEach((group, groupIndex) => {
+  group.ids.forEach((id, itemIndex) => {
+    INTERVIEW_GUIDE_ORDER_INDEX.set(id, groupIndex * 1000 + itemIndex);
+    INTERVIEW_GUIDE_TOPIC_BY_ID.set(id, group.topic);
+  });
+});
+
+const buildOrderedInterviewGuideSections = (sections) => {
+  return [...sections]
+    .sort((a, b) => {
+      const aIndex = INTERVIEW_GUIDE_ORDER_INDEX.has(a.id) ? INTERVIEW_GUIDE_ORDER_INDEX.get(a.id) : Number.MAX_SAFE_INTEGER;
+      const bIndex = INTERVIEW_GUIDE_ORDER_INDEX.has(b.id) ? INTERVIEW_GUIDE_ORDER_INDEX.get(b.id) : Number.MAX_SAFE_INTEGER;
+      if (aIndex !== bIndex) return aIndex - bIndex;
+      return interviewGuideSections.findIndex(section => section.id === a.id) - interviewGuideSections.findIndex(section => section.id === b.id);
+    })
+    .map((section, index) => ({
+      ...section,
+      displayLabel: `資料${String(index + 1).padStart(2, "0")}`,
+      topic: INTERVIEW_GUIDE_TOPIC_BY_ID.get(section.id) || "その他メモ"
+    }));
+};
+
+const interviewGuideSectionsInStudyOrder = buildOrderedInterviewGuideSections(interviewGuideSections);
+
+const INTERVIEW_GUIDE_RAW_TEXT = interviewGuideSectionsInStudyOrder.map(section => [section.title, ...(section.body || []), ...(section.bullets || [])].join("\n")).join("\n\n");
 
 const GUIDE_COMMON_FOLLOWUPS = [
   { q: "なぜそう考えたのですか？", a: "自分の経験を1つ挙げ、その経験から何を感じ、九大経済工学で何を学びたいと思ったのかまでつなげます。" },
@@ -1620,15 +1789,16 @@ function App() {
   }, [studyQuizData]);
 
   const editableInterviewSections = useMemo(() => {
-    return interviewGuideSections.map(section => {
+    const sections = interviewGuideSections.map(section => {
       const edit = guideEdits[section.id];
       return edit?.sourceVersion === INTERVIEW_GUIDE_SOURCE_VERSION ? { ...section, ...edit, isEdited: true } : section;
     });
+    return buildOrderedInterviewGuideSections(sections);
   }, [guideEdits]);
 
   const recentInterviewSectionIds = useMemo(() => {
-    return new Set(editableInterviewSections.slice(-RECENT_INTERVIEW_GUIDE_COUNT).map(section => section.id));
-  }, [editableInterviewSections]);
+    return new Set(interviewGuideSections.slice(-RECENT_INTERVIEW_GUIDE_COUNT).map(section => section.id));
+  }, []);
 
   const mergedInterviewPracticeCards = useMemo(() => {
     return buildInterviewPracticeCards(editableInterviewSections).map(card => {
@@ -1953,7 +2123,9 @@ function App() {
       const target = [
         section.title,
         section.label,
+        section.displayLabel,
         section.tag,
+        section.topic,
         section.isEdited ? '編集済み' : '',
         markLabel,
         memoryLabel,
@@ -1969,6 +2141,14 @@ function App() {
       return target.includes(normalizedQuery);
     });
   }, [activeGuideMemory, editableInterviewSections, guideCoreNotes, guideMarks, guideMemoryFilter, guideMemorizedCounts, hiddenGuideSections, recentInterviewSectionIds, searchQuery, showGuideLaterOnly, showGuideRecentOnly, showGuideWeakOnly, showHiddenGuideOnly]);
+
+  const guideTopicCounts = useMemo(() => {
+    return filteredInterviewSections.reduce((counts, section) => {
+      const topic = section.topic || "その他メモ";
+      counts[topic] = (counts[topic] || 0) + 1;
+      return counts;
+    }, {});
+  }, [filteredInterviewSections]);
 
   const weakGuidePracticeCards = useMemo(() => {
     return mergedInterviewPracticeCards.filter(card => {
@@ -3679,8 +3859,8 @@ function App() {
 		              </div>
 		            )}
 
-		            <div id="guide-card-list" className="grid scroll-mt-4 grid-cols-1 gap-4">
-	              {filteredInterviewSections.map(section => {
+	            <div id="guide-card-list" className="grid scroll-mt-4 grid-cols-1 gap-4">
+	              {filteredInterviewSections.map((section, sectionIndex) => {
 	                const guideMark = guideMarks[section.id];
 	                const guideMemoryStatus = activeGuideMemory[section.id];
 	                const guideMemoryMeta = GUIDE_MEMORY_META[guideMemoryStatus];
@@ -3691,10 +3871,23 @@ function App() {
 			                const guideCoreNote = guideCoreNotes[section.id] || "";
 			                const hasGuideBody = (section.body || []).length > 0 || (section.bullets || []).length > 0;
 			                const isRecentGuide = recentInterviewSectionIds.has(section.id);
+			                const sectionTopic = section.topic || "その他メモ";
+			                const previousTopic = filteredInterviewSections[sectionIndex - 1]?.topic || "その他メモ";
+			                const shouldShowTopicHeading = sectionIndex === 0 || sectionTopic !== previousTopic;
 		                return (
-	                <article key={section.id} className={`rounded-3xl border bg-white/95 p-5 sm:p-6 shadow-sm ${isGuideHidden ? 'border-slate-300 bg-slate-50/90 opacity-85' : guideMemoryStatus === 'memorized' ? 'border-emerald-200 ring-2 ring-emerald-50' : guideMemoryStatus === 'shaky' ? 'border-amber-200 ring-2 ring-amber-50' : guideMemoryStatus === 'review' ? 'border-rose-200 ring-2 ring-rose-50' : guideMemoryStatus === 'later' ? 'border-indigo-200 ring-2 ring-indigo-50' : guideMark === 'must' ? 'border-rose-200 ring-2 ring-rose-100' : guideMark === 'weak' ? 'border-amber-200 ring-2 ring-amber-100' : guideMark === 'fix' ? 'border-violet-200 ring-2 ring-violet-100' : 'border-white'}`}>
+	                <div key={section.id} className="space-y-3">
+	                  {shouldShowTopicHeading && (
+	                    <div className="sticky top-[76px] z-[2] -mx-1 flex items-center justify-between rounded-2xl border border-cyan-100 bg-cyan-50/95 px-4 py-2 shadow-sm backdrop-blur">
+	                      <div className="flex min-w-0 items-center gap-2">
+	                        <span className="h-2 w-2 shrink-0 rounded-full bg-cyan-500"></span>
+	                        <h3 className="truncate text-sm font-black text-cyan-900">{sectionTopic}</h3>
+	                      </div>
+	                      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-cyan-700 shadow-sm">{guideTopicCounts[sectionTopic] || 0}件</span>
+	                    </div>
+	                  )}
+	                <article className={`rounded-3xl border bg-white/95 p-5 sm:p-6 shadow-sm ${isGuideHidden ? 'border-slate-300 bg-slate-50/90 opacity-85' : guideMemoryStatus === 'memorized' ? 'border-emerald-200 ring-2 ring-emerald-50' : guideMemoryStatus === 'shaky' ? 'border-amber-200 ring-2 ring-amber-50' : guideMemoryStatus === 'review' ? 'border-rose-200 ring-2 ring-rose-50' : guideMemoryStatus === 'later' ? 'border-indigo-200 ring-2 ring-indigo-50' : guideMark === 'must' ? 'border-rose-200 ring-2 ring-rose-100' : guideMark === 'weak' ? 'border-amber-200 ring-2 ring-amber-100' : guideMark === 'fix' ? 'border-violet-200 ring-2 ring-violet-100' : 'border-white'}`}>
 	                  <div className="mb-4 flex flex-wrap items-center gap-2">
-			                    <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-black text-cyan-700">{section.label}</span>
+			                    <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-black text-cyan-700">{section.displayLabel || section.label}</span>
 			                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{section.tag}</span>
 			                    {isRecentGuide && <span className="rounded-full bg-cyan-700 px-3 py-1 text-xs font-black text-white">NEW</span>}
                     <span className={`rounded-full px-3 py-1 text-xs font-black ${guideMemoryStatus === 'memorized' ? 'bg-emerald-100 text-emerald-700' : guideMemoryStatus === 'shaky' ? 'bg-amber-100 text-amber-700' : guideMemoryStatus === 'review' ? 'bg-rose-100 text-rose-700' : guideMemoryStatus === 'later' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-400'}`}>
@@ -3799,6 +3992,7 @@ function App() {
                     </ul>
                   )}
                 </article>
+                </div>
                 );
               })}
               {filteredInterviewSections.length === 0 && (
