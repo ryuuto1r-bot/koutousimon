@@ -1491,6 +1491,14 @@ const GUIDE_MEMORY_META = {
   later: { label: "後でチェック", short: "後", tone: "indigo" }
 };
 const GUIDE_LOW_MEMORY_STATUSES = new Set(['shaky', 'review']);
+const TODAY_GUIDE_REASON_META = {
+  review: { label: '要復習', className: 'bg-rose-50 text-rose-700 border-rose-100' },
+  shaky: { label: 'あいまい', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+  later: { label: '後で', className: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+  low: { label: '回数少', className: 'bg-slate-50 text-slate-600 border-slate-100' },
+  recent: { label: '最近追加', className: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
+  fill: { label: '調整', className: 'bg-white text-slate-500 border-slate-100' }
+};
 const GUIDE_READINESS_RANKS = [
   { key: "final", min: 5, label: "本番候補", hint: "5回以上", badgeClass: "bg-rose-100 text-rose-700 border-rose-200" },
   { key: "stable", min: 3, label: "安定", hint: "3〜4回", badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -1500,6 +1508,33 @@ const GUIDE_READINESS_RANKS = [
 const getGuideReadinessRank = (count = 0) => {
   const safeCount = Number(count) || 0;
   return GUIDE_READINESS_RANKS.find(rank => safeCount >= rank.min) || GUIDE_READINESS_RANKS[GUIDE_READINESS_RANKS.length - 1];
+};
+const hashStringToSeed = (value = '') => {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
+const seededRandom = (seed) => {
+  let value = seed >>> 0;
+  return () => {
+    value += 0x6D2B79F5;
+    let t = value;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+const seededShuffle = (items, seedText = '') => {
+  const shuffled = [...items];
+  const random = seededRandom(hashStringToSeed(seedText));
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 };
 
 const interviewPracticeCardOverrides = {
@@ -2188,21 +2223,81 @@ function App() {
     }, {});
   }, [filteredInterviewSections]);
 
+  const visibleGuidePracticeCards = useMemo(() => {
+    return mergedInterviewPracticeCards.filter(card => card.sectionId && !hiddenGuideSections[card.sectionId]);
+  }, [hiddenGuideSections, mergedInterviewPracticeCards]);
+
   const weakGuidePracticeCards = useMemo(() => {
-    return mergedInterviewPracticeCards.filter(card => {
+    return visibleGuidePracticeCards.filter(card => {
       const sectionId = card.sectionId;
-      if (!sectionId || hiddenGuideSections[sectionId]) return false;
       const count = Number(guideMemorizedCounts[sectionId]) || 0;
       return GUIDE_LOW_MEMORY_STATUSES.has(guideMemory[sectionId]) || count <= 2;
     });
-  }, [guideMemory, guideMemorizedCounts, hiddenGuideSections, mergedInterviewPracticeCards]);
+  }, [guideMemory, guideMemorizedCounts, visibleGuidePracticeCards]);
 
   const laterGuidePracticeCards = useMemo(() => {
-    return mergedInterviewPracticeCards.filter(card => {
+    return visibleGuidePracticeCards.filter(card => {
       const sectionId = card.sectionId;
-      return sectionId && !hiddenGuideSections[sectionId] && guideMemory[sectionId] === 'later';
+      return sectionId && guideMemory[sectionId] === 'later';
     });
-  }, [guideMemory, hiddenGuideSections, mergedInterviewPracticeCards]);
+  }, [guideMemory, visibleGuidePracticeCards]);
+
+  const todayGuidePracticePlan = useMemo(() => {
+    const selected = [];
+    const selectedIds = new Set();
+    const reasonCounts = { review: 0, shaky: 0, later: 0, low: 0, recent: 0, fill: 0 };
+    const addCard = (card, reason) => {
+      if (!card?.sectionId || selectedIds.has(card.sectionId) || selected.length >= GUIDE_PRACTICE_QUESTION_COUNT) return false;
+      selected.push({ ...card, todayReason: reason });
+      selectedIds.add(card.sectionId);
+      reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+      return true;
+    };
+    const pick = (cards, limit, reason) => {
+      seededShuffle(cards, `${selectedDate}:${reason}`).forEach(card => {
+        if (reasonCounts[reason] >= limit) return;
+        addCard(card, reason);
+      });
+    };
+    const withPriorityScore = (card) => {
+      const sectionId = card.sectionId;
+      const status = guideMemory[sectionId];
+      const count = Number(guideMemorizedCounts[sectionId]) || 0;
+      let score = 0;
+      if (status === 'review') score += 80;
+      if (status === 'shaky') score += 70;
+      if (status === 'later') score += 55;
+      if (count === 0) score += 45;
+      if (count > 0 && count <= 2) score += 35;
+      if (recentInterviewSectionIds.has(sectionId)) score += 18;
+      if (guideMarks[sectionId] === 'must') score += 12;
+      if (guideMarks[sectionId] === 'weak') score += 10;
+      return score;
+    };
+    const reviewCards = visibleGuidePracticeCards.filter(card => guideMemory[card.sectionId] === 'review');
+    const shakyCards = visibleGuidePracticeCards.filter(card => guideMemory[card.sectionId] === 'shaky');
+    const laterCards = visibleGuidePracticeCards.filter(card => guideMemory[card.sectionId] === 'later');
+    const lowCountCards = visibleGuidePracticeCards.filter(card => {
+      const count = Number(guideMemorizedCounts[card.sectionId]) || 0;
+      return count <= 2;
+    });
+    const recentCards = visibleGuidePracticeCards.filter(card => recentInterviewSectionIds.has(card.sectionId));
+
+    pick(reviewCards, 4, 'review');
+    pick(shakyCards, 4, 'shaky');
+    pick(laterCards, 2, 'later');
+    pick(lowCountCards, 7, 'low');
+    pick(recentCards, 2, 'recent');
+
+    const fillCards = seededShuffle(visibleGuidePracticeCards, `${selectedDate}:fill`)
+      .sort((a, b) => withPriorityScore(b) - withPriorityScore(a));
+    fillCards.forEach(card => addCard(card, 'fill'));
+
+    return {
+      cards: selected.slice(0, GUIDE_PRACTICE_QUESTION_COUNT),
+      reasonCounts
+    };
+  }, [guideMarks, guideMemory, guideMemorizedCounts, recentInterviewSectionIds, selectedDate, visibleGuidePracticeCards]);
 
   const filteredComparisonCards = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -3232,12 +3327,27 @@ function App() {
         ? weakGuidePracticeCards
         : options.laterOnly
           ? laterGuidePracticeCards
-        : mergedInterviewPracticeCards.filter(card => !hiddenGuideSections[card.sectionId]);
+        : visibleGuidePracticeCards;
     const shuffled = [...source].sort(() => 0.5 - Math.random());
     const selected = sectionId ? shuffled : shuffled.slice(0, GUIDE_PRACTICE_QUESTION_COUNT);
     if (selected.length === 0) {
       if (options.weakOnly) window.alert?.("弱い資料はありません。");
       if (options.laterOnly) window.alert?.("後でチェックの資料はありません。");
+      return;
+    }
+    setMockQuestions(selected);
+    setMockExamMode('guide');
+    setMockIndex(0);
+    setMockTimeLeft(60);
+    setShowMockAnswer(false);
+    setMockFollowupIndex(0);
+    setRevealedAnswers({});
+  };
+
+  const startTodayGuidePractice = () => {
+    const selected = todayGuidePracticePlan.cards;
+    if (selected.length === 0) {
+      window.alert?.("今日の練習候補がありません。");
       return;
     }
     setMockQuestions(selected);
@@ -3558,7 +3668,8 @@ function App() {
   const currentGuidePracticeStatus = mockExamMode === 'guide'
     ? activeGuideMemory[mockQuestions[mockIndex]?.sectionId]
     : null;
-  const availableGuidePracticeCount = mergedInterviewPracticeCards.filter(card => !hiddenGuideSections[card.sectionId]).length;
+  const availableGuidePracticeCount = visibleGuidePracticeCards.length;
+  const mockTimerText = `${String(Math.floor(Math.max(0, mockTimeLeft) / 60)).padStart(2, '0')}:${String(Math.max(0, mockTimeLeft) % 60).padStart(2, '0')}`;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-rose-200 app-shell">
@@ -3667,18 +3778,49 @@ function App() {
                     <div className="flex items-center gap-3">
                       <FileText className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-xl text-cyan-700 shadow-sm" />
                       <div className="min-w-0">
-                        <p className="text-base font-black text-slate-900 sm:text-lg">面接資料からランダム出題</p>
-                        <p className="mt-1 text-xs font-bold text-slate-500">15問・約15分</p>
+                        <p className="text-base font-black text-slate-900 sm:text-lg">今日やる15問を自動生成</p>
+                        <p className="mt-1 text-xs font-bold text-slate-500">{selectedDate} / 要復習・あいまい・回数少を優先</p>
                       </div>
                     </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {Object.entries(TODAY_GUIDE_REASON_META).map(([key, meta]) => {
+                        const count = todayGuidePracticePlan.reasonCounts[key] || 0;
+                        if (count === 0) return null;
+                        return (
+                          <span key={key} className={`rounded-full border px-2.5 py-1 text-[11px] font-black ${meta.className}`}>
+                            {meta.label} {count}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    {todayGuidePracticePlan.cards.length > 0 && (
+                      <div className="mt-4 rounded-lg border border-white/80 bg-white/70 p-3">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-cyan-700">今日の先頭3問</p>
+                        <div className="mt-2 space-y-1.5">
+                          {todayGuidePracticePlan.cards.slice(0, 3).map((card, index) => (
+                            <div key={card.sectionId} className="flex items-start gap-2 text-xs font-bold leading-5 text-slate-700">
+                              <span className="mt-0.5 rounded-full bg-cyan-700 px-1.5 py-0.5 text-[10px] font-black text-white">{index + 1}</span>
+                              <span className="min-w-0 flex-1 truncate">{card.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={startTodayGuidePractice}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-3.5 text-base font-black text-white shadow-sm transition-colors hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                    >
+                      <Mic className="text-cyan-300" /> 今日の15問を開始
+                    </button>
                     <button
                       type="button"
                       onClick={startSelectedGuidePractice}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-3.5 text-base font-black text-white shadow-sm transition-colors hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-100 bg-white px-4 py-2.5 text-sm font-black text-cyan-800 transition-colors hover:bg-cyan-50"
                     >
-                      <Mic className="text-cyan-300" /> 練習を開始
+                      <Shuffle className="text-cyan-500" /> 下のモードでランダム15問
                     </button>
-                    <p className="mt-2 text-center text-[11px] font-bold text-slate-500">選択したモードで最大15問を出題します</p>
+                    <p className="mt-2 text-center text-[11px] font-bold text-slate-500">今日のセットは日付と学習状況から自動で決まります</p>
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 overflow-hidden rounded-lg border border-slate-200 bg-white">
@@ -5236,7 +5378,7 @@ function App() {
               </div>
               <div className="flex items-center gap-4">
                 <div className={`flex items-center font-mono text-xl font-bold px-3 py-1 rounded-lg ${mockTimeLeft <= 10 ? 'bg-red-500/20 text-red-400 animate-bounce' : 'bg-slate-800 text-emerald-400'}`}>
-                  <Timer className="w-5 h-5 mr-2" /> 00:{String(mockTimeLeft).padStart(2, '0')}
+                  <Timer className="w-5 h-5 mr-2" /> {mockTimerText}
                 </div>
                 <button onClick={() => setMockExamMode(null)} className="text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
               </div>
