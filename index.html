@@ -419,7 +419,8 @@ const categoryRankMap = {
   "6. 最小二乗・回帰": "",
   "7. 確率・統計": "",
   "8. 微分方程式": "A",
-  "9. 経済基礎": ""
+  "9. 経済基礎": "",
+  "直前カード": "S"
 };
 
 const comparisonCards = [
@@ -473,6 +474,271 @@ const comparisonCards = [
       { name: "フーリエ変換", scope: "周波数分析", left: "周波数を調べる", right: "音声・画像・信号処理", cue: "周波数に分ける" },
       { name: "ラプラス変換", scope: "微分方程式", left: "時間領域からs領域", right: "制御・回路・振動", cue: "解きやすく変換" }
     ]
+  }
+];
+
+const lastMinuteCards = [
+  {
+    id: 10001,
+    lastMinuteId: "M1",
+    difficulty: "基礎",
+    category: "直前カード",
+    title: "M1 微分係数と導関数の違いを説明してください。",
+    formula: "f'(a), \\quad f'(x)",
+    definition: "微分係数は一点の変化率、導関数は各点の微分係数を集めた関数。",
+    oral30: "微分係数は、ある一点における関数の変化率や接線の傾きを表す値です。一方、導関数は各点での微分係数を対応させた新しい関数です。つまり、微分係数は一点の情報であり、導関数は関数全体の変化の情報を表す点が違います。",
+    explanation: "1分説明の要点:\n・微分係数は一点での変化率\n・導関数は各点の微分係数を集めた関数\n・一点の情報か、関数全体の情報かが違う",
+    followups: [{ q: "導関数が存在しない例は。", a: "$|x|$ の $x=0$ では左右微分が一致しないため、導関数は存在しません。" }],
+    rank: "A",
+    lastMinute: true
+  },
+  {
+    id: 10002,
+    lastMinuteId: "M2",
+    difficulty: "基礎",
+    category: "直前カード",
+    title: "M2 合成関数の微分の考え方を説明してください。",
+    formula: "\\frac{dy}{dx}=\\frac{dy}{du}\\frac{du}{dx}",
+    formulaMust: true,
+    definition: "外側の変化率と内側の変化率を掛け合わせる微分法。",
+    oral30: "合成関数の微分は、外側の関数の変化率と内側の関数の変化率を掛け合わせて求めます。直感的には、入力が途中の変換を経て出力に影響するため、その途中の変化率を連鎖的に掛けるという考え方です。経済では効用関数や費用関数の変数変換でも使われます。",
+    explanation: "1分説明の要点:\n・外側の変化率×内側の変化率\n・連鎖律の直感は「途中の変換を経る」こと\n・経済では変数変換や効用・費用の合成で使う",
+    followups: [{ q: "例を一つ。", a: "$y=(3x+1)^2$ なら外側は $2(3x+1)$、内側は $3$ なので、積で $6(3x+1)$ になります。" }],
+    rank: "A",
+    lastMinute: true
+  },
+  {
+    id: 10003,
+    lastMinuteId: "M3",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M3 偏微分と全微分の違いは何ですか。",
+    formula: "df=f_x dx+f_y dy",
+    formulaMust: true,
+    definition: "偏微分は一つの変数だけ、全微分はすべての微小変化を合わせる。",
+    oral30: "偏微分は、他の変数を固定して一つの変数だけを変化させたときの変化率です。一方、全微分は複数の変数が同時に微小変化したとき、それぞれの偏微分の効果を足し合わせて、関数全体の変化を近似するものです。",
+    explanation: "1分説明の要点:\n・偏微分は他の変数を固定して一変数ずつ変化を見る\n・全微分は全部の微小変化を合わせた近似\n・多変数関数の局所的変化を表す",
+    followups: [{ q: "経済での意味は。", a: "価格と所得の両方が変わるときの需要変化の近似に使えます。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10004,
+    lastMinuteId: "M4",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M4 極大・極小を調べる基本手順を説明してください。",
+    formula: "f'(x)=0, \\quad f''(x)>0 \\text{ or } f''(x)<0",
+    definition: "一階微分で候補を探し、二階微分や符号変化で判定する。",
+    oral30: "極大・極小を調べるときは、まず一階微分が0になる点や微分できない点を探して候補を見つけます。その後、二階微分の符号や一階微分の前後の符号変化を見て、極大か極小かを判定します。多変数の場合はヘッセ行列も重要になります。",
+    explanation: "1分説明の要点:\n・まず一階微分が 0 または未定義の点を探す\n・二階微分や前後の符号で判定\n・多変数ならヘッセ行列も関係する",
+    followups: [{ q: "二階微分だけで十分でない場合は。", a: "二階微分が0のときは判定できないため、一階微分の前後の符号や高階微分など別の判定が必要です。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10005,
+    lastMinuteId: "M5",
+    difficulty: "基礎",
+    category: "直前カード",
+    title: "M5 定積分の意味を説明してください。",
+    formula: "\\int_a^b f(x)\\,dx",
+    definition: "区間全体の累積量や面積を表す操作。",
+    oral30: "定積分は、ある区間全体にわたる量の累積を表します。幾何学的にはグラフと軸に囲まれた面積として理解でき、微小な量を細かく足し合わせる極限の考え方です。経済では総費用、総余剰、分布関数などで使われます。",
+    explanation: "1分説明の要点:\n・区間全体の累積量、面積の極限として理解\n・微小量を足し合わせる考え方\n・経済では総費用、総余剰、分布関数で使う",
+    followups: [{ q: "不定積分との違いは。", a: "定積分は区間を指定して数値を求めるもの、不定積分は原始関数の族を求めるものです。" }],
+    rank: "A",
+    lastMinute: true
+  },
+  {
+    id: 10006,
+    lastMinuteId: "M6",
+    difficulty: "基礎",
+    category: "直前カード",
+    title: "M6 置換積分と部分積分はどう使い分けますか。",
+    formula: "\\int u\\,dv=uv-\\int v\\,du",
+    definition: "置換積分は複合関数、部分積分は積の形に使う。",
+    oral30: "置換積分は、複合関数のまとまりを新しい変数に置き換えて簡単にする方法です。部分積分は、関数の積の形を一方は微分、一方は積分することで崩して計算しやすくする方法です。どちらも微分公式を逆向きに使う考え方です。",
+    explanation: "1分説明の要点:\n・置換積分は複合関数のまとまりを変数変換\n・部分積分は積の形を崩して簡単にする\n・微分公式の逆向きに考える",
+    followups: [{ q: "部分積分の公式を言ってください。", a: "$\\int u\\,dv = uv-\\int v\\,du$ です。" }],
+    rank: "A",
+    lastMinute: true
+  },
+  {
+    id: 10007,
+    lastMinuteId: "M7",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M7 重積分は何を表しますか。",
+    formula: "\\iint_D f(x,y)\\,dxdy",
+    definition: "二次元や三次元領域における量の総和。",
+    oral30: "重積分は、二次元や三次元の領域全体にわたる量の総和を表します。密度が1なら面積や体積を表し、密度がある場合はその密度を領域全体で足し合わせた総量になります。計算では積分順序や領域の把握が重要です。",
+    explanation: "1分説明の要点:\n・二次元・三次元領域での量の総和\n・面積や体積、密度付きなら総量\n・順序交換は領域把握が本質",
+    followups: [{ q: "経済で使う場面は。", a: "同時分布の確率計算や、地域・時間にわたる総量評価などで使えます。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10008,
+    lastMinuteId: "M8",
+    difficulty: "基礎",
+    category: "直前カード",
+    title: "M8 行列を「線形写像」として説明してください。",
+    formula: "T(\\mathbf{x})=A\\mathbf{x}",
+    definition: "行列はベクトルを別のベクトルへ移す線形な変換ルール。",
+    oral30: "行列は、ベクトルを別のベクトルへ移す線形写像として理解できます。回転、拡大縮小、せん断のような変換を一つの記法で表すことができ、連立一次方程式や回帰分析、多変量データの処理に便利です。",
+    explanation: "1分説明の要点:\n・ベクトルを別のベクトルへ移すルール\n・回転、拡大縮小、せん断を一括表現できる\n・連立一次方程式や回帰分析の表現に便利",
+    followups: [{ q: "なぜ経済で重要か。", a: "多変量データ、最適化、回帰分析、マルコフ過程などで頻繁に使うためです。" }],
+    rank: "A",
+    lastMinute: true
+  },
+  {
+    id: 10009,
+    lastMinuteId: "M9",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M9 連立一次方程式が解をもつ条件を説明してください。",
+    formula: "\\operatorname{rank}(A)=\\operatorname{rank}(A|b)",
+    formulaMust: true,
+    definition: "係数行列と拡大係数行列の階数が一致すれば解をもつ。",
+    oral30: "連立一次方程式が解をもつかどうかは、係数行列Aと拡大係数行列(A|b)の階数で判定できます。階数が一致すれば少なくとも一つ解があり、さらにその階数が未知数の数に等しければ一意解、未知数の数より小さければ無数の解をもちます。",
+    explanation: "1分説明の要点:\n・係数行列と拡大係数行列の階数で判定\n・階数が一致すれば少なくとも一つ解がある\n・未知数の数と階数で一意か無限かが決まる",
+    followups: [{ q: "一意解の条件は。", a: "係数行列と拡大係数行列の階数が一致し、その階数が未知数の数に等しいことです。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10010,
+    lastMinuteId: "M10",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M10 固有値・固有ベクトルとは何ですか。",
+    formula: "A\\mathbf{v}=\\lambda\\mathbf{v}",
+    formulaMust: true,
+    definition: "変換しても向きが変わらないベクトルと、その倍率。",
+    oral30: "固有ベクトルとは、行列で変換しても向きが変わらず、長さだけが変わる特別なベクトルです。そのときの倍率が固有値です。固有値・固有ベクトルは、動学モデルの安定性や主成分分析で主要な変動方向を理解するために役立ちます。",
+    explanation: "1分説明の要点:\n・変換しても向きが変わらず倍率だけ変わるベクトル\n・その倍率が固有値\n・動学モデルや主成分分析の理解に役立つ",
+    followups: [{ q: "経済での直感的な意味は。", a: "長期の成長率や安定性、データの主要な変動方向を把握することに対応します。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10011,
+    lastMinuteId: "M11",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M11 正定値行列とは何ですか。",
+    formula: "\\mathbf{x}^T A\\mathbf{x}>0 \\quad (\\mathbf{x}\\ne \\mathbf{0})",
+    formulaMust: true,
+    definition: "任意のゼロでないベクトルに対して二次形式が常に正になる行列。",
+    oral30: "正定値行列とは、任意のゼロでないベクトル $x$ に対して、二次形式 $x^T A x$ が常に正になる行列です。最適化ではヘッセ行列が正定値であることが、関数の凸性や局所最小の判定に関係します。",
+    explanation: "1分説明の要点:\n・任意の 0 でないベクトル x に対し $x^T A x>0$\n・二次形式が常に正\n・最適化で凸性や最小値判定に使う",
+    followups: [{ q: "なぜ最適化で大事か。", a: "ヘッセ行列が正定値なら、その点が局所最小である十分条件になりやすいからです。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10012,
+    lastMinuteId: "M12",
+    difficulty: "基礎",
+    category: "直前カード",
+    title: "M12 条件付き確率とベイズの定理を説明してください。",
+    formula: "P(A|B)=\\frac{P(B|A)P(A)}{P(B)}",
+    formulaMust: true,
+    definition: "条件付き確率は条件下の確率、ベイズの定理は条件の向きを逆にする公式。",
+    oral30: "条件付き確率は、事象Bが起きたという条件のもとで事象Aが起きる確率です。ベイズの定理は、$P(A|B)$ と $P(B|A)$ のように条件の向きを逆にして確率を計算する公式で、事前情報を新しい情報で更新する考え方に使われます。",
+    explanation: "1分説明の要点:\n・条件付き確率は「B が起きたときの A」\n・ベイズは条件の向きを逆にする公式\n・事前情報と新情報を更新する考え方",
+    followups: [{ q: "公式を口頭で。", a: "$P(A|B)=\\frac{P(B|A)P(A)}{P(B)}$ です。" }],
+    rank: "A",
+    lastMinute: true
+  },
+  {
+    id: 10013,
+    lastMinuteId: "M13",
+    difficulty: "基礎",
+    category: "直前カード",
+    title: "M13 期待値と分散の意味を説明してください。",
+    formula: "E[X], \\quad V[X]=E[(X-\\mu)^2]",
+    definition: "期待値は中心、分散はばらつき。",
+    oral30: "期待値は確率を考慮した平均的な中心を表します。分散は、値が期待値からどれくらい散らばっているかを表す指標です。経済や金融では、平均的な収益とリスクを分けて見るために重要です。",
+    explanation: "1分説明の要点:\n・期待値は平均的な中心\n・分散はばらつきの大きさ\n・平均とリスクを分けて見るのが重要",
+    followups: [{ q: "標準偏差との違いは。", a: "標準偏差は分散の平方根なので、単位が元の変数と同じに戻ります。" }],
+    rank: "A",
+    lastMinute: true
+  },
+  {
+    id: 10014,
+    lastMinuteId: "M14",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M14 大数の法則と中心極限定理の違いは。",
+    formula: "\\bar{X}\\to\\mu, \\quad \\frac{\\bar{X}-\\mu}{\\sigma/\\sqrt{n}}\\xrightarrow{d}N(0,1)",
+    formulaMust: true,
+    definition: "大数は平均の収束、中心極限定理は標本平均の分布の形。",
+    oral30: "大数の法則は、標本数を増やすと標本平均が真の平均に近づくという定理です。中心極限定理は、元の分布によらず、標本平均を標準化した分布が正規分布に近づくという定理です。大数の法則は値の安定性、中心極限定理は推定や検定で使う近似分布に関係します。",
+    explanation: "1分説明の要点:\n・大数は平均が真の値へ近づく話\n・中心極限は平均の分布が正規に近づく話\n・推定と検定の基礎",
+    followups: [{ q: "どちらが推定量の安定性に関係するか。", a: "大数の法則が一致性などの安定性に関係し、中心極限定理は近似分布に関係します。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10015,
+    lastMinuteId: "M15",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M15 不偏性と一致性の違いを説明してください。",
+    formula: "E[\\hat{\\theta}]=\\theta, \\quad \\hat{\\theta}\\xrightarrow{p}\\theta",
+    formulaMust: true,
+    definition: "不偏性は平均して真値、一致性は標本が増えると真値へ近づく性質。",
+    oral30: "不偏性は、推定量の期待値が真の値に一致するという有限標本での性質です。一致性は、標本数を増やすと推定量が真の値に近づくという漸近的な性質です。つまり、不偏性は平均的な偏り、一致性はデータが増えたときの収束に注目します。",
+    explanation: "1分説明の要点:\n・不偏性は平均すると真値に一致\n・一致性は標本が増えると真値に近づく\n・有限標本の性質と漸近的性質の違い",
+    followups: [{ q: "どちらがより重要ですか。", a: "状況次第ですが、実証では一致性や分散も含めて総合的に判断する必要があります。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10016,
+    lastMinuteId: "M16",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M16 仮説検定の p 値をどう説明しますか。",
+    formula: "p=P(\\text{観測以上に極端な結果}\\mid H_0)",
+    definition: "帰無仮説のもとで、観測結果以上に極端な結果が出る確率。",
+    oral30: "p値は、帰無仮説が正しいと仮定したときに、今回観測された結果以上に極端な結果がどれくらい起こりやすいかを表す値です。帰無仮説そのものが正しい確率ではありません。p値が小さいほど、観測結果は帰無仮説と整合しにくいと判断します。",
+    explanation: "1分説明の要点:\n・帰無仮説が正しいとしたとき、観測以上に極端な結果の出やすさ\n・帰無仮説そのものの真確率ではない\n・小さいほど整合性が低い",
+    followups: [{ q: "p=0.03 は何を意味するか。", a: "帰無仮説の下で、この程度以上に極端な結果が約3%の確率で起こるという意味です。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10017,
+    lastMinuteId: "M17",
+    difficulty: "標準",
+    category: "直前カード",
+    title: "M17 ラグランジュ未定乗数法の考え方を説明してください。",
+    formula: "L(x,y,\\lambda)=f(x,y)-\\lambda g(x,y)",
+    formulaMust: true,
+    definition: "制約付き最適化を目的関数と制約をまとめて解く方法。",
+    oral30: "ラグランジュ未定乗数法は、制約付き最適化を解くために、目的関数と制約条件を一つのラグランジュ関数にまとめる方法です。偏微分して0とおくことで候補点を求めます。また、乗数は制約を少し緩めたときに目的関数がどれだけ改善するかという限界価値として解釈できます。",
+    explanation: "1分説明の要点:\n・制約付き最適化を、評価関数と制約を一つにまとめて解く\n・乗数は制約を少し緩めたときの価値の近似として読める\n・経済学では予算制約で頻出",
+    followups: [{ q: "乗数の経済学的意味は。", a: "シャドープライス、つまり制約を1単位緩和したときの目的関数の限界価値です。" }],
+    rank: "S",
+    lastMinute: true
+  },
+  {
+    id: 10018,
+    lastMinuteId: "M18",
+    difficulty: "発展",
+    category: "直前カード",
+    title: "M18 凸関数と最適化の関係を説明してください。",
+    formula: "f(tx+(1-t)y)\\le tf(x)+(1-t)f(y)",
+    formulaMust: true,
+    definition: "凸関数では局所最小が大域最小になりやすく、最適化が扱いやすい。",
+    oral30: "凸関数では、局所的な最小点が全体の最小点になりやすいため、最適化問題を安定して解きやすくなります。解の探索や理論的な保証がしやすく、数理計画法や機械学習でも重要です。経済工学では、複雑な意思決定問題を扱いやすい形にするうえで重要な性質です。",
+    explanation: "1分説明の要点:\n・凸関数では局所最小が大域最小になりやすい\n・最適化が扱いやすく解釈もしやすい\n・数理計画や機械学習で重要",
+    followups: [{ q: "凹関数ならどうなるか。", a: "凹関数は最大化問題で扱いやすく、局所最大が大域最大になりやすいです。効用最大化などでよく使われます。" }],
+    rank: "S",
+    lastMinute: true
   }
 ];
 
@@ -1607,9 +1873,10 @@ function App() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [showSketchFullscreen, setShowSketchFullscreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const searchInputRef = useRef(null);
-  const isGuideMode = appMode === 'guide';
-  const isComparisonMode = appMode === 'compare';
+	  const searchInputRef = useRef(null);
+	  const isGuideMode = appMode === 'guide';
+	  const isComparisonMode = appMode === 'compare';
+	  const isLastMinuteMode = appMode === 'lastMinute';
   
   const [showHeaderControls, setShowHeaderControls] = useState(false);
 
@@ -1877,13 +2144,20 @@ function App() {
     return () => unsubscribe();
   }, [user, syncMode]);
 
-  const mergedQuizData = useMemo(() => {
-    const editedBase = quizData.map(q => {
-      const edit = questionEdits[q.id];
-      return edit ? { ...q, ...edit, isEdited: true } : q;
-    });
-    return [...editedBase, ...customQuestions];
-  }, [customQuestions, questionEdits]);
+	  const mergedQuizData = useMemo(() => {
+	    const editedBase = quizData.map(q => {
+	      const edit = questionEdits[q.id];
+	      return edit ? { ...q, ...edit, isEdited: true } : q;
+	    });
+	    return [...editedBase, ...customQuestions];
+	  }, [customQuestions, questionEdits]);
+
+	  const lastMinuteQuizData = useMemo(() => {
+	    return lastMinuteCards.map(q => {
+	      const edit = questionEdits[q.id];
+	      return edit ? { ...q, ...edit, isEdited: true } : q;
+	    });
+	  }, [questionEdits]);
 
   const studyQuizData = useMemo(() => {
     return mergedQuizData.filter(q => q.category !== "0. 志望理由・面接");
@@ -1912,15 +2186,27 @@ function App() {
     });
   }, [editableInterviewSections, guideCoreNotes]);
 
-  const allMasteredIds = useMemo(() => {
-    const ids = new Set();
-    Object.values(dailyHistory).forEach(dayRecord => {
-      Object.entries(dayRecord).forEach(([id, status]) => {
-        if (status === 'mastered') ids.add(Number(id));
+	  const allMasteredIds = useMemo(() => {
+	    const ids = new Set();
+	    Object.values(dailyHistory).forEach(dayRecord => {
+	      Object.entries(dayRecord).forEach(([id, status]) => {
+	        if (status === 'mastered') ids.add(Number(id));
       });
     });
-    return ids;
-  }, [dailyHistory]);
+	    return ids;
+	  }, [dailyHistory]);
+
+	  const lastMinuteIdSet = useMemo(() => new Set(lastMinuteQuizData.map(q => String(q.id))), [lastMinuteQuizData]);
+
+	  const allLastMinuteMasteredIds = useMemo(() => {
+	    const ids = new Set();
+	    Object.values(dailyHistory).forEach(dayRecord => {
+	      Object.entries(dayRecord).forEach(([id, status]) => {
+	        if (status === 'mastered' && lastMinuteIdSet.has(String(id))) ids.add(Number(id));
+	      });
+	    });
+	    return ids;
+	  }, [dailyHistory, lastMinuteIdSet]);
 
   const touchedIds = useMemo(() => {
     const ids = new Set();
@@ -2049,9 +2335,15 @@ function App() {
     return stats;
   }, [allMasteredIds, studyQuizData]);
 
-  const unmasteredItems = useMemo(() => {
-    return studyQuizData.filter(q => !allMasteredIds.has(q.id));
-  }, [allMasteredIds, studyQuizData]);
+	  const unmasteredItems = useMemo(() => {
+	    return studyQuizData.filter(q => !allMasteredIds.has(q.id));
+	  }, [allMasteredIds, studyQuizData]);
+
+	  const modeUnmasteredItems = useMemo(() => {
+	    return isLastMinuteMode
+	      ? lastMinuteQuizData.filter(q => !allLastMinuteMasteredIds.has(q.id))
+	      : unmasteredItems;
+	  }, [allLastMinuteMasteredIds, isLastMinuteMode, lastMinuteQuizData, unmasteredItems]);
 
   const last7DaysStats = useMemo(() => {
     const stats = [];
@@ -2098,16 +2390,33 @@ function App() {
     }).filter(Boolean);
   }, [dailyHistory, selectedDate, studyQuizData]);
 
-  const todaySummary = useMemo(() => {
-    const statuses = Object.entries(currentDayRecord)
-      .filter(([id]) => studyQuizIdSet.has(id))
-      .map(([, status]) => status);
-    return {
+	  const todaySummary = useMemo(() => {
+	    const statuses = Object.entries(currentDayRecord)
+	      .filter(([id]) => studyQuizIdSet.has(id))
+	      .map(([, status]) => status);
+	    return {
       mastered: statuses.filter(status => status === 'mastered').length,
       review: statuses.filter(status => status === 'review').length,
-      total: statuses.length
-    };
-  }, [currentDayRecord, studyQuizIdSet]);
+	      total: statuses.length
+	    };
+	  }, [currentDayRecord, studyQuizIdSet]);
+
+	  const lastMinuteSummary = useMemo(() => {
+	    const statuses = Object.entries(currentDayRecord)
+	      .filter(([id]) => lastMinuteIdSet.has(String(id)))
+	      .map(([, status]) => status);
+	    const mastered = lastMinuteQuizData.filter(q => allLastMinuteMasteredIds.has(q.id)).length;
+	    const total = lastMinuteQuizData.length;
+	    return {
+	      total,
+	      mastered,
+	      remaining: Math.max(0, total - mastered),
+	      progress: total > 0 ? Math.round((mastered / total) * 100) : 0,
+	      todayMastered: statuses.filter(status => status === 'mastered').length,
+	      todayReview: statuses.filter(status => status === 'review').length,
+	      todayTotal: statuses.length
+	    };
+	  }, [allLastMinuteMasteredIds, currentDayRecord, lastMinuteIdSet, lastMinuteQuizData]);
 
   const oralProgressSummary = useMemo(() => {
     if (oralProgressView === 'daily') {
@@ -2190,10 +2499,11 @@ function App() {
     };
   }, [allMasteredIds, currentDayRecord, dueCardIds, selectedDate, touchedIds, visibleOralPracticeQuestions, weaknessStats]);
 
-  const modeQuizData = useMemo(() => {
-    if (appMode === 'guide' || appMode === 'compare') return [];
-    return studyQuizData;
-  }, [appMode, studyQuizData]);
+	  const modeQuizData = useMemo(() => {
+	    if (appMode === 'guide' || appMode === 'compare') return [];
+	    if (appMode === 'lastMinute') return lastMinuteQuizData;
+	    return studyQuizData;
+	  }, [appMode, lastMinuteQuizData, studyQuizData]);
 
   const focusRecommendation = useMemo(() => {
     const availableData = modeQuizData.filter(q => !hiddenCards[q.id] && (showNonSOnly || showAdvanced || q.rank !== 'B') && (!showNonSOnly || q.rank !== 'S'));
@@ -2217,9 +2527,10 @@ function App() {
     return { type: 'mock', label: '仕上げの模擬面接', count: todaySummary.total, tone: 'emerald', description: '一通り進んでいます。声に出して本番形式で確認しましょう。', button: '模擬面接へ' };
   }, [allMasteredIds, appMode, dueCardIds, hiddenCards, modeQuizData, showAdvanced, showNonSOnly, todaySummary.total, touchedIds, weaknessStats]);
 
-  const filteredData = useMemo(() => {
-    if (appMode === 'guide' || appMode === 'compare') return [];
-    let data = [...studyQuizData];
+	  const filteredData = useMemo(() => {
+	    if (appMode === 'guide' || appMode === 'compare') return [];
+	    let data = [...modeQuizData];
+	    const masteredIds = appMode === 'lastMinute' ? allLastMinuteMasteredIds : allMasteredIds;
 
     if (shuffleSeed > 0) {
       for (let i = data.length - 1; i > 0; i--) {
@@ -2228,10 +2539,10 @@ function App() {
       }
     }
 
-    if (showHiddenOnly) {
-      data = data.filter(q => hiddenCards[q.id] && !q.isCustom); 
-      if (activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
-    } else {
+	    if (showHiddenOnly) {
+	      data = data.filter(q => hiddenCards[q.id] && !q.isCustom);
+	      if (appMode !== 'lastMinute' && activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
+	    } else {
       data = data.filter(q => !hiddenCards[q.id]);
       
       if (!showAdvanced && !showNonSOnly && !showUnmasteredOnly) data = data.filter(q => q.rank !== 'B');
@@ -2239,9 +2550,9 @@ function App() {
       if (showDueOnly) data = data.filter(q => dueCardIds.has(q.id));
       if (showWeakOnly) data = data.filter(q => weaknessStats.ids.has(q.id));
       if (showUntouchedOnly) data = data.filter(q => !touchedIds.has(q.id));
-      if (showUnmasteredOnly) data = data.filter(q => !allMasteredIds.has(q.id));
-      if (activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
-    }
+	      if (showUnmasteredOnly) data = data.filter(q => !masteredIds.has(q.id));
+	      if (appMode !== 'lastMinute' && activeCategory !== "すべて") data = data.filter(q => q.category === activeCategory);
+	    }
 
     if (focusedQuestionId !== null) {
       data = data.filter(q => q.id === focusedQuestionId);
@@ -2268,7 +2579,7 @@ function App() {
     }
 
     return data;
-  }, [appMode, activeCategory, showAdvanced, showNonSOnly, showUntouchedOnly, showUnmasteredOnly, showDueOnly, showWeakOnly, allMasteredIds, focusedQuestionId, touchedIds, dueCardIds, weaknessStats, shuffleSeed, hiddenCards, showHiddenOnly, studyQuizData, searchQuery]);
+	  }, [appMode, activeCategory, showAdvanced, showNonSOnly, showUntouchedOnly, showUnmasteredOnly, showDueOnly, showWeakOnly, allLastMinuteMasteredIds, allMasteredIds, focusedQuestionId, touchedIds, dueCardIds, weaknessStats, shuffleSeed, hiddenCards, showHiddenOnly, modeQuizData, searchQuery]);
 
   const filteredInterviewSections = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -3235,9 +3546,10 @@ function App() {
     }
   };
 
-  const showRestoredStudyCardInMainList = (id = null) => {
-    setAppMode('oral');
-    setActiveCategory("すべて");
+	  const showRestoredStudyCardInMainList = (id = null) => {
+	    const isLastMinuteCard = id !== null && lastMinuteIdSet.has(String(id));
+	    setAppMode(isLastMinuteCard ? 'lastMinute' : 'oral');
+	    setActiveCategory("すべて");
     setSearchQuery("");
     setFocusedQuestionId(id);
     setShowAdvanced(true);
@@ -3405,7 +3717,7 @@ function App() {
     const newQuestionEdits = { ...questionEdits };
     delete newQuestionEdits[editQuestion.id];
     setQuestionEdits(newQuestionEdits);
-    const original = quizData.find(q => q.id === editQuestion.id);
+	    const original = quizData.find(q => q.id === editQuestion.id) || lastMinuteCards.find(q => q.id === editQuestion.id);
     if (original) setSelectedCard(original);
     if (user && db) {
       const docRef = getProgressDocRef();
@@ -3632,8 +3944,8 @@ function App() {
     setInterviewCoachResult(null);
   };
 
-  const startOralPracticeSet = (mode = 'important') => {
-    const availableQuestions = visibleOralPracticeQuestions;
+	  const startOralPracticeSet = (mode = 'important') => {
+	    const availableQuestions = visibleOralPracticeQuestions;
     const source = mode === 'weak'
       ? availableQuestions.filter(q => weaknessStats.ids.has(q.id))
       : mode === 'due'
@@ -3651,8 +3963,23 @@ function App() {
     setMockTimeLeft(60);
     setShowMockAnswer(false);
     setMockFollowupIndex(0);
-    setRevealedAnswers({});
-  };
+	    setRevealedAnswers({});
+	  };
+
+	  const startLastMinutePractice = () => {
+	    const source = lastMinuteQuizData.filter(q => !hiddenCards[q.id]);
+	    if (source.length === 0) {
+	      window.alert?.("直前カードに出題できる問題がありません。");
+	      return;
+	    }
+	    setMockQuestions(seededShuffle(source, `${selectedDate}:last-minute-practice`));
+	    setMockExamMode('lastMinute');
+	    setMockIndex(0);
+	    setMockTimeLeft(60);
+	    setShowMockAnswer(false);
+	    setMockFollowupIndex(0);
+	    setRevealedAnswers({});
+	  };
 
   const startTodayOralPractice = () => {
     const selected = todayOralPracticePlan.questions;
@@ -3674,10 +4001,14 @@ function App() {
       startOralPracticeSet('important');
       return;
     }
-    if (type === 'guide') {
-      startGuidePractice();
-      return;
-    }
+	    if (type === 'guide') {
+	      startGuidePractice();
+	      return;
+	    }
+	    if (type === 'lastMinute') {
+	      startLastMinutePractice();
+	      return;
+	    }
     
     setMockExamMode(type);
     setMockIndex(0);
@@ -3832,7 +4163,7 @@ function App() {
     showUnmasteredOnly ? "未習得" : null,
     showHiddenOnly ? "非表示中" : null,
     showNonSOnly ? "S以外" : null,
-    showAdvanced ? "B含む" : null,
+	    showAdvanced && !isLastMinuteMode ? "B含む" : null,
     focusedQuestionId !== null ? "選択した1問" : null,
     searchQuery ? `検索: ${searchQuery}` : null
   ].filter(Boolean);
@@ -3842,18 +4173,19 @@ function App() {
   const guidePracticeProgress = mockQuestions.length > 0
     ? Math.round((guidePracticeMasteredCount / mockQuestions.length) * 100)
     : 0;
-  const currentGuidePracticeStatus = mockExamMode === 'guide'
-    ? activeGuideMemory[mockQuestions[mockIndex]?.sectionId]
-    : null;
-  const oralPracticeMasteredCount = mockExamMode === 'oral'
-    ? mockQuestions.filter(question => currentDayRecord[question.id] === 'mastered').length
-    : 0;
+	  const currentGuidePracticeStatus = mockExamMode === 'guide'
+	    ? activeGuideMemory[mockQuestions[mockIndex]?.sectionId]
+	    : null;
+	  const isQuestionPracticeMock = mockExamMode === 'oral' || mockExamMode === 'lastMinute';
+	  const oralPracticeMasteredCount = isQuestionPracticeMock
+	    ? mockQuestions.filter(question => currentDayRecord[question.id] === 'mastered').length
+	    : 0;
   const oralPracticeProgress = mockQuestions.length > 0
     ? Math.round((oralPracticeMasteredCount / mockQuestions.length) * 100)
     : 0;
-  const currentOralPracticeStatus = mockExamMode === 'oral'
-    ? currentDayRecord[mockQuestions[mockIndex]?.id]
-    : null;
+	  const currentOralPracticeStatus = isQuestionPracticeMock
+	    ? currentDayRecord[mockQuestions[mockIndex]?.id]
+	    : null;
   const availableGuidePracticeCount = visibleGuidePracticeCards.length;
   const mockTimerText = `${String(Math.floor(Math.max(0, mockTimeLeft) / 60)).padStart(2, '0')}:${String(Math.max(0, mockTimeLeft) % 60).padStart(2, '0')}`;
 
@@ -3869,7 +4201,7 @@ function App() {
               <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 min-h-[16px]">
                 {isLoading ? <Loader2 className="w-3 h-3 animate-spin text-slate-400" /> : (
                   <span className="font-bold text-slate-400">
-                    {isComparisonMode ? `比較カード ${filteredComparisonCards.length}件 / 全${comparisonCards.length}件` : isGuideMode ? `面接資料 ${filteredInterviewSections.length}件 / 全${editableInterviewSections.length}件` : `表示中 ${filteredData.length}問 / 全${studyQuizData.length}問`}
+	                    {isComparisonMode ? `比較カード ${filteredComparisonCards.length}件 / 全${comparisonCards.length}件` : isGuideMode ? `面接資料 ${filteredInterviewSections.length}件 / 全${editableInterviewSections.length}件` : isLastMinuteMode ? `直前カード ${filteredData.length}問 / 全${lastMinuteQuizData.length}問` : `表示中 ${filteredData.length}問 / 全${studyQuizData.length}問`}
                   </span>
                 )}
               </div>
@@ -3886,14 +4218,20 @@ function App() {
           <div className={`transition-all duration-300 overflow-hidden ${showHeaderControls ? 'max-h-[500px] opacity-100 mt-4 pointer-events-auto' : 'max-h-0 opacity-0 mt-0 pointer-events-none'}`}>
             <div className="w-full flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
               <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1 rounded-xl">
-                <button
-                  onClick={() => { setAppMode('oral'); setActiveCategory('すべて'); setShowHiddenOnly(false); setShowHeaderControls(false); }}
-                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'oral' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  <BrainCircuit className="w-4 h-4" /> 数学・経済
-                </button>
-                <button
-                  onClick={() => { setAppMode('guide'); setActiveCategory('すべて'); setShowHiddenOnly(false); setShowDueOnly(false); setShowWeakOnly(false); setShowUntouchedOnly(false); setShowHeaderControls(false); }}
+	                <button
+	                  onClick={() => { setAppMode('oral'); setActiveCategory('すべて'); setShowHiddenOnly(false); setShowHeaderControls(false); }}
+	                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'oral' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+	                >
+	                  <BrainCircuit className="w-4 h-4" /> 数学・経済
+	                </button>
+	                <button
+	                  onClick={() => { clearFilters(); setAppMode('lastMinute'); setActiveCategory('すべて'); setShowAdvanced(true); setShowHeaderControls(false); }}
+	                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'lastMinute' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+	                >
+	                  <Clock className="w-4 h-4" /> 直前カード
+	                </button>
+	                <button
+	                  onClick={() => { setAppMode('guide'); setActiveCategory('すべて'); setShowHiddenOnly(false); setShowDueOnly(false); setShowWeakOnly(false); setShowUntouchedOnly(false); setShowHeaderControls(false); }}
                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'guide' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   <FileText className="w-4 h-4" /> 面接資料
@@ -3926,25 +4264,25 @@ function App() {
                   <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent border-none outline-none text-indigo-900 cursor-pointer font-bold" />
                 </div>
 
-                <button 
-                  onClick={() => setShowProgressModal(true)}
-                  className="flex-1 sm:w-64 bg-slate-100 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-200 transition-colors text-left relative group"
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1">
-                      <BarChart2 className="w-3 h-3"/> 累計習得度
-                    </span>
-                    <span className="text-xs font-bold text-rose-600">{progress}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-1.5">
-                    <div className="bg-rose-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
-                  </div>
-                  <div className="absolute inset-0 bg-slate-900/5 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="text-[10px] font-bold text-slate-700 bg-white/95 px-2 py-1 rounded shadow-sm flex items-center gap-1">
-                      <BarChart2 className="w-3 h-3"/> 詳細分析
-                    </span>
-                  </div>
-                </button>
+	                <button
+	                  onClick={() => isLastMinuteMode ? setShowUnmasteredOnly(prev => !prev) : setShowProgressModal(true)}
+	                  className="flex-1 sm:w-64 bg-slate-100 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-200 transition-colors text-left relative group"
+	                >
+	                  <div className="flex justify-between items-center mb-1">
+	                    <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1">
+	                      <BarChart2 className="w-3 h-3"/> {isLastMinuteMode ? '直前カード習得度' : '累計習得度'}
+	                    </span>
+	                    <span className="text-xs font-bold text-rose-600">{isLastMinuteMode ? lastMinuteSummary.progress : progress}%</span>
+	                  </div>
+	                  <div className="w-full bg-slate-200 rounded-full h-1.5">
+	                    <div className="bg-rose-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${isLastMinuteMode ? lastMinuteSummary.progress : progress}%` }}></div>
+	                  </div>
+	                  <div className="absolute inset-0 bg-slate-900/5 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+	                    <span className="text-[10px] font-bold text-slate-700 bg-white/95 px-2 py-1 rounded shadow-sm flex items-center gap-1">
+	                      <BarChart2 className="w-3 h-3"/> {isLastMinuteMode ? '未習得のみ' : '詳細分析'}
+	                    </span>
+	                  </div>
+	                </button>
               </div>
             </div>
           </div>
@@ -4535,11 +4873,66 @@ function App() {
           </div>
         ) : (
           <>
-        <section className="mb-6 border-y border-slate-200 bg-white py-5 sm:py-6">
-          <h2 className="text-2xl font-black text-slate-950">口頭試問対策</h2>
-          <p className="mt-1 text-xs font-bold text-slate-500">数学・経済の重要問題を、本番形式で効率よく練習します。</p>
+	        <section className="mb-6 border-y border-slate-200 bg-white py-5 sm:py-6">
+	          <h2 className="text-2xl font-black text-slate-950">{isLastMinuteMode ? '直前カード' : '口頭試問対策'}</h2>
+	          <p className="mt-1 text-xs font-bold text-slate-500">{isLastMinuteMode ? '試験前に一気に確認する短問セットです。通常カードとは分けて管理します。' : '数学・経済の重要問題を、本番形式で効率よく練習します。'}</p>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+	          {isLastMinuteMode ? (
+	            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+	              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
+	                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+	                  <div className="min-w-0 flex-1">
+	                    <div className="flex flex-wrap items-center justify-between gap-3">
+	                      <h3 className="flex items-center gap-2 text-base font-black text-slate-950">
+	                        <Clock className="text-emerald-700" /> 直前カード 習得度
+	                      </h3>
+	                      <span className="rounded-lg bg-white px-3 py-1.5 text-xs font-black text-emerald-700 border border-emerald-100">全{lastMinuteSummary.total}問</span>
+	                    </div>
+	                    <div className="mt-3 flex items-end justify-between gap-4">
+	                      <div>
+	                        <div className="flex items-end gap-1">
+	                          <span className="text-5xl font-black leading-none text-emerald-700">{lastMinuteSummary.progress}</span>
+	                          <span className="pb-1 text-lg font-black text-slate-400">%</span>
+	                        </div>
+	                        <p className="mt-1 text-xs font-black text-slate-500">直前カードの累計習得度</p>
+	                      </div>
+	                      <div className="text-right text-[11px] font-black text-slate-500">
+	                        <div>覚えた {lastMinuteSummary.mastered} / {lastMinuteSummary.total}問</div>
+	                        <div className="mt-1 text-amber-600">今日 {lastMinuteSummary.todayTotal}問（覚えた {lastMinuteSummary.todayMastered} / 詰まった {lastMinuteSummary.todayReview}）</div>
+	                      </div>
+	                    </div>
+	                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+	                      <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${lastMinuteSummary.progress}%` }}></div>
+	                    </div>
+	                  </div>
+	                  <div className="sm:w-48">
+	                    <button type="button" onClick={startLastMinutePractice} className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-100">
+	                      <Mic className="text-emerald-300" /> 直前練習開始
+	                    </button>
+	                    <button type="button" onClick={() => { clearFilters(); setAppMode('oral'); }} className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600 hover:bg-slate-50">
+	                      数学カードへ戻る
+	                    </button>
+	                  </div>
+	                </div>
+	              </div>
+	              <aside className="rounded-lg border border-slate-200 bg-white p-4">
+	                <p className="text-xs font-black text-slate-500">残り</p>
+	                <div className="mt-1 text-3xl font-black text-rose-600">{lastMinuteSummary.remaining}<span className="ml-1 text-xs">問</span></div>
+	                <div className="mt-4 grid grid-cols-3 divide-x divide-slate-100 text-center">
+	                  {['基礎', '標準', '発展'].map(level => {
+	                    const count = lastMinuteQuizData.filter(item => item.difficulty === level).length;
+	                    return (
+	                      <div key={level} className="px-1">
+	                        <span className="block text-sm font-black text-emerald-700">{level}</span>
+	                        <span className="mt-1 block text-lg font-black text-slate-700">{count}<small className="ml-0.5 text-[9px] text-slate-400">問</small></span>
+	                      </div>
+	                    );
+	                  })}
+	                </div>
+	              </aside>
+	            </div>
+	          ) : (
+	          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
             <div className="min-w-0">
               <div className="grid grid-cols-[auto_repeat(4,1fr)] items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white">
                 <div className="flex items-center px-3 py-3 text-sm font-black text-slate-900 sm:px-4">今日の学習</div>
@@ -4775,8 +5168,9 @@ function App() {
                 {showUnmasteredOnly ? '全カードに戻す' : '未習得一覧へ'} <ChevronRight />
               </button>
             </aside>
-          </div>
-        </section>
+	          </div>
+	          )}
+	        </section>
 
         <div className="mb-4 bg-white/90 border border-white/80 rounded-2xl shadow-sm p-3 sm:p-4">
           <label className="flex items-center gap-3">
@@ -4808,11 +5202,14 @@ function App() {
             })}
           </div>
           <div className="flex gap-2 w-full sm:w-auto overflow-x-auto hide-scrollbar pb-2 sm:pb-0 items-center">
-            <button onClick={() => setShowAddModal(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 bg-rose-600 text-white border-rose-700 hover:bg-rose-700 shadow-sm">
-              <Plus className="w-4 h-4" /> 問題作成
-            </button>
-
-            <div className="w-px h-6 bg-slate-200 mx-1 shrink-0"></div>
+	            {!isLastMinuteMode && (
+	              <>
+	                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 bg-rose-600 text-white border-rose-700 hover:bg-rose-700 shadow-sm">
+	                  <Plus className="w-4 h-4" /> 問題作成
+	                </button>
+	                <div className="w-px h-6 bg-slate-200 mx-1 shrink-0"></div>
+	              </>
+	            )}
 
             <button onClick={() => setShowHiddenOnly(!showHiddenOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showHiddenOnly ? 'bg-slate-800 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
               <EyeOff className="w-4 h-4" /> 非表示中 ({Object.keys(hiddenCards).length})
@@ -4820,24 +5217,32 @@ function App() {
             
             <div className="w-px h-6 bg-slate-200 mx-1 shrink-0"></div>
 
-            <button onClick={() => setShowAdvanced(!showAdvanced)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${!showAdvanced ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-indigo-100 text-indigo-700 border-indigo-300'}`}>
-              {!showAdvanced ? <><Flame className="w-4 h-4" /> S・Aランクのみ</> : <><Sparkles className="w-4 h-4" /> Bランク含むすべて</>}
-            </button>
-            <button onClick={() => { setShowHiddenOnly(false); setShowAdvanced(true); setShowNonSOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showNonSOnly ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
-              <CircleDashed className="w-4 h-4" /> S以外のみ
-            </button>
+	            {!isLastMinuteMode && (
+	              <>
+	                <button onClick={() => setShowAdvanced(!showAdvanced)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${!showAdvanced ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-indigo-100 text-indigo-700 border-indigo-300'}`}>
+	                  {!showAdvanced ? <><Flame className="w-4 h-4" /> S・Aランクのみ</> : <><Sparkles className="w-4 h-4" /> Bランク含むすべて</>}
+	                </button>
+	                <button onClick={() => { setShowHiddenOnly(false); setShowAdvanced(true); setShowNonSOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showNonSOnly ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+	                  <CircleDashed className="w-4 h-4" /> S以外のみ
+	                </button>
+	              </>
+	            )}
             <button onClick={() => setShowUntouchedOnly(!showUntouchedOnly)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showUntouchedOnly ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-white text-slate-500 border-slate-200'}`}>
               <CircleDashed className="w-4 h-4" /> 未着手
             </button>
-            <button onClick={() => { setShowHiddenOnly(false); setShowAdvanced(true); setShowUnmasteredOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showUnmasteredOnly ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
-              <CheckCircle className="w-4 h-4" /> 未習得のみ ({unmasteredItems.length})
+	            <button onClick={() => { setShowHiddenOnly(false); setShowAdvanced(true); setShowUnmasteredOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showUnmasteredOnly ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+	              <CheckCircle className="w-4 h-4" /> 未習得のみ ({modeUnmasteredItems.length})
             </button>
-            <button onClick={() => { setShowWeakOnly(false); setShowDueOnly(!showDueOnly); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showDueOnly ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-500 border-slate-200'}`}>
-              <Clock className="w-4 h-4" /> 復習 ({dueCardIds.size})
-            </button>
-            <button onClick={() => { setShowHiddenOnly(false); setShowDueOnly(false); setShowUntouchedOnly(false); setShowWeakOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showWeakOnly ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-white text-slate-500 border-slate-200'}`}>
-              <Target className="w-4 h-4" /> 弱点 ({weaknessStats.count})
-            </button>
+	            {!isLastMinuteMode && (
+	              <>
+	                <button onClick={() => { setShowWeakOnly(false); setShowDueOnly(!showDueOnly); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showDueOnly ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-500 border-slate-200'}`}>
+	                  <Clock className="w-4 h-4" /> 復習 ({dueCardIds.size})
+	                </button>
+	                <button onClick={() => { setShowHiddenOnly(false); setShowDueOnly(false); setShowUntouchedOnly(false); setShowWeakOnly(prev => !prev); }} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${showWeakOnly ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-white text-slate-500 border-slate-200'}`}>
+	                  <Target className="w-4 h-4" /> 弱点 ({weaknessStats.count})
+	                </button>
+	              </>
+	            )}
             <button onClick={() => setShuffleSeed(prev => prev + 1)} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border bg-white text-slate-500 border-slate-200 hover:bg-slate-50 shrink-0">
               <Shuffle className="w-4 h-4" /> シャッフル
             </button>
@@ -4880,11 +5285,12 @@ function App() {
                 <div>
                   <div className="flex justify-between items-start mb-2.5">
                     <div className="flex gap-2 items-center flex-wrap">
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 flex items-center gap-1.5">
-                        {item.category.replace(/^\d+\.\s*/, '')}
-                        {!showNonSOnly && categoryRankMap[item.category] === 'S' && <span className="text-[9px] bg-rose-500 text-white px-1.5 py-0.5 rounded shadow-sm">S</span>}
-                        {!showNonSOnly && categoryRankMap[item.category] === 'A' && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded shadow-sm">A</span>}
-                      </span>
+	                      <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 flex items-center gap-1.5">
+	                        {item.category.replace(/^\d+\.\s*/, '')}
+	                        {!item.lastMinute && !showNonSOnly && categoryRankMap[item.category] === 'S' && <span className="text-[9px] bg-rose-500 text-white px-1.5 py-0.5 rounded shadow-sm">S</span>}
+	                        {!item.lastMinute && !showNonSOnly && categoryRankMap[item.category] === 'A' && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded shadow-sm">A</span>}
+	                      </span>
+	                      {item.lastMinute && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700">{item.lastMinuteId} / {item.difficulty}</span>}
                       {item.isCustom && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3 mr-1" />自作</span>}
                       {item.isEdited && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-violet-100 text-violet-700"><Edit3 className="w-3 h-3 mr-1" />編集済み</span>}
                       {showWeakOnly && weaknessStats.details[item.id] && <span className="flex items-center text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700"><Target className="w-3 h-3 mr-1" />弱点度 {Math.round(weaknessStats.details[item.id].score)}</span>}
@@ -4946,11 +5352,12 @@ function App() {
           <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()} onTouchStart={startCardSwipe} onTouchEnd={endCardSwipe}>
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div className="flex gap-2 items-center flex-wrap">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-700 flex items-center gap-1.5">
-                  {selectedCard.category}
-                  {!showNonSOnly && categoryRankMap[selectedCard.category] === 'S' && <span className="text-[9px] bg-rose-500 text-white px-1.5 py-0.5 rounded shadow-sm">S(必須)</span>}
-                  {!showNonSOnly && categoryRankMap[selectedCard.category] === 'A' && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded shadow-sm">A(余裕)</span>}
-                </span>
+	                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-700 flex items-center gap-1.5">
+	                  {selectedCard.category}
+	                  {!selectedCard.lastMinute && !showNonSOnly && categoryRankMap[selectedCard.category] === 'S' && <span className="text-[9px] bg-rose-500 text-white px-1.5 py-0.5 rounded shadow-sm">S(必須)</span>}
+	                  {!selectedCard.lastMinute && !showNonSOnly && categoryRankMap[selectedCard.category] === 'A' && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded shadow-sm">A(余裕)</span>}
+	                </span>
+	                {selectedCard.lastMinute && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700">{selectedCard.lastMinuteId} / {selectedCard.difficulty}</span>}
                 {selectedCard.isCustom && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700"><Edit3 className="w-3 h-3 mr-1" />自作問題</span>}
                 {selectedCard.isEdited && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-violet-100 text-violet-700"><Edit3 className="w-3 h-3 mr-1" />編集済み</span>}
                 {selectedCard.trap && <span className="flex items-center text-xs font-bold px-2 py-1 rounded-md bg-red-100 text-red-700"><Skull className="w-3 h-3 mr-1" />面接で事故注意！</span>}
@@ -5681,21 +6088,21 @@ function App() {
                   <Mic className="w-6 h-6 text-rose-500 animate-pulse" />
                 )}
                 <div>
-                  <div className="font-bold text-lg">
-                    {mockExamMode === 'guide' ? '面接資料 練習カード' : '模擬口頭試問（数学・経済）'}
-                  </div>
+	                  <div className="font-bold text-lg">
+	                    {mockExamMode === 'guide' ? '面接資料 練習カード' : mockExamMode === 'lastMinute' ? '直前カード 練習' : '模擬口頭試問（数学・経済）'}
+	                  </div>
                   {mockExamMode === 'guide' && (
                     <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-black text-slate-300">
                       <span>全体習得率 {guideMemoryCounts.progress}%</span>
                       <span>今回 {guidePracticeMasteredCount}/{mockQuestions.length}問</span>
                     </div>
                   )}
-                  {mockExamMode === 'oral' && (
-                    <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-black text-slate-300">
-                      <span>今日の習得率 {progress}%</span>
-                      <span>今回 {oralPracticeMasteredCount}/{mockQuestions.length}問</span>
-                    </div>
-                  )}
+	                  {isQuestionPracticeMock && (
+	                    <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-black text-slate-300">
+	                      <span>{mockExamMode === 'lastMinute' ? `直前カード習得率 ${lastMinuteSummary.progress}%` : `今日の習得率 ${progress}%`}</span>
+	                      <span>今回 {oralPracticeMasteredCount}/{mockQuestions.length}問</span>
+	                    </div>
+	                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -5722,8 +6129,8 @@ function App() {
                   </div>
                 </div>
               )}
-              {mockExamMode === 'oral' && (
-                <div className="mb-6 w-full rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+	              {isQuestionPracticeMock && (
+	                <div className="mb-6 w-full rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="text-xs font-black text-emerald-800">今回の{mockQuestions.length}問 習得率</span>
                     <span className="text-lg font-black text-emerald-700">{oralPracticeProgress}%</span>
@@ -5755,8 +6162,8 @@ function App() {
                   このカード: {GUIDE_MEMORY_META[currentGuidePracticeStatus]?.label || '未チェック'}
                 </div>
               )}
-              {mockExamMode === 'oral' && (
-                <div className={`mb-4 rounded-full px-3 py-1 text-xs font-black ${
+	              {isQuestionPracticeMock && (
+	                <div className={`mb-4 rounded-full px-3 py-1 text-xs font-black ${
                   currentOralPracticeStatus === 'mastered'
                     ? 'bg-emerald-100 text-emerald-700'
                     : currentOralPracticeStatus === 'review'
@@ -5853,7 +6260,7 @@ function App() {
                     </>
                   )}
 
-                  {mockExamMode === 'oral' && mockQuestions[mockIndex].category !== "0. 志望理由・面接" && (
+	                  {isQuestionPracticeMock && mockQuestions[mockIndex].category !== "0. 志望理由・面接" && (
                     <p className="text-xs font-bold text-slate-400 mt-4">
                       ※さらに「数式で書くと？」「図で説明すると？」と聞かれる可能性にも備えておきましょう。
                     </p>
@@ -5895,7 +6302,7 @@ function App() {
 	                    覚えた → 次へ
 	                  </button>
                 </div>
-              ) : mockExamMode === 'oral' ? (
+	              ) : isQuestionPracticeMock ? (
 	                <div className="order-3 flex w-full min-w-0 gap-2 sm:order-none sm:w-auto sm:flex-1">
 	                  <button
 	                    onClick={() => markOralPracticeAndAdvance('review')}
@@ -6394,9 +6801,13 @@ function App() {
           <span>{isGuideMode ? '後で' : '復習'}</span>
           {isGuideMode ? guideMemoryCounts.later > 0 && <b>{guideMemoryCounts.later}</b> : dueCardIds.size > 0 && <b>{dueCardIds.size}</b>}
         </button>
-        <button type="button" onClick={() => isGuideMode ? startGuidePractice() : startMockExam('oral')} className="mobile-nav-item mobile-nav-primary">
+        <button type="button" onClick={() => isGuideMode ? startGuidePractice() : isLastMinuteMode ? startLastMinutePractice() : startMockExam('oral')} className="mobile-nav-item mobile-nav-primary">
           <Mic className="mobile-nav-icon" />
           <span>面接</span>
+        </button>
+        <button type="button" onClick={() => { clearFilters(); setAppMode('lastMinute'); setShowAdvanced(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`mobile-nav-item ${isLastMinuteMode ? 'is-active' : ''}`}>
+          <Clock className="mobile-nav-icon" />
+          <span>直前</span>
         </button>
         <button type="button" onClick={() => { clearFilters(); setAppMode('guide'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`mobile-nav-item ${isGuideMode ? 'is-active' : ''}`}>
           <FileText className="mobile-nav-icon" />
@@ -6935,7 +7346,7 @@ function App() {
             bottom: calc(0.75rem + env(safe-area-inset-bottom));
             z-index: 45;
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+	            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: 0.35rem;
             padding: 0.45rem;
             border: 1px solid rgba(255, 255, 255, 0.86);
