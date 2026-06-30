@@ -65,6 +65,7 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - Restoring a hidden oral-exam question from the hidden-only view now uses the same `元の一覧へ戻す` behavior and exits hidden-only mode after the modal closes.
 - Hidden restore actions now use dedicated restore handlers instead of toggle-only behavior; restored oral cards clear conflicting filters, focus the restored card, and restored guide cards scroll back into the normal guide list.
 - A one-time oral-card migration restores `積分とは何ですか`, `基底とは何ですか`, `ランクと連立方程式の解`, `期待値`, `信頼区間`, `ベイズの定理`, `推定量の一致性と不偏性の違い`, and `大数の法則と中心極限定理の違い` from hidden questions.
+- `積分とは何ですか` and `基底とは何ですか` are promoted from B to A so the restored cards appear in the normal S/A learning list without requiring the B-rank filter.
 - A one-time guide-data migration restores `大学進学後の進路`, `院の進学は考えているか`, and `高専で学んできたこと` from hidden interview-guide sections for existing synced users, then records `restore-guide-visible-2026-06-30` so later manual hiding still works.
 - Interview-guide practice now shows a daily auto-generated 15-card set based on the selected date and current guide progress, prioritizing review, shaky, later, low-count, and recent cards while preserving the existing random mode as a secondary action.
 - The daily guide-practice start button opens the 15-question practice modal, and the mock timer now renders as minute-second text such as `01:00` / `00:59`.
