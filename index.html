@@ -2088,20 +2088,22 @@ function App() {
 
   const oralProgressSummary = useMemo(() => {
     if (oralProgressView === 'daily') {
-      const total = todaySummary.total;
+      const total = studyQuizData.length;
       return {
         total,
         mastered: todaySummary.mastered,
         review: todaySummary.review,
+        studied: todaySummary.total,
         remaining: Math.max(0, total - todaySummary.mastered),
         progress: total > 0 ? Math.round((todaySummary.mastered / total) * 100) : 0,
-        label: `${selectedDate} の習得度`
+        label: `${selectedDate} の習得度（全体比）`
       };
     }
     return {
       total: studyQuizData.length,
       mastered: masteredStudyCount,
       review: weaknessStats.count,
+      studied: null,
       remaining: unmasteredItems.length,
       progress,
       label: '累計習得度'
@@ -4540,7 +4542,7 @@ function App() {
                       </div>
                       <div className="text-right text-[11px] font-black text-slate-500">
                         <div>覚えた {oralProgressSummary.mastered} / {oralProgressSummary.total}問</div>
-                        <div className="mt-1 text-amber-600">{oralProgressView === 'daily' ? `詰まった ${oralProgressSummary.review}問` : `弱点 ${oralProgressSummary.review}問`}</div>
+                        <div className="mt-1 text-amber-600">{oralProgressView === 'daily' ? `今日解いた ${oralProgressSummary.studied}問 / 詰まった ${oralProgressSummary.review}問` : `弱点 ${oralProgressSummary.review}問`}</div>
                       </div>
                     </div>
 

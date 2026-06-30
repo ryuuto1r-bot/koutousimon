@@ -67,6 +67,6 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - Interview-guide practice now shows a daily auto-generated 15-card set based on the selected date and current guide progress, prioritizing review, shaky, later, low-count, and recent cards while preserving the existing random mode as a secondary action.
 - The daily guide-practice start button opens the 15-question practice modal, and the mock timer now renders as minute-second text such as `01:00` / `00:59`.
 - Oral-exam practice now has a daily auto-generated 15-question set based on the selected date and current progress, prioritizing due, weak, unmastered, untouched, and important questions; oral mock buttons now mark questions as `review` or `mastered` before advancing.
-- Oral-exam progress now has a top-level cumulative/daily mastery card; daily mode uses the selected date and shows mastered versus studied oral questions for that day.
+- Oral-exam progress now has a top-level cumulative/daily mastery card; daily mode uses the selected date but calculates the percentage against all oral questions, while also showing how many were studied that day.
 
 final result: passed
