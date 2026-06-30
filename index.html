@@ -2092,14 +2092,19 @@ function App() {
   const oralProgressSummary = useMemo(() => {
     if (oralProgressView === 'daily') {
       const total = studyQuizData.length;
+      const studiedPercent = total > 0 ? Math.round((todaySummary.total / total) * 100) : 0;
+      const remainingCount = Math.max(0, total - todaySummary.total);
+      const remainingPercent = total > 0 ? Math.max(0, 100 - studiedPercent) : 0;
       return {
         total,
         mastered: todaySummary.mastered,
         review: todaySummary.review,
         studied: todaySummary.total,
-        remaining: Math.max(0, total - todaySummary.mastered),
-        progress: total > 0 ? Math.round((todaySummary.mastered / total) * 100) : 0,
-        label: `${selectedDate} の習得度（全体比）`
+        remaining: remainingCount,
+        studiedPercent,
+        remainingPercent,
+        progress: studiedPercent,
+        label: `${selectedDate} の実施率（全体比）`
       };
     }
     return {
@@ -2108,6 +2113,8 @@ function App() {
       review: weaknessStats.count,
       studied: null,
       remaining: unmasteredItems.length,
+      studiedPercent: null,
+      remainingPercent: null,
       progress,
       label: '累計習得度'
     };
@@ -4544,14 +4551,30 @@ function App() {
                         <p className="mt-1 text-xs font-black text-slate-500">{oralProgressSummary.label}</p>
                       </div>
                       <div className="text-right text-[11px] font-black text-slate-500">
-                        <div>覚えた {oralProgressSummary.mastered} / {oralProgressSummary.total}問</div>
-                        <div className="mt-1 text-amber-600">{oralProgressView === 'daily' ? `今日解いた ${oralProgressSummary.studied}問 / 詰まった ${oralProgressSummary.review}問` : `弱点 ${oralProgressSummary.review}問`}</div>
+                        {oralProgressView === 'daily' ? (
+                          <>
+                            <div className="text-emerald-700">やった {oralProgressSummary.studiedPercent}%（{oralProgressSummary.studied}/{oralProgressSummary.total}問）</div>
+                            <div className="mt-1 text-slate-500">残り {oralProgressSummary.remainingPercent}%（{oralProgressSummary.remaining}問）</div>
+                            <div className="mt-1 text-amber-600">覚えた {oralProgressSummary.mastered}問 / 詰まった {oralProgressSummary.review}問</div>
+                          </>
+                        ) : (
+                          <>
+                            <div>覚えた {oralProgressSummary.mastered} / {oralProgressSummary.total}問</div>
+                            <div className="mt-1 text-amber-600">弱点 {oralProgressSummary.review}問</div>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
                       <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${oralProgressSummary.progress}%` }}></div>
                     </div>
+                    {oralProgressView === 'daily' && (
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] font-black">
+                        <div className="rounded-lg bg-emerald-100 px-2 py-1 text-emerald-800">今日やった {oralProgressSummary.studiedPercent}%</div>
+                        <div className="rounded-lg bg-white px-2 py-1 text-slate-500">今日の残り {oralProgressSummary.remainingPercent}%</div>
+                      </div>
+                    )}
                   </div>
                   <button
                     type="button"
