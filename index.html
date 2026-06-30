@@ -1675,6 +1675,7 @@ function App() {
   const [showGuideWeakOnly, setShowGuideWeakOnly] = useState(false);
   const [guideMemoryFilter, setGuideMemoryFilter] = useState(null);
   const [guideMemoryView, setGuideMemoryView] = useState('cumulative');
+  const [oralProgressView, setOralProgressView] = useState('cumulative');
   const [showGuideLaterOnly, setShowGuideLaterOnly] = useState(false);
   const [showGuideRecentOnly, setShowGuideRecentOnly] = useState(false);
   const [showHiddenGuideOnly, setShowHiddenGuideOnly] = useState(false);
@@ -2084,6 +2085,28 @@ function App() {
       total: statuses.length
     };
   }, [currentDayRecord, studyQuizIdSet]);
+
+  const oralProgressSummary = useMemo(() => {
+    if (oralProgressView === 'daily') {
+      const total = todaySummary.total;
+      return {
+        total,
+        mastered: todaySummary.mastered,
+        review: todaySummary.review,
+        remaining: Math.max(0, total - todaySummary.mastered),
+        progress: total > 0 ? Math.round((todaySummary.mastered / total) * 100) : 0,
+        label: `${selectedDate} の習得度`
+      };
+    }
+    return {
+      total: studyQuizData.length,
+      mastered: masteredStudyCount,
+      review: weaknessStats.count,
+      remaining: unmasteredItems.length,
+      progress,
+      label: '累計習得度'
+    };
+  }, [masteredStudyCount, oralProgressView, progress, selectedDate, studyQuizData.length, todaySummary, unmasteredItems.length, weaknessStats.count]);
 
   const visibleOralPracticeQuestions = useMemo(() => {
     return studyQuizData.filter(q => !hiddenCards[q.id]);
@@ -4466,6 +4489,74 @@ function App() {
                   </button>
                 ))}
               </div>
+
+              <article className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="flex items-center gap-2 text-base font-black text-slate-950">
+                        <BarChart2 className="text-emerald-700" /> 口頭試問 習得度
+                      </h3>
+                      <div className="inline-grid grid-cols-2 overflow-hidden rounded-lg border border-emerald-100 bg-white">
+                        <button
+                          type="button"
+                          aria-pressed={oralProgressView === 'cumulative'}
+                          onClick={() => setOralProgressView('cumulative')}
+                          className={`px-3 py-1.5 text-xs font-black ${oralProgressView === 'cumulative' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                        >
+                          累計
+                        </button>
+                        <button
+                          type="button"
+                          aria-pressed={oralProgressView === 'daily'}
+                          onClick={() => setOralProgressView('daily')}
+                          className={`border-l border-emerald-100 px-3 py-1.5 text-xs font-black ${oralProgressView === 'daily' ? 'bg-emerald-700 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                        >
+                          日別
+                        </button>
+                      </div>
+                    </div>
+
+                    {oralProgressView === 'daily' && (
+                      <label className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-white/80 px-3 py-2">
+                        <span className="flex items-center gap-2 text-xs font-black text-emerald-800"><Calendar className="w-4 h-4" /> 日別チェック</span>
+                        <input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          aria-label="口頭試問の日別チェック日"
+                          className="min-w-0 bg-transparent text-xs font-black text-emerald-900 outline-none"
+                        />
+                      </label>
+                    )}
+
+                    <div className="mt-3 flex items-end justify-between gap-4">
+                      <div>
+                        <div className="flex items-end gap-1">
+                          <span className="text-5xl font-black leading-none text-emerald-700">{oralProgressSummary.progress}</span>
+                          <span className="pb-1 text-lg font-black text-slate-400">%</span>
+                        </div>
+                        <p className="mt-1 text-xs font-black text-slate-500">{oralProgressSummary.label}</p>
+                      </div>
+                      <div className="text-right text-[11px] font-black text-slate-500">
+                        <div>覚えた {oralProgressSummary.mastered} / {oralProgressSummary.total}問</div>
+                        <div className="mt-1 text-amber-600">{oralProgressView === 'daily' ? `詰まった ${oralProgressSummary.review}問` : `弱点 ${oralProgressSummary.review}問`}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                      <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${oralProgressSummary.progress}%` }}></div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowProgressModal(true)}
+                    className="rounded-lg border border-emerald-100 bg-white px-4 py-2.5 text-xs font-black text-emerald-700 shadow-sm hover:bg-emerald-50"
+                  >
+                    詳細を見る
+                  </button>
+                </div>
+              </article>
 
               <article className="mt-3 rounded-xl border border-cyan-100 bg-cyan-50/70 p-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
