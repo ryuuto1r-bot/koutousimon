@@ -68,5 +68,6 @@ The focused comparison covers the complete oral-exam menu and the start of the p
 - The daily guide-practice start button opens the 15-question practice modal, and the mock timer now renders as minute-second text such as `01:00` / `00:59`.
 - Oral-exam practice now has a daily auto-generated 15-question set based on the selected date and current progress, prioritizing due, weak, unmastered, untouched, and important questions; oral mock buttons now mark questions as `review` or `mastered` before advancing.
 - Oral-exam progress now has a top-level cumulative/daily mastery card; daily mode uses the selected date but calculates the percentage against all oral questions, while also showing how many were studied that day.
+- Added oral-exam cards for 相加平均, 相乗平均, and AM-GM不等式 with formula recall, equality-condition follow-up, and optimization-use follow-up.
 
 final result: passed
