@@ -1902,6 +1902,18 @@ const MATERIAL_IMAGE_QUALITY = 0.78;
 const RECENT_INTERVIEW_GUIDE_COUNT = 10;
 const GUIDE_PRACTICE_QUESTION_COUNT = 15;
 
+const downloadTextFile = (filename, content) => {
+  const blob = new Blob(["\uFEFF", content], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
 function App() {
   const [appMode, setAppMode] = useState('oral');
   const [activeCategory, setActiveCategory] = useState("すべて");
@@ -2193,6 +2205,102 @@ function App() {
 	      return edit ? { ...q, ...edit, isEdited: true } : q;
 	    });
 	  }, [questionEdits]);
+
+  const exportAllOralQuestions = () => {
+    const oralCards = mergedQuizData.filter(q => q.category !== "0. 志望理由・面接");
+    const followupCount = [...oralCards, ...lastMinuteQuizData]
+      .reduce((total, card) => total + (card.followups?.length || 0), 0);
+    const categoryOrder = [
+      ...oralCategories.filter(category => category !== "すべて"),
+      ...oralCards
+        .map(card => card.category)
+        .filter((category, index, categories) => category && !oralCategories.includes(category) && categories.indexOf(category) === index)
+    ];
+    const lines = [
+      "# 九州大学経済工学科 口頭試問対策 全問題",
+      "",
+      `出力日: ${new Date().toLocaleDateString("ja-JP")}`,
+      "",
+      "## 収録数",
+      "",
+      `- 通常カード: ${oralCards.length}問`,
+      `- 直前カード: ${lastMinuteQuizData.length}問`,
+      `- 追撃質問: ${followupCount}問`,
+      `- 比較カード: ${comparisonCards.length}件`,
+      "",
+      "## 問題一覧",
+      ""
+    ];
+
+    const appendQuestionList = (cards) => {
+      categoryOrder.forEach(category => {
+        const categoryCards = cards.filter(card => card.category === category);
+        if (categoryCards.length === 0) return;
+        lines.push(`### ${category}`, "");
+        categoryCards.forEach((card, index) => {
+          lines.push(`${index + 1}. [${card.rank || "-"}] ${card.title}`);
+          (card.followups || []).forEach(followup => {
+            lines.push(`   - 追撃: ${followup.q}`);
+          });
+        });
+        lines.push("");
+      });
+    };
+
+    appendQuestionList(oralCards);
+    lines.push("### 直前カード", "");
+    lastMinuteQuizData.forEach(card => {
+      lines.push(`${card.lastMinuteId || card.id}. [${card.difficulty || card.rank || "-"}] ${card.title.replace(/^M\\d+\\s*/, "")}`);
+      (card.followups || []).forEach(followup => {
+        lines.push(`   - 追撃: ${followup.q}`);
+      });
+    });
+
+    lines.push("", "## 回答・公式付き完全版", "");
+    const appendCardDetails = (card, label) => {
+      lines.push(`### ${label}`, "");
+      lines.push(`- カテゴリ: ${card.category || "未分類"}`);
+      lines.push(`- ランク: ${card.rank || card.difficulty || "-"}`);
+      if (card.formula) lines.push(`- 公式: $${card.formula}$`);
+      if (card.definition) lines.push(`- 定義: ${card.definition}`);
+      if (card.oral30) lines.push("", "**30秒回答例**", "", card.oral30);
+      if (card.explanation) lines.push("", "**詳細・要点**", "", card.explanation);
+      if (card.application) lines.push("", "**経済・工学への応用**", "", card.application);
+      if (card.followups?.length) {
+        lines.push("", "**追撃質問**", "");
+        card.followups.forEach((followup, index) => {
+          lines.push(`${index + 1}. Q. ${followup.q}`, `   A. ${followup.a || "未登録"}`);
+        });
+      }
+      lines.push("", "---", "");
+    };
+
+    categoryOrder.forEach(category => {
+      const categoryCards = oralCards.filter(card => card.category === category);
+      if (categoryCards.length === 0) return;
+      lines.push(`## ${category}`, "");
+      categoryCards.forEach(card => appendCardDetails(card, card.title));
+    });
+
+    lines.push("## 直前カード", "");
+    lastMinuteQuizData.forEach(card => appendCardDetails(card, card.title));
+
+    lines.push("## 比較カード", "");
+    comparisonCards.forEach(card => {
+      lines.push(`### ${card.title}`, "", card.subtitle || "");
+      if (card.formula) lines.push("", `- 公式: $${card.formula}$`);
+      if (card.keyTakeaway) lines.push(`- 核: ${card.keyTakeaway}`);
+      lines.push("");
+      (card.items || []).forEach(item => {
+        lines.push(`- **${item.name}**: ${item.scope} / ${item.left} / ${item.right} / ${item.cue}`);
+      });
+      lines.push("", "---", "");
+    });
+
+    const date = new Date();
+    const dateText = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    downloadTextFile(`口頭試問対策_全問題_${dateText}.md`, lines.join("\n"));
+  };
 
   const studyQuizData = useMemo(() => {
     return mergedQuizData.filter(q => q.category !== "0. 志望理由・面接");
@@ -5946,7 +6054,13 @@ function App() {
               </div>
 
             </div>
-            <div className="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
+            <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between gap-3">
+              <button
+                onClick={exportAllOralQuestions}
+                className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-black text-indigo-700 transition-colors hover:bg-indigo-100"
+              >
+                <FileText className="w-4 h-4" /> 全問題を出力
+              </button>
               <button onClick={() => setShowProgressModal(false)} className="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 閉じる
               </button>
