@@ -90,10 +90,23 @@ const LOCAL_KEY = 'koutousimon4-progress-v1';
 const FIREBASE_CONFIG_KEY = 'koutousimon-firebase-config-v1';
 const GUIDE_RESTORE_MIGRATION_KEY = 'restore-guide-visible-2026-06-30';
 const GUIDE_RESTORE_SECTION_IDS = ['pdf-guide-20', 'pdf-guide-21', 'pdf-guide-42'];
+const ORAL_RESTORE_MIGRATION_KEY = 'restore-oral-visible-2026-06-30-integral-stats';
+const ORAL_RESTORE_CARD_IDS = ['116', '503', '533', '702', '706', '713', '714', '715'];
 function restoreRequestedGuideSections(hiddenGuideSections = {}) {
   const nextHidden = { ...hiddenGuideSections };
   let changed = false;
   GUIDE_RESTORE_SECTION_IDS.forEach(id => {
+    if (nextHidden[id]) {
+      delete nextHidden[id];
+      changed = true;
+    }
+  });
+  return { nextHidden, changed };
+}
+function restoreRequestedOralCards(hiddenCards = {}) {
+  const nextHidden = { ...hiddenCards };
+  let changed = false;
+  ORAL_RESTORE_CARD_IDS.forEach(id => {
     if (nextHidden[id]) {
       delete nextHidden[id];
       changed = true;
@@ -1838,17 +1851,24 @@ function App() {
         const loadedMigrations = data.dataMigrations || {};
         let nextMigrations = loadedMigrations;
         let nextHiddenGuideSections = data.hiddenGuideSections || {};
+        let nextHiddenCards = data.hiddenCards || {};
         if (!loadedMigrations[GUIDE_RESTORE_MIGRATION_KEY]) {
           const restoreResult = restoreRequestedGuideSections(nextHiddenGuideSections);
           nextHiddenGuideSections = restoreResult.nextHidden;
           nextMigrations = { ...loadedMigrations, [GUIDE_RESTORE_MIGRATION_KEY]: true };
           setDoc(docRef, { hiddenGuideSections: nextHiddenGuideSections, dataMigrations: nextMigrations }, { merge: true }).catch(console.error);
         }
+        if (!loadedMigrations[ORAL_RESTORE_MIGRATION_KEY]) {
+          const restoreResult = restoreRequestedOralCards(nextHiddenCards);
+          nextHiddenCards = restoreResult.nextHidden;
+          nextMigrations = { ...nextMigrations, [ORAL_RESTORE_MIGRATION_KEY]: true };
+          setDoc(docRef, { hiddenCards: nextHiddenCards, dataMigrations: nextMigrations }, { merge: true }).catch(console.error);
+        }
         setDataMigrations(nextMigrations);
         setHiddenGuideSections(nextHiddenGuideSections);
         setDeletedGuideSections(data.deletedGuideSections || {});
         setChecklists(data.checklists || {});
-        setHiddenCards(data.hiddenCards || {}); 
+        setHiddenCards(nextHiddenCards);
         setCustomQuestions(data.customQuestions || []); 
         setQuestionEdits(data.questionEdits || {});
       }
