@@ -6242,10 +6242,10 @@ function App() {
       })()}
 
       {mockExamMode !== null && mockQuestions.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-md">
-	          <div className="bg-white w-full max-w-3xl max-h-[94vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
-            
-            <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+        <div className="mock-practice-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-md">
+	          <div className="mock-practice-dialog bg-white w-full max-w-3xl max-h-[94vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
+
+            <div className="mock-practice-header px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-3">
                 {mockExamMode === 'guide' ? (
                   <FileText className="w-6 h-6 text-cyan-400 animate-pulse" />
@@ -6278,9 +6278,9 @@ function App() {
               </div>
             </div>
 
-	            <div className="p-5 sm:p-12 flex flex-col items-center justify-start min-h-0 overflow-y-auto custom-scrollbar">
-              {mockExamMode === 'guide' && (
-                <div className="mb-6 w-full rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+	            <div className="mock-practice-body p-5 sm:p-12 flex flex-col items-center justify-start min-h-0 overflow-y-auto custom-scrollbar">
+	              {mockExamMode === 'guide' && (
+	                <div className={`guide-practice-progress mb-6 w-full rounded-2xl border border-cyan-100 bg-cyan-50 p-4 ${showMockAnswer ? 'is-compact' : ''}`}>
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="text-xs font-black text-cyan-800">今回の{mockQuestions.length}問 習得率</span>
                     <span className="text-lg font-black text-cyan-700">{guidePracticeProgress}%</span>
@@ -6309,9 +6309,9 @@ function App() {
                   </div>
                 </div>
               )}
-              <div className="text-slate-400 font-bold mb-4 uppercase tracking-widest">
-                Question {mockIndex + 1} / {mockQuestions.length}
-              </div>
+	              <div className="mock-practice-counter text-slate-400 font-bold mb-4 uppercase tracking-widest">
+	                Question {mockIndex + 1} / {mockQuestions.length}
+	              </div>
               {mockExamMode === 'guide' && (
                 <div className={`mb-4 rounded-full px-3 py-1 text-xs font-black ${
                   currentGuidePracticeStatus === 'memorized'
@@ -6339,9 +6339,9 @@ function App() {
                 </div>
               )}
               
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-800 text-center mb-8 leading-tight">
-                「{renderTextWithMath(mockQuestions[mockIndex].title)}」
-              </h2>
+	              <h2 className={`mock-practice-title text-3xl sm:text-4xl font-black text-slate-800 text-center mb-8 leading-tight ${mockExamMode === 'guide' && showMockAnswer ? 'is-answer-open' : ''}`}>
+	                「{renderTextWithMath(mockQuestions[mockIndex].title)}」
+	              </h2>
 
               {!showMockAnswer ? (
                 <div className="w-full text-center space-y-6 mt-8">
@@ -6355,15 +6355,15 @@ function App() {
                   </button>
                 </div>
               ) : (
-                <div className="w-full bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-fade-in text-left max-h-[50vh] overflow-y-auto custom-scrollbar">
-	                  <h4 className="text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> {mockExamMode === 'guide' ? '回答の軸' : '30秒回答例'}</h4>
+                <div className={`mock-answer-panel w-full bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-fade-in text-left custom-scrollbar ${mockExamMode === 'guide' ? 'guide-practice-answer-panel' : 'max-h-[50vh] overflow-y-auto'}`}>
+	                  <h4 className="guide-answer-heading text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> {mockExamMode === 'guide' ? '回答の軸' : '30秒回答例'}</h4>
 	                  {mockExamMode === 'guide' && mockQuestions[mockIndex].coreNote && (
-	                    <div className="mb-4 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+	                    <div className="guide-answer-core mb-4 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
 	                      <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-700">核の一文</div>
 	                      <p className="text-base font-black leading-relaxed text-slate-900">{renderTextWithMath(mockQuestions[mockIndex].coreNote)}</p>
 	                    </div>
 	                  )}
-	                  <p className="text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+	                  <p className={`guide-answer-text text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100 ${mockExamMode === 'guide' ? 'is-guide-answer' : ''}`}>
 	                    「{renderTextWithMath(mockQuestions[mockIndex].oral30)}」
 	                  </p>
                   
@@ -6373,7 +6373,7 @@ function App() {
                     if (!currentFollowup) return null;
                     const answerKey = `guide-followup-${mockFollowupIndex}`;
                     return (
-                      <div className="mb-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
+	                      <div className="guide-followup-card mb-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <h4 className="text-sm font-black text-cyan-800 flex items-center"><Sparkles className="w-4 h-4 mr-2"/> 面接官の追撃モード</h4>
                           <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-cyan-700">{mockFollowupIndex + 1} / {followups.length}</span>
@@ -6434,7 +6434,7 @@ function App() {
               )}
             </div>
 
-	            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+	            <div className="mock-practice-footer px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
 	              <div className="flex shrink-0 items-center gap-2">
 	                <button onClick={() => setMockExamMode(null)} className="shrink-0 px-3 sm:px-5 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition-colors">
 	                  中断する
@@ -7493,6 +7493,23 @@ function App() {
           background: #f5f3ff;
           color: #6d28d9;
         }
+        .guide-practice-progress.is-compact {
+          margin-bottom: 1rem;
+          padding-top: 0.75rem;
+          padding-bottom: 0.75rem;
+        }
+        .guide-practice-answer-panel {
+          max-height: none;
+          overflow: visible;
+          border-color: #bae6fd;
+          background: #f8fafc;
+        }
+        .guide-answer-text.is-guide-answer {
+          border-left: 4px solid #0891b2;
+          box-shadow: none;
+          font-size: 1.08rem;
+          line-height: 1.95;
+        }
         @media (min-width: 860px) and (orientation: landscape) {
           .note-workspace {
             grid-template-columns: minmax(17rem, 0.85fr) minmax(0, 1.45fr);
@@ -7511,6 +7528,98 @@ function App() {
           body {
             max-width: 100%;
             overflow-x: clip;
+          }
+          .mock-practice-overlay {
+            padding: 0.45rem;
+          }
+          .mock-practice-dialog {
+            height: calc(100dvh - 0.9rem);
+            max-height: none;
+            border-radius: 0.9rem;
+          }
+          .mock-practice-header {
+            flex: 0 0 auto;
+            gap: 0.6rem;
+            padding: 0.7rem 0.85rem;
+          }
+          .mock-practice-header .text-lg {
+            font-size: 0.95rem;
+          }
+          .mock-practice-header .text-xl {
+            font-size: 1rem;
+          }
+          .mock-practice-header .w-6 {
+            width: 1.15rem;
+          }
+          .mock-practice-header .h-6 {
+            height: 1.15rem;
+          }
+          .mock-practice-body {
+            align-items: stretch;
+            padding: 0.85rem;
+          }
+          .guide-practice-progress,
+          .guide-practice-progress.is-compact {
+            margin-bottom: 0.75rem;
+            border-radius: 0.75rem;
+            padding: 0.7rem 0.8rem;
+          }
+          .mock-practice-counter {
+            margin-bottom: 0.45rem;
+            text-align: center;
+            font-size: 0.65rem;
+            letter-spacing: 0;
+          }
+          .mock-practice-title {
+            margin-bottom: 1rem;
+            font-size: 1.35rem;
+            line-height: 1.55;
+          }
+          .mock-practice-title.is-answer-open {
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+            line-height: 1.55;
+            text-align: left;
+          }
+          .guide-practice-answer-panel {
+            max-height: none;
+            overflow: visible;
+            border: 0;
+            border-top: 1px solid #bae6fd;
+            border-radius: 0;
+            background: white;
+            padding: 1rem 0 0;
+          }
+          .guide-answer-heading {
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+          }
+          .guide-answer-core {
+            margin-bottom: 0.75rem;
+            border-radius: 0.75rem;
+            padding: 0.85rem;
+          }
+          .guide-answer-text.is-guide-answer {
+            margin-bottom: 1rem;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-size: 1rem;
+            line-height: 2;
+          }
+          .guide-followup-card {
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            padding: 1rem;
+          }
+          .guide-followup-card > p {
+            border-radius: 0.65rem;
+            padding: 0.85rem;
+            font-size: 0.95rem;
+            line-height: 1.75;
+          }
+          .mock-practice-footer {
+            flex: 0 0 auto;
+            padding: 0.65rem 0.75rem;
           }
           main {
             padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
