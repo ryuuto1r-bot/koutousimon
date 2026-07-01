@@ -1909,6 +1909,9 @@ const MAX_MATERIAL_IMAGE_SIDE = 1600;
 const MATERIAL_IMAGE_QUALITY = 0.78;
 const RECENT_INTERVIEW_GUIDE_COUNT = 10;
 const GUIDE_PRACTICE_QUESTION_COUNT = 15;
+const AI_INTERVIEW_DURATION = 15 * 60;
+const AI_INTERVIEW_MATERIAL_COUNT = 18;
+const AI_INTERVIEW_ENDPOINT = "https://asia-northeast1-koutousimon-sync.cloudfunctions.net/interview";
 
 const downloadTextFile = (filename, content) => {
   const blob = new Blob(["\uFEFF", content], { type: "text/markdown;charset=utf-8" });
@@ -2027,6 +2030,18 @@ function App() {
   const [interviewCoachAnswer, setInterviewCoachAnswer] = useState("");
   const [interviewCoachResult, setInterviewCoachResult] = useState(null);
   const [interviewCoachListening, setInterviewCoachListening] = useState(false);
+  const [aiInterviewActive, setAiInterviewActive] = useState(false);
+  const [aiInterviewLoading, setAiInterviewLoading] = useState(false);
+  const [aiInterviewError, setAiInterviewError] = useState("");
+  const [aiInterviewAnswer, setAiInterviewAnswer] = useState("");
+  const [aiInterviewMessages, setAiInterviewMessages] = useState([]);
+  const [aiInterviewMaterials, setAiInterviewMaterials] = useState([]);
+  const [aiInterviewQuestion, setAiInterviewQuestion] = useState("");
+  const [aiInterviewFocusId, setAiInterviewFocusId] = useState("");
+  const [aiInterviewEndsAt, setAiInterviewEndsAt] = useState(null);
+  const [aiInterviewTimeLeft, setAiInterviewTimeLeft] = useState(AI_INTERVIEW_DURATION);
+  const [aiInterviewReport, setAiInterviewReport] = useState(null);
+  const [aiInterviewHistory, setAiInterviewHistory] = useState([]);
   
   const [editingNote, setEditingNote] = useState("");
   const [materialError, setMaterialError] = useState("");
@@ -2041,6 +2056,7 @@ function App() {
   const materialFileInputRef = useRef(null);
   const cardSwipeRef = useRef(null);
   const interviewRecognitionRef = useRef(null);
+  const aiInterviewRecognitionRef = useRef(null);
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -2169,6 +2185,7 @@ function App() {
         setGuideMemorizedCounts(data.guideMemorizedCounts || {});
         setGuideCoreNotes(data.guideCoreNotes || {});
         setInterviewAnswerHistory(data.interviewAnswerHistory || []);
+        setAiInterviewHistory(data.aiInterviewHistory || []);
         setGuideEdits(data.guideEdits || {});
         const loadedMigrations = data.dataMigrations || {};
         let nextMigrations = loadedMigrations;
@@ -2908,6 +2925,7 @@ function App() {
     guideMemorizedCounts,
     guideCoreNotes,
     interviewAnswerHistory,
+    aiInterviewHistory,
     guideEdits,
     hiddenGuideSections,
     deletedGuideSections,
@@ -3092,6 +3110,14 @@ function App() {
     if (user && db) {
       const docRef = getProgressDocRef();
       await setDoc(docRef, { interviewAnswerHistory: nextHistory }, { merge: true });
+    }
+  };
+
+  const saveAiInterviewHistory = async (nextHistory) => {
+    setAiInterviewHistory(nextHistory);
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, { aiInterviewHistory: nextHistory }, { merge: true });
     }
   };
 
@@ -3988,6 +4014,284 @@ function App() {
     startGuidePractice();
   };
 
+  const formatAiInterviewTime = (seconds) => {
+    const safeSeconds = Math.max(0, Number(seconds) || 0);
+    return `${String(Math.floor(safeSeconds / 60)).padStart(2, "0")}:${String(safeSeconds % 60).padStart(2, "0")}`;
+  };
+
+  const speakAiInterviewer = (text = aiInterviewQuestion) => {
+    if (!text || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ja-JP";
+    utterance.rate = 0.96;
+    const japaneseVoice = window.speechSynthesis.getVoices().find(voice => voice.lang?.toLowerCase().startsWith("ja"));
+    if (japaneseVoice) utterance.voice = japaneseVoice;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopAiInterviewSpeech = () => {
+    if (aiInterviewRecognitionRef.current) {
+      try { aiInterviewRecognitionRef.current.stop(); } catch (e) {}
+      aiInterviewRecognitionRef.current = null;
+    }
+    setInterviewCoachListening(false);
+  };
+
+  const startAiInterviewSpeech = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      window.alert?.("このブラウザは音声入力に対応していません。文字入力を使ってください。");
+      return;
+    }
+    stopAiInterviewSpeech();
+    const recognition = new SpeechRecognition();
+    const baseAnswer = aiInterviewAnswer.trim();
+    let finalTranscript = "";
+    recognition.lang = "ja-JP";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const transcript = event.results[i][0]?.transcript || "";
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      setAiInterviewAnswer([baseAnswer, finalTranscript, interimTranscript].filter(Boolean).join(" "));
+    };
+    recognition.onerror = () => setInterviewCoachListening(false);
+    recognition.onend = () => setInterviewCoachListening(false);
+    aiInterviewRecognitionRef.current = recognition;
+    setInterviewCoachListening(true);
+    recognition.start();
+  };
+
+  const getAiInterviewErrorMessage = (code) => {
+    if (code === "AUTH_REQUIRED" || code === "LOGIN_REQUIRED") return "Googleログインが必要です。同期設定からログインしてください。";
+    if (code === "DAILY_LIMIT") return "本日のAI面接の利用上限に達しました。明日もう一度試してください。";
+    if (code === "Failed to fetch") return "AI面接サーバーへ接続できません。通信状態を確認してください。";
+    return "AI面接を開始できませんでした。API設定または通信状態を確認してください。";
+  };
+
+  const callAiInterview = async (payload) => {
+    if (!cloudUser?.getIdToken) throw new Error("LOGIN_REQUIRED");
+    const token = await cloudUser.getIdToken();
+    const response = await fetch(AI_INTERVIEW_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "INTERVIEW_FAILED");
+    return data;
+  };
+
+  const buildAiInterviewMaterials = () => {
+    const selected = [];
+    const seen = new Set();
+    const add = (card) => {
+      if (!card?.sectionId || seen.has(card.sectionId) || selected.length >= AI_INTERVIEW_MATERIAL_COUNT) return;
+      seen.add(card.sectionId);
+      selected.push(card);
+    };
+    seededShuffle(weakGuidePracticeCards, `${selectedDate}:ai-weak`).slice(0, 6).forEach(add);
+    todayGuidePracticePlan.cards.forEach(add);
+    seededShuffle(visibleGuidePracticeCards, `${selectedDate}:ai-fill`).forEach(add);
+    return selected.map(card => ({
+      sectionId: card.sectionId,
+      title: card.title,
+      coreNote: card.coreNote || "",
+      answer: [card.oral30, card.explanation].filter(Boolean).join("\n")
+    }));
+  };
+
+  const startAiInterview = async () => {
+    if (!cloudUser) {
+      setShowSyncModal(true);
+      setSyncError("AI模擬面接を使うにはGoogleログインが必要です。");
+      return;
+    }
+    const materials = buildAiInterviewMaterials();
+    if (materials.length === 0) {
+      window.alert?.("面接資料がありません。");
+      return;
+    }
+    stopInterviewSpeech();
+    stopAiInterviewSpeech();
+    window.speechSynthesis?.cancel?.();
+    setAiInterviewActive(true);
+    setAiInterviewLoading(true);
+    setAiInterviewError("");
+    setAiInterviewAnswer("");
+    setAiInterviewMessages([]);
+    setAiInterviewMaterials(materials);
+    setAiInterviewQuestion("");
+    setAiInterviewFocusId("");
+    setAiInterviewReport(null);
+    setAiInterviewEndsAt(null);
+    setAiInterviewTimeLeft(AI_INTERVIEW_DURATION);
+    try {
+      const result = await callAiInterview({
+        action: "start",
+        materials,
+        messages: [],
+        remainingSeconds: AI_INTERVIEW_DURATION
+      });
+      const question = result.interviewerText?.trim() || "九州大学経済工学科を志望した理由を教えてください。";
+      setAiInterviewQuestion(question);
+      setAiInterviewFocusId(result.focusSectionId || "");
+      setAiInterviewMessages([{ role: "interviewer", content: question }]);
+      setAiInterviewEndsAt(Date.now() + AI_INTERVIEW_DURATION * 1000);
+      window.setTimeout(() => speakAiInterviewer(question), 150);
+    } catch (error) {
+      setAiInterviewError(getAiInterviewErrorMessage(error.message));
+    } finally {
+      setAiInterviewLoading(false);
+    }
+  };
+
+  const submitAiInterviewAnswer = async () => {
+    const answer = aiInterviewAnswer.trim();
+    if (!answer || aiInterviewLoading || aiInterviewReport) return;
+    stopAiInterviewSpeech();
+    const remainingSeconds = aiInterviewEndsAt
+      ? Math.max(0, Math.ceil((aiInterviewEndsAt - Date.now()) / 1000))
+      : aiInterviewTimeLeft;
+    setAiInterviewLoading(true);
+    setAiInterviewError("");
+    try {
+      const result = await callAiInterview({
+        action: "turn",
+        materials: aiInterviewMaterials,
+        messages: aiInterviewMessages,
+        answer,
+        remainingSeconds
+      });
+      const nextQuestion = result.interviewerText?.trim() || "もう少し具体的に説明してください。";
+      setAiInterviewMessages(prev => [
+        ...prev,
+        { role: "candidate", content: answer },
+        { role: "interviewer", content: nextQuestion }
+      ]);
+      setAiInterviewQuestion(nextQuestion);
+      setAiInterviewFocusId(result.focusSectionId || "");
+      setAiInterviewAnswer("");
+      window.setTimeout(() => speakAiInterviewer(nextQuestion), 150);
+    } catch (error) {
+      setAiInterviewError(getAiInterviewErrorMessage(error.message));
+    } finally {
+      setAiInterviewLoading(false);
+    }
+  };
+
+  const finishAiInterview = async (options = {}) => {
+    if (aiInterviewLoading || aiInterviewReport || aiInterviewMaterials.length === 0) return;
+    stopAiInterviewSpeech();
+    window.speechSynthesis?.cancel?.();
+    const pendingAnswer = aiInterviewAnswer.trim();
+    const finalMessages = pendingAnswer
+      ? [...aiInterviewMessages, { role: "candidate", content: pendingAnswer }]
+      : aiInterviewMessages;
+    const remainingSeconds = aiInterviewEndsAt
+      ? Math.max(0, Math.ceil((aiInterviewEndsAt - Date.now()) / 1000))
+      : aiInterviewTimeLeft;
+    setAiInterviewMessages(finalMessages);
+    setAiInterviewAnswer("");
+    setAiInterviewLoading(true);
+    setAiInterviewError("");
+    try {
+      const result = await callAiInterview({
+        action: "finish",
+        materials: aiInterviewMaterials,
+        messages: finalMessages,
+        remainingSeconds
+      });
+      const report = result.report || null;
+      if (!report) throw new Error("INTERVIEW_FAILED");
+      setAiInterviewReport(report);
+      setAiInterviewQuestion(result.interviewerText || "以上で面接を終了します。");
+      setAiInterviewEndsAt(null);
+
+      const record = {
+        id: Date.now(),
+        savedAt: new Date().toISOString(),
+        score: Number(report.overallScore) || 0,
+        summary: report.summary || "",
+        strengths: report.strengths || [],
+        improvements: report.improvements || [],
+        rubric: report.rubric || {},
+        weakSectionIds: report.weakSectionIds || [],
+        nextPractice: report.nextPractice || "",
+        transcript: finalMessages.slice(-30),
+        endedByTimer: !!options.auto
+      };
+      const nextHistory = [record, ...aiInterviewHistory].slice(0, 20);
+      setAiInterviewHistory(nextHistory);
+
+      const validSectionIds = new Set(visibleGuidePracticeCards.map(card => card.sectionId));
+      const weakIds = (report.weakSectionIds || []).filter(id => validSectionIds.has(id));
+      const nextGuideMemory = { ...guideMemory };
+      const nextDailyRecord = { ...(guideDailyMemory[selectedDate] || {}) };
+      const nextGuideMarks = { ...guideMarks };
+      weakIds.forEach(id => {
+        nextGuideMemory[id] = "review";
+        nextDailyRecord[id] = "review";
+        nextGuideMarks[id] = "weak";
+      });
+      const nextGuideDailyMemory = { ...guideDailyMemory, [selectedDate]: nextDailyRecord };
+      setGuideMemory(nextGuideMemory);
+      setGuideDailyMemory(nextGuideDailyMemory);
+      setGuideMarks(nextGuideMarks);
+
+      if (user && db) {
+        await setDoc(getProgressDocRef(), {
+          aiInterviewHistory: nextHistory,
+          guideMemory: nextGuideMemory,
+          guideDailyMemory: nextGuideDailyMemory,
+          guideMarks: nextGuideMarks
+        }, { merge: true });
+      }
+    } catch (error) {
+      setAiInterviewError(getAiInterviewErrorMessage(error.message));
+    } finally {
+      setAiInterviewLoading(false);
+    }
+  };
+
+  const closeAiInterview = () => {
+    if (!aiInterviewReport && aiInterviewMessages.length > 1) {
+      const ok = window.confirm?.("15分模擬面接を中断しますか？ここまでの会話は評価に保存されません。");
+      if (ok === false) return;
+    }
+    stopAiInterviewSpeech();
+    window.speechSynthesis?.cancel?.();
+    setAiInterviewActive(false);
+    setAiInterviewLoading(false);
+    setAiInterviewError("");
+  };
+
+  useEffect(() => {
+    if (!aiInterviewActive || !aiInterviewEndsAt || aiInterviewReport) return;
+    const updateTimer = () => {
+      setAiInterviewTimeLeft(Math.max(0, Math.ceil((aiInterviewEndsAt - Date.now()) / 1000)));
+    };
+    updateTimer();
+    const timer = window.setInterval(updateTimer, 500);
+    return () => window.clearInterval(timer);
+  }, [aiInterviewActive, aiInterviewEndsAt, aiInterviewReport]);
+
+  useEffect(() => {
+    if (!aiInterviewActive || !aiInterviewEndsAt || aiInterviewTimeLeft > 0 || aiInterviewLoading || aiInterviewReport) return;
+    finishAiInterview({ auto: true });
+  }, [aiInterviewActive, aiInterviewEndsAt, aiInterviewTimeLeft, aiInterviewLoading, aiInterviewReport]);
+
   const stopInterviewSpeech = () => {
     if (interviewRecognitionRef.current) {
       try { interviewRecognitionRef.current.stop(); } catch (e) {}
@@ -4616,8 +4920,8 @@ function App() {
                     <button type="button" onClick={openMotivationTimer} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-50 sm:text-sm">
                       <Timer /> 5分タイマー
                     </button>
-                    <button type="button" onClick={() => startInterviewCoach()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-50 sm:text-sm">
-                      <MessageSquare /> 模擬面接官
+                    <button type="button" onClick={startAiInterview} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-900 bg-slate-900 px-3 py-2.5 text-xs font-black text-white shadow-sm hover:bg-slate-700 sm:text-sm">
+                      <Mic /> AI 15分模擬面接
                     </button>
                     <button type="button" aria-expanded={showGuideUtilities} onClick={() => setShowGuideUtilities(prev => !prev)} className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-black sm:text-sm ${showGuideUtilities ? 'border-cyan-700 bg-cyan-700 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
                       <Search /> 検索・絞り込み
@@ -4647,6 +4951,7 @@ function App() {
                     <button type="button" onClick={() => { setGuideMemoryFilter(null); setShowGuideWeakOnly(false); setShowGuideRecentOnly(false); setShowHiddenGuideOnly(false); setShowGuideLaterOnly(prev => !prev); }} className={`rounded-lg border px-3 py-2.5 text-left text-xs font-black ${showGuideLaterOnly ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-indigo-100 bg-indigo-50 text-indigo-700'}`}>後でチェックのみ ({guideMemoryCounts.later})</button>
                     <button type="button" onClick={() => { setGuideMemoryFilter(null); setSearchQuery(""); setShowGuideWeakOnly(false); setShowGuideLaterOnly(false); setShowHiddenGuideOnly(false); setShowGuideRecentOnly(prev => !prev); }} className={`rounded-lg border px-3 py-2.5 text-left text-xs font-black ${showGuideRecentOnly ? 'border-cyan-700 bg-cyan-700 text-white' : 'border-cyan-100 bg-cyan-50 text-cyan-700'}`}>最近追加 ({recentInterviewSectionIds.size})</button>
                     <button type="button" onClick={() => startInterviewCoach({ weakOnly: true })} className="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-left text-xs font-black text-indigo-700">弱点面接 ({weakGuidePracticeCards.length})</button>
+                    <button type="button" onClick={() => startInterviewCoach()} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-black text-slate-700">AIなし簡易面接</button>
                     <button type="button" onClick={() => setRevealedGuideSections({})} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-black text-slate-700">表示中の回答を隠す</button>
                     <button type="button" onClick={() => { setSearchQuery("本番"); focusSearch(); }} className="rounded-lg border border-cyan-100 bg-cyan-50 px-3 py-2.5 text-left text-xs font-black text-cyan-700">本番用を探す</button>
                   </div>
@@ -4687,6 +4992,33 @@ function App() {
 	                )}
 		              </div>
 		            </div>
+
+		            {aiInterviewHistory.length > 0 && (
+		              <div className="rounded-2xl border border-cyan-100 bg-white/90 p-4 shadow-sm">
+		                <div className="mb-3 flex items-center justify-between gap-3">
+		                  <h3 className="flex items-center gap-2 text-sm font-black text-slate-800">
+		                    <Mic className="h-4 w-4 text-cyan-700" /> AI 15分面接の履歴
+		                  </h3>
+		                  <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-black text-cyan-700">全{aiInterviewHistory.length}回</span>
+		                </div>
+		                <div className="space-y-2">
+		                  {aiInterviewHistory.slice(0, 3).map(item => (
+		                    <details key={item.id} className="rounded-xl border border-slate-100 bg-slate-50">
+		                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2">
+		                        <span className="truncate text-xs font-black text-slate-700">
+		                          {new Date(item.savedAt).toLocaleDateString("ja-JP")} の模擬面接
+		                        </span>
+		                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${item.score >= 80 ? "bg-emerald-100 text-emerald-700" : item.score >= 65 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>{item.score}点</span>
+		                      </summary>
+		                      <div className="border-t border-slate-100 px-3 py-3">
+		                        <p className="text-xs font-bold leading-6 text-slate-600">{item.summary}</p>
+		                        {item.improvements?.length > 0 && <p className="mt-2 text-xs font-black leading-6 text-rose-700">次に直す: {item.improvements[0]}</p>}
+		                      </div>
+		                    </details>
+		                  ))}
+		                </div>
+		              </div>
+		            )}
 
 		            {interviewAnswerHistory.length > 0 && (
 		              <div className="rounded-2xl border border-indigo-100 bg-white/90 p-4 shadow-sm">
@@ -6080,6 +6412,198 @@ function App() {
               <button onClick={() => setShowProgressModal(false)} className="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 閉じる
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {aiInterviewActive && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/95 p-2 backdrop-blur-md sm:p-4">
+          <div className="flex max-h-[96vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:rounded-3xl">
+            <div className="bg-slate-900 px-4 py-3 text-white sm:px-6 sm:py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Mic className="h-6 w-6 text-cyan-300" />
+                  <div className="min-w-0">
+                    <div className="truncate text-base font-black sm:text-lg">AI 15分模擬面接</div>
+                    <div className="text-[10px] font-bold text-slate-400 sm:text-[11px]">九大経済工学科 編入面接</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!aiInterviewReport && (
+                    <div className={`rounded-lg px-3 py-1.5 font-mono text-lg font-black ${aiInterviewTimeLeft <= 90 ? "bg-rose-500 text-white" : "bg-slate-800 text-cyan-300"}`}>
+                      {formatAiInterviewTime(aiInterviewTimeLeft)}
+                    </div>
+                  )}
+                  <button type="button" onClick={closeAiInterview} className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white" aria-label="閉じる">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+              {!aiInterviewReport && (
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-700">
+                  <div
+                    className="h-full rounded-full bg-cyan-400 transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, ((AI_INTERVIEW_DURATION - aiInterviewTimeLeft) / AI_INTERVIEW_DURATION) * 100))}%` }}
+                  ></div>
+                </div>
+              )}
+            </div>
+
+            <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-7">
+              {aiInterviewError && (
+                <div className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold leading-6 text-rose-700">
+                  <AlertTriangle className="mt-0.5 h-4 w-4" />
+                  <span>{aiInterviewError}</span>
+                </div>
+              )}
+
+              {aiInterviewLoading && !aiInterviewQuestion && (
+                <div className="flex min-h-[320px] flex-col items-center justify-center text-center">
+                  <Loader2 className="mb-4 h-8 w-8 animate-spin text-cyan-600" />
+                  <p className="text-base font-black text-slate-800">面接官が資料を確認しています</p>
+                  <p className="mt-2 text-xs font-bold text-slate-400">最初の質問を準備中です</p>
+                </div>
+              )}
+
+              {!aiInterviewReport && aiInterviewQuestion && (
+                <div className="space-y-4">
+                  <section className="rounded-2xl border border-cyan-100 bg-white p-5 shadow-sm sm:p-6">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-cyan-700">面接官</span>
+                      <button
+                        type="button"
+                        onClick={() => speakAiInterviewer()}
+                        className="rounded-lg border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-700 hover:bg-cyan-100"
+                      >
+                        <Mic className="mr-1 inline-flex h-3 w-3" /> 読み上げ
+                      </button>
+                    </div>
+                    <h2 className="text-xl font-black leading-8 text-slate-900 sm:text-2xl sm:leading-10">
+                      {aiInterviewQuestion}
+                    </h2>
+                  </section>
+
+                  {aiInterviewMessages.length > 1 && (
+                    <details className="rounded-xl border border-slate-200 bg-white">
+                      <summary className="cursor-pointer px-4 py-3 text-xs font-black text-slate-500">
+                        ここまでの受け答えを見る ({Math.floor(aiInterviewMessages.length / 2)}回答)
+                      </summary>
+                      <div className="max-h-52 space-y-3 overflow-y-auto border-t border-slate-100 p-4 custom-scrollbar">
+                        {aiInterviewMessages.slice(0, -1).map((message, index) => (
+                          <div key={`${message.role}-${index}`} className={message.role === "candidate" ? "pl-5" : "pr-5"}>
+                            <div className={`rounded-xl px-3 py-2 text-xs font-bold leading-5 ${message.role === "candidate" ? "bg-indigo-50 text-indigo-900" : "bg-slate-100 text-slate-700"}`}>
+                              <span className="mb-1 block text-[9px] font-black uppercase text-slate-400">{message.role === "candidate" ? "あなた" : "面接官"}</span>
+                              {message.content}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+
+                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <label className="text-sm font-black text-slate-700">あなたの回答</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={interviewCoachListening ? stopAiInterviewSpeech : startAiInterviewSpeech}
+                          disabled={aiInterviewLoading}
+                          className={`rounded-lg border px-3 py-2 text-xs font-black ${interviewCoachListening ? "border-rose-600 bg-rose-600 text-white" : "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"}`}
+                        >
+                          <Mic className="mr-1 inline-flex h-3 w-3" /> {interviewCoachListening ? "停止" : "音声入力"}
+                        </button>
+                        <button type="button" onClick={() => setAiInterviewAnswer("")} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-black text-slate-500 hover:bg-slate-200">
+                          クリア
+                        </button>
+                      </div>
+                    </div>
+                    <textarea
+                      value={aiInterviewAnswer}
+                      onChange={(event) => setAiInterviewAnswer(event.target.value)}
+                      disabled={aiInterviewLoading}
+                      placeholder="声で答えるか、ここに入力してください。"
+                      className="h-36 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-base font-bold leading-7 text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-cyan-400 disabled:opacity-60 sm:h-40"
+                    />
+                    <button
+                      type="button"
+                      onClick={submitAiInterviewAnswer}
+                      disabled={!aiInterviewAnswer.trim() || aiInterviewLoading}
+                      className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-xl bg-indigo-700 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-indigo-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    >
+                      {aiInterviewLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 面接官が考えています</> : <>回答を送る <ChevronRight className="ml-1 h-4 w-4" /></>}
+                    </button>
+                  </section>
+                </div>
+              )}
+
+              {aiInterviewReport && (
+                <div className="space-y-4 animate-fade-in">
+                  <section className="rounded-2xl bg-slate-900 p-6 text-white shadow-lg">
+                    <div className="text-[11px] font-black uppercase tracking-widest text-cyan-300">15分模擬面接 総合評価</div>
+                    <div className="mt-2 flex items-end gap-2">
+                      <span className="text-6xl font-black">{aiInterviewReport.overallScore}</span>
+                      <span className="pb-2 text-lg font-black text-slate-400">/ 100</span>
+                    </div>
+                    <p className="mt-4 text-sm font-bold leading-7 text-slate-200">{aiInterviewReport.summary}</p>
+                  </section>
+
+                  <section className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {[
+                      ["内容", "content"],
+                      ["具体性", "specificity"],
+                      ["論理性", "logic"],
+                      ["九大接続", "kyudaiFit"],
+                      ["伝え方", "communication"]
+                    ].map(([label, key]) => (
+                      <div key={key} className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm">
+                        <div className="text-[10px] font-black text-slate-400">{label}</div>
+                        <div className="mt-1 text-2xl font-black text-slate-800">{aiInterviewReport.rubric?.[key] || 0}<span className="text-xs text-slate-400">/20</span></div>
+                      </div>
+                    ))}
+                  </section>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <section className="rounded-2xl border border-emerald-100 bg-white p-5">
+                      <h3 className="mb-3 text-sm font-black text-emerald-700">良かった点</h3>
+                      <ul className="space-y-2">
+                        {(aiInterviewReport.strengths || []).map((item, index) => <li key={index} className="text-sm font-bold leading-6 text-slate-700">・{item}</li>)}
+                      </ul>
+                    </section>
+                    <section className="rounded-2xl border border-rose-100 bg-white p-5">
+                      <h3 className="mb-3 text-sm font-black text-rose-700">次に直す点</h3>
+                      <ul className="space-y-2">
+                        {(aiInterviewReport.improvements || []).map((item, index) => <li key={index} className="text-sm font-bold leading-6 text-slate-700">・{item}</li>)}
+                      </ul>
+                    </section>
+                  </div>
+
+                  {aiInterviewReport.nextPractice && (
+                    <section className="rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
+                      <h3 className="mb-2 text-xs font-black uppercase tracking-wider text-indigo-700">次の練習</h3>
+                      <p className="text-sm font-black leading-7 text-slate-800">{aiInterviewReport.nextPractice}</p>
+                      <p className="mt-2 text-[11px] font-bold text-indigo-500">弱かった資料は「要復習」に自動保存しました。</p>
+                    </section>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <button type="button" onClick={closeAiInterview} className="rounded-xl px-4 py-2.5 text-sm font-black text-slate-500 hover:bg-slate-100">
+                {aiInterviewReport ? "閉じる" : "中断する"}
+              </button>
+              {!aiInterviewReport && aiInterviewQuestion && (
+                <button
+                  type="button"
+                  onClick={() => finishAiInterview()}
+                  disabled={aiInterviewLoading}
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                >
+                  ここで終了して評価
+                </button>
+              )}
             </div>
           </div>
         </div>
