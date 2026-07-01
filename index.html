@@ -6295,7 +6295,7 @@ function App() {
                 </div>
               )}
 	              {isQuestionPracticeMock && (
-	                <div className="mb-6 w-full rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+	                <div className={`oral-practice-progress mb-6 w-full rounded-2xl border border-emerald-100 bg-emerald-50 p-4 ${showMockAnswer ? 'is-compact' : ''}`}>
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="text-xs font-black text-emerald-800">今回の{mockQuestions.length}問 習得率</span>
                     <span className="text-lg font-black text-emerald-700">{oralPracticeProgress}%</span>
@@ -6339,7 +6339,7 @@ function App() {
                 </div>
               )}
               
-	              <h2 className={`mock-practice-title text-3xl sm:text-4xl font-black text-slate-800 text-center mb-8 leading-tight ${mockExamMode === 'guide' && showMockAnswer ? 'is-answer-open' : ''}`}>
+	              <h2 className={`mock-practice-title text-3xl sm:text-4xl font-black text-slate-800 text-center mb-8 leading-tight ${(mockExamMode === 'guide' || isQuestionPracticeMock) && showMockAnswer ? 'is-answer-open' : ''}`}>
 	                「{renderTextWithMath(mockQuestions[mockIndex].title)}」
 	              </h2>
 
@@ -6355,7 +6355,7 @@ function App() {
                   </button>
                 </div>
               ) : (
-                <div className={`mock-answer-panel w-full bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-fade-in text-left custom-scrollbar ${mockExamMode === 'guide' ? 'guide-practice-answer-panel' : 'max-h-[50vh] overflow-y-auto'}`}>
+                <div className={`mock-answer-panel w-full bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-fade-in text-left custom-scrollbar ${mockExamMode === 'guide' ? 'guide-practice-answer-panel' : isQuestionPracticeMock ? 'question-practice-answer-panel' : 'max-h-[50vh] overflow-y-auto'}`}>
 	                  <h4 className="guide-answer-heading text-sm font-bold text-rose-600 mb-3 flex items-center"><MessageSquare className="w-4 h-4 mr-2"/> {mockExamMode === 'guide' ? '回答の軸' : '30秒回答例'}</h4>
 	                  {mockExamMode === 'guide' && mockQuestions[mockIndex].coreNote && (
 	                    <div className="guide-answer-core mb-4 rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
@@ -6363,7 +6363,18 @@ function App() {
 	                      <p className="text-base font-black leading-relaxed text-slate-900">{renderTextWithMath(mockQuestions[mockIndex].coreNote)}</p>
 	                    </div>
 	                  )}
-	                  <p className={`guide-answer-text text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100 ${mockExamMode === 'guide' ? 'is-guide-answer' : ''}`}>
+                    {isQuestionPracticeMock && mockQuestions[mockIndex].formula && (
+                      <section className="question-practice-formula mb-4" aria-label="数式">
+                        <h4 className="question-practice-formula-heading">
+                          <Sigma className="w-4 h-4" /> 数式
+                          {mockQuestions[mockIndex].formulaMust && <span>暗記必須</span>}
+                        </h4>
+                        <div className="question-practice-formula-body">
+                          {renderFormulaStack(mockQuestions[mockIndex].formula, true)}
+                        </div>
+                      </section>
+                    )}
+	                  <p className={`guide-answer-text text-slate-800 font-bold text-lg mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-100 ${mockExamMode === 'guide' ? 'is-guide-answer' : isQuestionPracticeMock ? 'is-question-answer' : ''}`}>
 	                    「{renderTextWithMath(mockQuestions[mockIndex].oral30)}」
 	                  </p>
                   
@@ -7493,22 +7504,63 @@ function App() {
           background: #f5f3ff;
           color: #6d28d9;
         }
-        .guide-practice-progress.is-compact {
+        .guide-practice-progress.is-compact,
+        .oral-practice-progress.is-compact {
           margin-bottom: 1rem;
           padding-top: 0.75rem;
           padding-bottom: 0.75rem;
         }
-        .guide-practice-answer-panel {
+        .guide-practice-answer-panel,
+        .question-practice-answer-panel {
           max-height: none;
           overflow: visible;
           border-color: #bae6fd;
           background: #f8fafc;
         }
-        .guide-answer-text.is-guide-answer {
+        .guide-answer-text.is-guide-answer,
+        .guide-answer-text.is-question-answer {
           border-left: 4px solid #0891b2;
           box-shadow: none;
           font-size: 1.08rem;
           line-height: 1.95;
+        }
+        .question-practice-formula {
+          overflow: hidden;
+          border: 1px solid #c7d2fe;
+          border-radius: 0.9rem;
+          background: #eef2ff;
+        }
+        .question-practice-formula-heading {
+          min-height: 2.65rem;
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
+          border-bottom: 1px solid #c7d2fe;
+          padding: 0.55rem 0.9rem;
+          color: #4338ca;
+          font-size: 0.78rem;
+          font-weight: 950;
+        }
+        .question-practice-formula-heading span {
+          margin-left: auto;
+          border-radius: 999px;
+          background: #e11d48;
+          padding: 0.2rem 0.55rem;
+          color: white;
+          font-size: 0.62rem;
+          font-weight: 950;
+        }
+        .question-practice-formula-body {
+          overflow-x: auto;
+          padding: 1.15rem 0.9rem;
+          background: white;
+          color: #1e293b;
+          font-size: 1.12rem;
+          text-align: center;
+          -webkit-overflow-scrolling: touch;
+        }
+        .question-practice-formula-body .formula-line {
+          background: transparent;
         }
         @media (min-width: 860px) and (orientation: landscape) {
           .note-workspace {
@@ -7559,7 +7611,9 @@ function App() {
             padding: 0.85rem;
           }
           .guide-practice-progress,
-          .guide-practice-progress.is-compact {
+          .guide-practice-progress.is-compact,
+          .oral-practice-progress,
+          .oral-practice-progress.is-compact {
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
             padding: 0.7rem 0.8rem;
@@ -7581,7 +7635,8 @@ function App() {
             line-height: 1.55;
             text-align: left;
           }
-          .guide-practice-answer-panel {
+          .guide-practice-answer-panel,
+          .question-practice-answer-panel {
             max-height: none;
             overflow: visible;
             border: 0;
@@ -7599,12 +7654,26 @@ function App() {
             border-radius: 0.75rem;
             padding: 0.85rem;
           }
-          .guide-answer-text.is-guide-answer {
+          .guide-answer-text.is-guide-answer,
+          .guide-answer-text.is-question-answer {
             margin-bottom: 1rem;
             border-radius: 0.75rem;
             padding: 1rem;
             font-size: 1rem;
             line-height: 2;
+          }
+          .question-practice-formula {
+            margin-bottom: 0.85rem;
+            border-radius: 0.75rem;
+          }
+          .question-practice-formula-heading {
+            min-height: 2.4rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.74rem;
+          }
+          .question-practice-formula-body {
+            padding: 1rem 0.65rem;
+            font-size: 0.95rem;
           }
           .guide-followup-card {
             margin-bottom: 0.5rem;
