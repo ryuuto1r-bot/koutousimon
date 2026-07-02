@@ -416,7 +416,7 @@ const quizData = [
   { id: 1005, category: "10. 数値計算", title: "ルンゲ・クッタ法とは何ですか", formula: "y_{n+1}=y_n+\\frac{h}{6}(k_1+2k_2+2k_3+k_4)", definition: "1区間で複数回傾きを計算し、微分方程式を高精度に解く方法。", oral30: "ルンゲ・クッタ法とは、オイラー法より複数回傾きを計算することで、高精度に微分方程式の近似解を求める方法です。", explanation: "区間の始点だけでなく、中間点や終点付近の傾きも計算し、それらを重み付き平均して次の値を求めます。特に4次のルンゲ・クッタ法が広く使われます。", application: "経済動学、制御工学、機械振動など、微分方程式を精度よくシミュレーションする際に使われます。", followups: [{q: "代表的によく使われるルンゲ・クッタ法は何次ですか？", a: "「4次のルンゲ・クッタ法です。1ステップで4回傾きを評価します。」"}], rank: "A" }
 ];
 
-const oralCategories = ["すべて", "1. 一変数微積", "2. 多変数・最適化", "3. ラグランジュ", "4. テイラー展開", "5. 線形代数", "6. 最小二乗・回帰", "7. 確率・統計", "8. 微分方程式", "9. 経済基礎", "10. 数値計算"];
+const oralCategories = ["すべて", "1. 一変数微積", "2. 多変数・最適化", "3. ラグランジュ", "4. テイラー展開", "5. 線形代数", "6. 最小二乗・回帰", "7. 確率・統計", "8. 微分方程式", "10. 数値計算"];
 
 const categoryRankMap = {
   "0. 志望理由・面接": "S",
@@ -2356,7 +2356,7 @@ function App() {
   };
 
   const studyQuizData = useMemo(() => {
-    return mergedQuizData.filter(q => q.category !== "0. 志望理由・面接");
+    return mergedQuizData.filter(q => q.category !== "0. 志望理由・面接" && q.category !== "9. 経済基礎");
   }, [mergedQuizData]);
 
   const studyQuizIdSet = useMemo(() => {
@@ -4767,7 +4767,7 @@ function App() {
 	                  onClick={() => { setAppMode('oral'); setActiveCategory('すべて'); setShowHiddenOnly(false); setShowHeaderControls(false); }}
 	                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all text-sm ${appMode === 'oral' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
 	                >
-	                  <BrainCircuit className="w-4 h-4" /> 数学・経済
+	                  <BrainCircuit className="w-4 h-4" /> 数学
 	                </button>
 	                <button
 	                  onClick={() => { clearFilters(); setAppMode('lastMinute'); setActiveCategory('すべて'); setShowAdvanced(true); setShowHeaderControls(false); }}
@@ -5456,7 +5456,7 @@ function App() {
           <>
 	        <section className="mb-6 border-y border-slate-200 bg-white py-5 sm:py-6">
 	          <h2 className="text-2xl font-black text-slate-950">{isLastMinuteMode ? '直前カード' : '口頭試問対策'}</h2>
-	          <p className="mt-1 text-xs font-bold text-slate-500">{isLastMinuteMode ? '試験前に一気に確認する短問セットです。通常カードとは分けて管理します。' : '数学・経済の重要問題を、本番形式で効率よく練習します。'}</p>
+	          <p className="mt-1 text-xs font-bold text-slate-500">{isLastMinuteMode ? '試験前に一気に確認する短問セットです。通常カードとは分けて管理します。' : '数学・統計の重要問題を、本番形式で効率よく練習します。'}</p>
 
 	          {isLastMinuteMode ? (
 	            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
@@ -6888,7 +6888,7 @@ function App() {
                 )}
                 <div>
 	                  <div className="font-bold text-lg">
-	                    {mockExamMode === 'guide' ? '面接資料 練習カード' : mockExamMode === 'lastMinute' ? '直前カード 練習' : '模擬口頭試問（数学・経済）'}
+	                    {mockExamMode === 'guide' ? '面接資料 練習カード' : mockExamMode === 'lastMinute' ? '直前カード 練習' : '模擬口頭試問（数学）'}
 	                  </div>
                   {mockExamMode === 'guide' && (
                     <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-black text-slate-300">
