@@ -2238,7 +2238,26 @@ function App() {
             hiddenGuideSectionsUpdatedAt: nextHiddenGuideUpdatedAt
           });
         }
+        const remoteHiddenCardsUpdatedAt = Number(data.hiddenCardsUpdatedAt) || 0;
+        const localHiddenCardsUpdatedAt = Number(localData.hiddenCardsUpdatedAt) || 0;
+        let nextHiddenCardsUpdatedAt = remoteHiddenCardsUpdatedAt;
         let nextHiddenCards = data.hiddenCards || {};
+        if (localHiddenCardsUpdatedAt > remoteHiddenCardsUpdatedAt) {
+          nextHiddenCardsUpdatedAt = localHiddenCardsUpdatedAt;
+          nextHiddenCards = localData.hiddenCards || {};
+          if (!docRef.local) {
+            setDoc(docRef, {
+              hiddenCards: nextHiddenCards,
+              hiddenCardsUpdatedAt: nextHiddenCardsUpdatedAt
+            }, { merge: true }).catch(console.error);
+          }
+        } else if (remoteHiddenCardsUpdatedAt > localHiddenCardsUpdatedAt) {
+          writeLocalData({
+            ...readLocalData(),
+            hiddenCards: nextHiddenCards,
+            hiddenCardsUpdatedAt: nextHiddenCardsUpdatedAt
+          });
+        }
         if (!loadedMigrations[GUIDE_RESTORE_MIGRATION_KEY]) {
           const restoreResult = restoreRequestedGuideSections(nextHiddenGuideSections);
           nextHiddenGuideSections = restoreResult.nextHidden;
@@ -2254,7 +2273,12 @@ function App() {
           const restoreResult = restoreRequestedOralCards(nextHiddenCards);
           nextHiddenCards = restoreResult.nextHidden;
           nextMigrations = { ...nextMigrations, [ORAL_RESTORE_MIGRATION_KEY]: true };
-          setDoc(docRef, { hiddenCards: nextHiddenCards, dataMigrations: nextMigrations }, { merge: true }).catch(console.error);
+          if (restoreResult.changed) nextHiddenCardsUpdatedAt = Date.now();
+          setDoc(docRef, {
+            hiddenCards: nextHiddenCards,
+            hiddenCardsUpdatedAt: nextHiddenCardsUpdatedAt,
+            dataMigrations: nextMigrations
+          }, { merge: true }).catch(console.error);
         }
         setDataMigrations(nextMigrations);
         setHiddenGuideSections(nextHiddenGuideSections);
@@ -3830,15 +3854,33 @@ function App() {
     });
   };
 
+  const persistHiddenStudyCards = async (nextHidden) => {
+    const updatedAt = Date.now();
+    writeLocalData({
+      ...readLocalData(),
+      hiddenCards: nextHidden,
+      hiddenCardsUpdatedAt: updatedAt
+    });
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, {
+        hiddenCards: nextHidden,
+        hiddenCardsUpdatedAt: updatedAt
+      }, { merge: true });
+    }
+  };
+
   const restoreHiddenStudyCard = async (id, e) => {
     if (e) e.stopPropagation();
     const newHidden = { ...hiddenCards };
     delete newHidden[id];
     setHiddenCards(newHidden);
     showRestoredStudyCardInMainList(id);
-    if (user && db) {
-      const docRef = getProgressDocRef();
-      await setDoc(docRef, { hiddenCards: newHidden }, { merge: true });
+    try {
+      await persistHiddenStudyCards(newHidden);
+    } catch (error) {
+      console.error('Failed to persist restored study card', error);
+      setSyncError('端末には保存しました。クラウド同期は次回接続時に再試行します。');
     }
   };
 
@@ -3855,9 +3897,11 @@ function App() {
     if (wasHidden && showHiddenOnly) {
       showRestoredStudyCardInMainList(id);
     }
-    if (user && db) {
-      const docRef = getProgressDocRef();
-      await setDoc(docRef, { hiddenCards: newHidden }, { merge: true });
+    try {
+      await persistHiddenStudyCards(newHidden);
+    } catch (error) {
+      console.error('Failed to persist hidden study cards', error);
+      setSyncError('端末には保存しました。クラウド同期は次回接続時に再試行します。');
     }
   };
 
@@ -5973,6 +6017,15 @@ function App() {
                   )}
                 </div>
                 <div>
+                  {showHiddenOnly && hiddenCards[item.id] && (
+                    <button
+                      type="button"
+                      onClick={(e) => restoreHiddenStudyCard(item.id, e)}
+                      className="mb-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+                    >
+                      <Eye className="mr-2 h-4 w-4" /> 元の一覧へ戻す
+                    </button>
+                  )}
                   <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
                     <span className="text-xs font-black text-slate-400 group-hover:text-indigo-600 flex items-center">
                       <Eye className="w-4 h-4 mr-1.5" /> 解答を見る
