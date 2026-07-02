@@ -2217,13 +2217,38 @@ function App() {
         setGuideEdits(data.guideEdits || {});
         const loadedMigrations = data.dataMigrations || {};
         let nextMigrations = loadedMigrations;
+        const localData = readLocalData();
+        const remoteHiddenGuideUpdatedAt = Number(data.hiddenGuideSectionsUpdatedAt) || 0;
+        const localHiddenGuideUpdatedAt = Number(localData.hiddenGuideSectionsUpdatedAt) || 0;
+        let nextHiddenGuideUpdatedAt = remoteHiddenGuideUpdatedAt;
         let nextHiddenGuideSections = data.hiddenGuideSections || {};
+        if (localHiddenGuideUpdatedAt > remoteHiddenGuideUpdatedAt) {
+          nextHiddenGuideUpdatedAt = localHiddenGuideUpdatedAt;
+          nextHiddenGuideSections = localData.hiddenGuideSections || {};
+          if (!docRef.local) {
+            setDoc(docRef, {
+              hiddenGuideSections: nextHiddenGuideSections,
+              hiddenGuideSectionsUpdatedAt: nextHiddenGuideUpdatedAt
+            }, { merge: true }).catch(console.error);
+          }
+        } else if (remoteHiddenGuideUpdatedAt > localHiddenGuideUpdatedAt) {
+          writeLocalData({
+            ...localData,
+            hiddenGuideSections: nextHiddenGuideSections,
+            hiddenGuideSectionsUpdatedAt: nextHiddenGuideUpdatedAt
+          });
+        }
         let nextHiddenCards = data.hiddenCards || {};
         if (!loadedMigrations[GUIDE_RESTORE_MIGRATION_KEY]) {
           const restoreResult = restoreRequestedGuideSections(nextHiddenGuideSections);
           nextHiddenGuideSections = restoreResult.nextHidden;
           nextMigrations = { ...loadedMigrations, [GUIDE_RESTORE_MIGRATION_KEY]: true };
-          setDoc(docRef, { hiddenGuideSections: nextHiddenGuideSections, dataMigrations: nextMigrations }, { merge: true }).catch(console.error);
+          if (restoreResult.changed) nextHiddenGuideUpdatedAt = Date.now();
+          setDoc(docRef, {
+            hiddenGuideSections: nextHiddenGuideSections,
+            hiddenGuideSectionsUpdatedAt: nextHiddenGuideUpdatedAt,
+            dataMigrations: nextMigrations
+          }, { merge: true }).catch(console.error);
         }
         if (!loadedMigrations[ORAL_RESTORE_MIGRATION_KEY]) {
           const restoreResult = restoreRequestedOralCards(nextHiddenCards);
@@ -3207,15 +3232,33 @@ function App() {
     });
   };
 
+  const persistHiddenGuideSections = async (nextHidden) => {
+    const updatedAt = Date.now();
+    writeLocalData({
+      ...readLocalData(),
+      hiddenGuideSections: nextHidden,
+      hiddenGuideSectionsUpdatedAt: updatedAt
+    });
+    if (user && db) {
+      const docRef = getProgressDocRef();
+      await setDoc(docRef, {
+        hiddenGuideSections: nextHidden,
+        hiddenGuideSectionsUpdatedAt: updatedAt
+      }, { merge: true });
+    }
+  };
+
   const restoreHiddenGuideSection = async (id, e) => {
     if (e) e.stopPropagation();
     const nextHidden = { ...hiddenGuideSections };
     delete nextHidden[id];
     setHiddenGuideSections(nextHidden);
     showRestoredGuideInMainList(id);
-    if (user && db) {
-      const docRef = getProgressDocRef();
-      await setDoc(docRef, { hiddenGuideSections: nextHidden }, { merge: true });
+    try {
+      await persistHiddenGuideSections(nextHidden);
+    } catch (error) {
+      console.error('Failed to persist restored guide section', error);
+      setSyncError('端末には保存しました。クラウド同期は次回接続時に再試行します。');
     }
   };
 
@@ -3232,9 +3275,11 @@ function App() {
     if (wasHidden && showHiddenGuideOnly) {
       showRestoredGuideInMainList(id);
     }
-    if (user && db) {
-      const docRef = getProgressDocRef();
-      await setDoc(docRef, { hiddenGuideSections: nextHidden }, { merge: true });
+    try {
+      await persistHiddenGuideSections(nextHidden);
+    } catch (error) {
+      console.error('Failed to persist hidden guide sections', error);
+      setSyncError('端末には保存しました。クラウド同期は次回接続時に再試行します。');
     }
   };
 
@@ -3256,9 +3301,15 @@ function App() {
       return next;
     });
 
-    if (user && db) {
-      const docRef = getProgressDocRef();
-      await setDoc(docRef, { deletedGuideSections: nextDeleted, hiddenGuideSections: nextHidden }, { merge: true });
+    try {
+      await persistHiddenGuideSections(nextHidden);
+      if (user && db) {
+        const docRef = getProgressDocRef();
+        await setDoc(docRef, { deletedGuideSections: nextDeleted }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Failed to persist deleted guide section', error);
+      setSyncError('端末には保存しました。クラウド同期は次回接続時に再試行します。');
     }
   };
 
