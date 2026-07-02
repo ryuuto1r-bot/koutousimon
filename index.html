@@ -2309,7 +2309,9 @@ function App() {
 	  }, [questionEdits]);
 
   const exportAllOralQuestions = () => {
-    const oralCards = mergedQuizData.filter(q => q.category !== "0. 志望理由・面接");
+    const oralCards = mergedQuizData.filter(q =>
+      q.category !== "0. 志望理由・面接" && q.category !== "9. 経済基礎"
+    );
     const followupCount = [...oralCards, ...lastMinuteQuizData]
       .reduce((total, card) => total + (card.followups?.length || 0), 0);
     const categoryOrder = [
@@ -2319,9 +2321,11 @@ function App() {
         .filter((category, index, categories) => category && !oralCategories.includes(category) && categories.indexOf(category) === index)
     ];
     const lines = [
-      "# 九州大学経済工学科 口頭試問対策 全問題",
+      "# 九州大学経済工学科 数学口頭試問 AI練習用問題集",
       "",
       `出力日: ${new Date().toLocaleDateString("ja-JP")}`,
+      "",
+      "このファイルは数学の口頭試問練習専用です。経済学、志望動機、人物面接、経済工学への応用は出題しないでください。",
       "",
       "## 収録数",
       "",
@@ -2367,7 +2371,6 @@ function App() {
       if (card.definition) lines.push(`- 定義: ${card.definition}`);
       if (card.oral30) lines.push("", "**30秒回答例**", "", card.oral30);
       if (card.explanation) lines.push("", "**詳細・要点**", "", card.explanation);
-      if (card.application) lines.push("", "**経済・工学への応用**", "", card.application);
       if (card.followups?.length) {
         lines.push("", "**追撃質問**", "");
         card.followups.forEach((followup, index) => {
@@ -2401,7 +2404,7 @@ function App() {
 
     const date = new Date();
     const dateText = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    downloadTextFile(`口頭試問対策_全問題_${dateText}.md`, lines.join("\n"));
+    downloadTextFile(`AI口頭試問用_数学問題集_${dateText}.md`, lines.join("\n"));
   };
 
   const studyQuizData = useMemo(() => {
@@ -6628,7 +6631,7 @@ function App() {
                 onClick={exportAllOralQuestions}
                 className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-black text-indigo-700 transition-colors hover:bg-indigo-100"
               >
-                <FileText className="w-4 h-4" /> 全問題を出力
+                <FileText className="w-4 h-4" /> AI用問題集を出力
               </button>
               <button onClick={() => setShowProgressModal(false)} className="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 閉じる
