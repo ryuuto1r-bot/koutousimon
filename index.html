@@ -1934,7 +1934,7 @@ const MATERIAL_IMAGE_QUALITY = 0.78;
 const RECENT_INTERVIEW_GUIDE_COUNT = 10;
 const GUIDE_PRACTICE_QUESTION_COUNT = 15;
 const AI_INTERVIEW_DURATION = 15 * 60;
-const AI_INTERVIEW_MATERIAL_COUNT = 18;
+const AI_INTERVIEW_MATERIAL_COUNT = 12;
 const AI_INTERVIEW_ENDPOINT = "https://asia-northeast1-koutousimon-sync.cloudfunctions.net/interview";
 
 const downloadTextFile = (filename, content) => {
@@ -4102,6 +4102,8 @@ function App() {
   const getAiInterviewErrorMessage = (code) => {
     if (code === "AUTH_REQUIRED" || code === "LOGIN_REQUIRED") return "Googleログインが必要です。同期設定からログインしてください。";
     if (code === "DAILY_LIMIT") return "本日のAI練習の利用上限に達しました。明日もう一度試してください。";
+    if (code === "AI_RATE_LIMIT") return "AI側の一時的な利用制限にかかっています。1分ほど待ってからもう一度開始してください。";
+    if (code === "OPENAI_CONFIG_ERROR") return "AI APIキーの設定に問題があります。設定を確認してください。";
     if (code === "Failed to fetch") return "AIサーバーへ接続できません。通信状態を確認してください。";
     return "AI練習を開始できませんでした。API設定または通信状態を確認してください。";
   };

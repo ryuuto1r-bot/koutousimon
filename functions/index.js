@@ -14,7 +14,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000"
 ]);
 const DAILY_REQUEST_LIMIT = 80;
-const MAX_MATERIALS = 18;
+const MAX_MATERIALS = 12;
 const MAX_MESSAGES = 30;
 
 const clampText = (value, maxLength) => String(value || "").trim().slice(0, maxLength);
@@ -23,9 +23,9 @@ function sanitizeMaterials(materials) {
   if (!Array.isArray(materials)) return [];
   return materials.slice(0, MAX_MATERIALS).map((item) => ({
     sectionId: clampText(item?.sectionId, 100),
-    title: clampText(item?.title, 220),
-    answer: clampText(item?.answer, 1800),
-    coreNote: clampText(item?.coreNote, 500)
+    title: clampText(item?.title, 180),
+    answer: clampText(item?.answer, 1000),
+    coreNote: clampText(item?.coreNote, 300)
   })).filter((item) => item.title);
 }
 
@@ -290,6 +290,8 @@ async function requestOpenAI({ mode, action, materials, messages, answer, remain
   const payload = await response.json();
   if (!response.ok) {
     console.error("OpenAI request failed", response.status, payload?.error?.code || "unknown");
+    if (response.status === 429) throw new Error("AI_RATE_LIMIT");
+    if (response.status === 401 || response.status === 403) throw new Error("OPENAI_CONFIG_ERROR");
     throw new Error("OPENAI_REQUEST_FAILED");
   }
 
@@ -368,6 +370,15 @@ exports.interview = onRequest({
     }
     if (code === "DAILY_LIMIT") {
       res.status(429).json({ error: "DAILY_LIMIT" });
+      return;
+    }
+    if (code === "AI_RATE_LIMIT") {
+      res.set("Retry-After", "60");
+      res.status(429).json({ error: "AI_RATE_LIMIT" });
+      return;
+    }
+    if (code === "OPENAI_CONFIG_ERROR") {
+      res.status(502).json({ error: "OPENAI_CONFIG_ERROR" });
       return;
     }
     console.error("Interview function failed", code);
