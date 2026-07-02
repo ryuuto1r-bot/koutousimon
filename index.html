@@ -2434,6 +2434,58 @@ function App() {
     });
   }, [editableInterviewSections, guideCoreNotes]);
 
+  const exportAllInterviewQuestions = () => {
+    const activeSections = editableInterviewSections.filter(section => !hiddenGuideSections[section.id]);
+    const lines = [
+      "# 九州大学経済工学科 AI模擬面接用資料",
+      "",
+      `出力日: ${new Date().toLocaleDateString("ja-JP")}`,
+      "",
+      "このファイルは人物面接・志望理由の練習専用です。回答内容は改変せず、質問、追撃、評価の根拠として使用してください。数学の口頭試問は出題しないでください。",
+      "",
+      `収録資料: ${activeSections.length}件`,
+      "",
+      "## 質問一覧",
+      ""
+    ];
+
+    activeSections.forEach((section, index) => {
+      lines.push(`${index + 1}. ${section.title}`);
+    });
+
+    lines.push("", "## 回答付き完全版", "");
+    activeSections.forEach((section, index) => {
+      const coreNote = (guideCoreNotes[section.id] || "").trim();
+      const answerParts = [...(section.body || []), ...(section.bullets || [])].filter(Boolean);
+      lines.push(`### ${index + 1}. ${section.title}`, "");
+      lines.push(`- 分野: ${section.topic || section.tag || "面接資料"}`);
+      if (coreNote) lines.push(`- 核の一文: ${coreNote}`);
+      lines.push("", "**本人回答**", "");
+      if (answerParts.length > 0) {
+        answerParts.forEach(part => lines.push(part, ""));
+      } else {
+        lines.push("回答未登録", "");
+      }
+      lines.push("---", "");
+    });
+
+    lines.push(
+      "## 共通の追撃質問",
+      "",
+      "- なぜそう考えたのですか？",
+      "- 具体例を一つ挙げてください。",
+      "- あなた自身はそこで何をしましたか？",
+      "- その経験から何を学びましたか？",
+      "- なぜ九州大学の経済工学科でなければならないのですか？",
+      "- 入学後の学びにどうつなげますか？",
+      ""
+    );
+
+    const date = new Date();
+    const dateText = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    downloadTextFile(`AI模擬面接用_面接資料_${dateText}.md`, lines.join("\n"));
+  };
+
 	  const allMasteredIds = useMemo(() => {
 	    const ids = new Set();
 	    Object.values(dailyHistory).forEach(dayRecord => {
@@ -5118,6 +5170,9 @@ function App() {
                     </button>
                     <button type="button" onClick={() => { setGuideMemoryFilter(null); setShowGuideWeakOnly(false); setShowGuideLaterOnly(false); setShowGuideRecentOnly(false); setShowHiddenGuideOnly(prev => !prev); }} className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-black sm:text-sm ${showHiddenGuideOnly ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
                       <EyeOff /> 資料管理
+                    </button>
+                    <button type="button" onClick={exportAllInterviewQuestions} className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2.5 text-xs font-black text-cyan-800 hover:bg-cyan-100 sm:text-sm">
+                      <FileText /> AI用資料を出力
                     </button>
                   </div>
 
