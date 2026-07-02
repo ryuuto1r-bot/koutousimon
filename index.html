@@ -2030,6 +2030,7 @@ function App() {
   const [interviewCoachAnswer, setInterviewCoachAnswer] = useState("");
   const [interviewCoachResult, setInterviewCoachResult] = useState(null);
   const [interviewCoachListening, setInterviewCoachListening] = useState(false);
+  const [aiInterviewType, setAiInterviewType] = useState('interview');
   const [aiInterviewActive, setAiInterviewActive] = useState(false);
   const [aiInterviewLoading, setAiInterviewLoading] = useState(false);
   const [aiInterviewError, setAiInterviewError] = useState("");
@@ -2042,6 +2043,7 @@ function App() {
   const [aiInterviewTimeLeft, setAiInterviewTimeLeft] = useState(AI_INTERVIEW_DURATION);
   const [aiInterviewReport, setAiInterviewReport] = useState(null);
   const [aiInterviewHistory, setAiInterviewHistory] = useState([]);
+  const [aiOralHistory, setAiOralHistory] = useState([]);
   
   const [editingNote, setEditingNote] = useState("");
   const [materialError, setMaterialError] = useState("");
@@ -2067,6 +2069,7 @@ function App() {
   const activeGuideMemory = guideMemoryView === 'daily'
     ? (guideDailyMemory[selectedDate] || {})
     : guideMemory;
+  const isAiOralSession = aiInterviewType === 'oral';
 
   useEffect(() => {
     if (!document.getElementById('katex-css')) {
@@ -2186,6 +2189,7 @@ function App() {
         setGuideCoreNotes(data.guideCoreNotes || {});
         setInterviewAnswerHistory(data.interviewAnswerHistory || []);
         setAiInterviewHistory(data.aiInterviewHistory || []);
+        setAiOralHistory(data.aiOralHistory || []);
         setGuideEdits(data.guideEdits || {});
         const loadedMigrations = data.dataMigrations || {};
         let nextMigrations = loadedMigrations;
@@ -2926,6 +2930,7 @@ function App() {
     guideCoreNotes,
     interviewAnswerHistory,
     aiInterviewHistory,
+    aiOralHistory,
     guideEdits,
     hiddenGuideSections,
     deletedGuideSections,
@@ -4072,9 +4077,9 @@ function App() {
 
   const getAiInterviewErrorMessage = (code) => {
     if (code === "AUTH_REQUIRED" || code === "LOGIN_REQUIRED") return "Googleログインが必要です。同期設定からログインしてください。";
-    if (code === "DAILY_LIMIT") return "本日のAI面接の利用上限に達しました。明日もう一度試してください。";
-    if (code === "Failed to fetch") return "AI面接サーバーへ接続できません。通信状態を確認してください。";
-    return "AI面接を開始できませんでした。API設定または通信状態を確認してください。";
+    if (code === "DAILY_LIMIT") return "本日のAI練習の利用上限に達しました。明日もう一度試してください。";
+    if (code === "Failed to fetch") return "AIサーバーへ接続できません。通信状態を確認してください。";
+    return "AI練習を開始できませんでした。API設定または通信状態を確認してください。";
   };
 
   const callAiInterview = async (payload) => {
@@ -4112,20 +4117,50 @@ function App() {
     }));
   };
 
-  const startAiInterview = async () => {
+  const buildAiOralMaterials = () => {
+    const selected = [];
+    const seen = new Set();
+    const add = (question) => {
+      const id = String(question?.id || "");
+      if (!id || seen.has(id) || selected.length >= AI_INTERVIEW_MATERIAL_COUNT) return;
+      seen.add(id);
+      selected.push(question);
+    };
+    const available = visibleOralPracticeQuestions;
+    seededShuffle(available.filter(question => weaknessStats.ids.has(question.id)), `${selectedDate}:ai-oral-weak`).slice(0, 6).forEach(add);
+    seededShuffle(available.filter(question => dueCardIds.has(question.id)), `${selectedDate}:ai-oral-due`).slice(0, 4).forEach(add);
+    todayOralPracticePlan.questions.forEach(add);
+    seededShuffle(available.filter(question => question.rank === "S"), `${selectedDate}:ai-oral-s`).forEach(add);
+    seededShuffle(available, `${selectedDate}:ai-oral-fill`).forEach(add);
+    return selected.map(question => ({
+      sectionId: String(question.id),
+      title: question.title,
+      coreNote: [question.category, question.formula ? `数式: ${question.formula}` : ""].filter(Boolean).join(" / "),
+      answer: [
+        question.oral30 ? `30秒回答: ${question.oral30}` : "",
+        question.definition ? `定義: ${question.definition}` : "",
+        question.explanation ? `解説: ${question.explanation}` : "",
+        ...(question.followups || []).map(item => `追撃: ${item.q}\n回答: ${item.a}`)
+      ].filter(Boolean).join("\n")
+    }));
+  };
+
+  const startAiSession = async (mode = "interview") => {
+    const isOral = mode === "oral";
     if (!cloudUser) {
       setShowSyncModal(true);
-      setSyncError("AI模擬面接を使うにはGoogleログインが必要です。");
+      setSyncError(`${isOral ? "AI口頭試問" : "AI模擬面接"}を使うにはGoogleログインが必要です。`);
       return;
     }
-    const materials = buildAiInterviewMaterials();
+    const materials = isOral ? buildAiOralMaterials() : buildAiInterviewMaterials();
     if (materials.length === 0) {
-      window.alert?.("面接資料がありません。");
+      window.alert?.(isOral ? "口頭試問の問題がありません。" : "面接資料がありません。");
       return;
     }
     stopInterviewSpeech();
     stopAiInterviewSpeech();
     window.speechSynthesis?.cancel?.();
+    setAiInterviewType(mode);
     setAiInterviewActive(true);
     setAiInterviewLoading(true);
     setAiInterviewError("");
@@ -4139,12 +4174,15 @@ function App() {
     setAiInterviewTimeLeft(AI_INTERVIEW_DURATION);
     try {
       const result = await callAiInterview({
+        mode,
         action: "start",
         materials,
         messages: [],
         remainingSeconds: AI_INTERVIEW_DURATION
       });
-      const question = result.interviewerText?.trim() || "九州大学経済工学科を志望した理由を教えてください。";
+      const question = result.interviewerText?.trim() || (isOral
+        ? "微分とは何か、定義を説明してください。"
+        : "九州大学経済工学科を志望した理由を教えてください。");
       setAiInterviewQuestion(question);
       setAiInterviewFocusId(result.focusSectionId || "");
       setAiInterviewMessages([{ role: "interviewer", content: question }]);
@@ -4157,6 +4195,9 @@ function App() {
     }
   };
 
+  const startAiInterview = () => startAiSession("interview");
+  const startAiOralExam = () => startAiSession("oral");
+
   const submitAiInterviewAnswer = async () => {
     const answer = aiInterviewAnswer.trim();
     if (!answer || aiInterviewLoading || aiInterviewReport) return;
@@ -4168,6 +4209,7 @@ function App() {
     setAiInterviewError("");
     try {
       const result = await callAiInterview({
+        mode: aiInterviewType,
         action: "turn",
         materials: aiInterviewMaterials,
         messages: aiInterviewMessages,
@@ -4208,6 +4250,7 @@ function App() {
     setAiInterviewError("");
     try {
       const result = await callAiInterview({
+        mode: aiInterviewType,
         action: "finish",
         materials: aiInterviewMaterials,
         messages: finalMessages,
@@ -4216,7 +4259,7 @@ function App() {
       const report = result.report || null;
       if (!report) throw new Error("INTERVIEW_FAILED");
       setAiInterviewReport(report);
-      setAiInterviewQuestion(result.interviewerText || "以上で面接を終了します。");
+      setAiInterviewQuestion(result.interviewerText || (aiInterviewType === "oral" ? "以上で口頭試問を終了します。" : "以上で面接を終了します。"));
       setAiInterviewEndsAt(null);
 
       const record = {
@@ -4227,36 +4270,59 @@ function App() {
         strengths: report.strengths || [],
         improvements: report.improvements || [],
         rubric: report.rubric || {},
+        coveredSectionIds: report.coveredSectionIds || [],
+        masteredSectionIds: report.masteredSectionIds || [],
         weakSectionIds: report.weakSectionIds || [],
         nextPractice: report.nextPractice || "",
         transcript: finalMessages.slice(-30),
         endedByTimer: !!options.auto
       };
-      const nextHistory = [record, ...aiInterviewHistory].slice(0, 20);
-      setAiInterviewHistory(nextHistory);
+      if (aiInterviewType === "oral") {
+        const nextHistory = [record, ...aiOralHistory].slice(0, 20);
+        const validQuestionIds = new Set(visibleOralPracticeQuestions.map(question => String(question.id)));
+        const coveredIds = new Set((report.coveredSectionIds || []).map(String).filter(id => validQuestionIds.has(id)));
+        const weakIds = new Set((report.weakSectionIds || []).map(String).filter(id => coveredIds.has(id)));
+        const masteredIds = (report.masteredSectionIds || []).map(String).filter(id => coveredIds.has(id) && !weakIds.has(id));
+        const nextDayRecord = { ...(dailyHistory[selectedDate] || {}) };
+        masteredIds.forEach(id => { nextDayRecord[id] = "mastered"; });
+        weakIds.forEach(id => { nextDayRecord[id] = "review"; });
+        const nextDailyHistory = { ...dailyHistory, [selectedDate]: nextDayRecord };
+        setAiOralHistory(nextHistory);
+        setDailyHistory(nextDailyHistory);
 
-      const validSectionIds = new Set(visibleGuidePracticeCards.map(card => card.sectionId));
-      const weakIds = (report.weakSectionIds || []).filter(id => validSectionIds.has(id));
-      const nextGuideMemory = { ...guideMemory };
-      const nextDailyRecord = { ...(guideDailyMemory[selectedDate] || {}) };
-      const nextGuideMarks = { ...guideMarks };
-      weakIds.forEach(id => {
-        nextGuideMemory[id] = "review";
-        nextDailyRecord[id] = "review";
-        nextGuideMarks[id] = "weak";
-      });
-      const nextGuideDailyMemory = { ...guideDailyMemory, [selectedDate]: nextDailyRecord };
-      setGuideMemory(nextGuideMemory);
-      setGuideDailyMemory(nextGuideDailyMemory);
-      setGuideMarks(nextGuideMarks);
+        if (user && db) {
+          await setDoc(getProgressDocRef(), {
+            aiOralHistory: nextHistory,
+            dailyHistory: nextDailyHistory
+          }, { merge: true });
+        }
+      } else {
+        const nextHistory = [record, ...aiInterviewHistory].slice(0, 20);
+        setAiInterviewHistory(nextHistory);
 
-      if (user && db) {
-        await setDoc(getProgressDocRef(), {
-          aiInterviewHistory: nextHistory,
-          guideMemory: nextGuideMemory,
-          guideDailyMemory: nextGuideDailyMemory,
-          guideMarks: nextGuideMarks
-        }, { merge: true });
+        const validSectionIds = new Set(visibleGuidePracticeCards.map(card => card.sectionId));
+        const weakIds = (report.weakSectionIds || []).filter(id => validSectionIds.has(id));
+        const nextGuideMemory = { ...guideMemory };
+        const nextDailyRecord = { ...(guideDailyMemory[selectedDate] || {}) };
+        const nextGuideMarks = { ...guideMarks };
+        weakIds.forEach(id => {
+          nextGuideMemory[id] = "review";
+          nextDailyRecord[id] = "review";
+          nextGuideMarks[id] = "weak";
+        });
+        const nextGuideDailyMemory = { ...guideDailyMemory, [selectedDate]: nextDailyRecord };
+        setGuideMemory(nextGuideMemory);
+        setGuideDailyMemory(nextGuideDailyMemory);
+        setGuideMarks(nextGuideMarks);
+
+        if (user && db) {
+          await setDoc(getProgressDocRef(), {
+            aiInterviewHistory: nextHistory,
+            guideMemory: nextGuideMemory,
+            guideDailyMemory: nextGuideDailyMemory,
+            guideMarks: nextGuideMarks
+          }, { merge: true });
+        }
       }
     } catch (error) {
       setAiInterviewError(getAiInterviewErrorMessage(error.message));
@@ -4267,7 +4333,7 @@ function App() {
 
   const closeAiInterview = () => {
     if (!aiInterviewReport && aiInterviewMessages.length > 1) {
-      const ok = window.confirm?.("15分模擬面接を中断しますか？ここまでの会話は評価に保存されません。");
+      const ok = window.confirm?.(`${aiInterviewType === "oral" ? "15分口頭試問" : "15分模擬面接"}を中断しますか？ここまでの会話は評価に保存されません。`);
       if (ok === false) return;
     }
     stopAiInterviewSpeech();
@@ -5567,12 +5633,22 @@ function App() {
                   <div className="sm:w-48">
                     <button
                       type="button"
-                      onClick={startTodayOralPractice}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                      onClick={startAiOralExam}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-700 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-100"
                     >
-                      <Mic className="text-cyan-300" /> 15問開始
+                      <Sparkles className="text-indigo-200" /> AI 15分口頭試問
                     </button>
-                    <p className="mt-2 text-center text-[10px] font-bold text-slate-500">「覚えた → 次へ」で習得に反映</p>
+                    <button
+                      type="button"
+                      onClick={startTodayOralPractice}
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                    >
+                      <Mic className="text-cyan-300" /> 通常15問
+                    </button>
+                    <p className="mt-2 text-center text-[10px] font-bold text-slate-500">AIの正答・弱点も習得状況へ反映</p>
+                    {aiOralHistory[0] && (
+                      <p className="mt-1 text-center text-[10px] font-black text-indigo-600">前回 {aiOralHistory[0].score}点</p>
+                    )}
                   </div>
                 </div>
               </article>
@@ -6425,8 +6501,8 @@ function App() {
                 <div className="flex min-w-0 items-center gap-3">
                   <Mic className="h-6 w-6 text-cyan-300" />
                   <div className="min-w-0">
-                    <div className="truncate text-base font-black sm:text-lg">AI 15分模擬面接</div>
-                    <div className="text-[10px] font-bold text-slate-400 sm:text-[11px]">九大経済工学科 編入面接</div>
+                    <div className="truncate text-base font-black sm:text-lg">{isAiOralSession ? "AI 15分口頭試問" : "AI 15分模擬面接"}</div>
+                    <div className="text-[10px] font-bold text-slate-400 sm:text-[11px]">{isAiOralSession ? "定義・数式・意味・理由を確認" : "九大経済工学科 編入面接"}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -6461,8 +6537,8 @@ function App() {
               {aiInterviewLoading && !aiInterviewQuestion && (
                 <div className="flex min-h-[320px] flex-col items-center justify-center text-center">
                   <Loader2 className="mb-4 h-8 w-8 animate-spin text-cyan-600" />
-                  <p className="text-base font-black text-slate-800">面接官が資料を確認しています</p>
-                  <p className="mt-2 text-xs font-bold text-slate-400">最初の質問を準備中です</p>
+                  <p className="text-base font-black text-slate-800">{isAiOralSession ? "試問官が問題を選んでいます" : "面接官が資料を確認しています"}</p>
+                  <p className="mt-2 text-xs font-bold text-slate-400">最初の{isAiOralSession ? "問題" : "質問"}を準備中です</p>
                 </div>
               )}
 
@@ -6470,7 +6546,7 @@ function App() {
                 <div className="space-y-4">
                   <section className="rounded-2xl border border-cyan-100 bg-white p-5 shadow-sm sm:p-6">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-cyan-700">面接官</span>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-cyan-700">{isAiOralSession ? "試問官" : "面接官"}</span>
                       <button
                         type="button"
                         onClick={() => speakAiInterviewer()}
@@ -6480,7 +6556,7 @@ function App() {
                       </button>
                     </div>
                     <h2 className="text-xl font-black leading-8 text-slate-900 sm:text-2xl sm:leading-10">
-                      {aiInterviewQuestion}
+                      {renderTextWithMath(aiInterviewQuestion)}
                     </h2>
                   </section>
 
@@ -6493,8 +6569,8 @@ function App() {
                         {aiInterviewMessages.slice(0, -1).map((message, index) => (
                           <div key={`${message.role}-${index}`} className={message.role === "candidate" ? "pl-5" : "pr-5"}>
                             <div className={`rounded-xl px-3 py-2 text-xs font-bold leading-5 ${message.role === "candidate" ? "bg-indigo-50 text-indigo-900" : "bg-slate-100 text-slate-700"}`}>
-                              <span className="mb-1 block text-[9px] font-black uppercase text-slate-400">{message.role === "candidate" ? "あなた" : "面接官"}</span>
-                              {message.content}
+                              <span className="mb-1 block text-[9px] font-black uppercase text-slate-400">{message.role === "candidate" ? "あなた" : isAiOralSession ? "試問官" : "面接官"}</span>
+                              {renderTextWithMath(message.content)}
                             </div>
                           </div>
                         ))}
@@ -6532,7 +6608,7 @@ function App() {
                       disabled={!aiInterviewAnswer.trim() || aiInterviewLoading}
                       className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-xl bg-indigo-700 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-indigo-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
-                      {aiInterviewLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 面接官が考えています</> : <>回答を送る <ChevronRight className="ml-1 h-4 w-4" /></>}
+                      {aiInterviewLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {isAiOralSession ? "試問官" : "面接官"}が考えています</> : <>回答を送る <ChevronRight className="ml-1 h-4 w-4" /></>}
                     </button>
                   </section>
                 </div>
@@ -6541,7 +6617,7 @@ function App() {
               {aiInterviewReport && (
                 <div className="space-y-4 animate-fade-in">
                   <section className="rounded-2xl bg-slate-900 p-6 text-white shadow-lg">
-                    <div className="text-[11px] font-black uppercase tracking-widest text-cyan-300">15分模擬面接 総合評価</div>
+                    <div className="text-[11px] font-black uppercase tracking-widest text-cyan-300">{isAiOralSession ? "15分口頭試問 総合評価" : "15分模擬面接 総合評価"}</div>
                     <div className="mt-2 flex items-end gap-2">
                       <span className="text-6xl font-black">{aiInterviewReport.overallScore}</span>
                       <span className="pb-2 text-lg font-black text-slate-400">/ 100</span>
@@ -6550,13 +6626,19 @@ function App() {
                   </section>
 
                   <section className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {[
+                    {(isAiOralSession ? [
+                      ["定義", "content"],
+                      ["数式", "specificity"],
+                      ["論理性", "logic"],
+                      ["理解", "kyudaiFit"],
+                      ["伝え方", "communication"]
+                    ] : [
                       ["内容", "content"],
                       ["具体性", "specificity"],
                       ["論理性", "logic"],
                       ["九大接続", "kyudaiFit"],
                       ["伝え方", "communication"]
-                    ].map(([label, key]) => (
+                    ]).map(([label, key]) => (
                       <div key={key} className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm">
                         <div className="text-[10px] font-black text-slate-400">{label}</div>
                         <div className="mt-1 text-2xl font-black text-slate-800">{aiInterviewReport.rubric?.[key] || 0}<span className="text-xs text-slate-400">/20</span></div>
@@ -6583,7 +6665,11 @@ function App() {
                     <section className="rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
                       <h3 className="mb-2 text-xs font-black uppercase tracking-wider text-indigo-700">次の練習</h3>
                       <p className="text-sm font-black leading-7 text-slate-800">{aiInterviewReport.nextPractice}</p>
-                      <p className="mt-2 text-[11px] font-bold text-indigo-500">弱かった資料は「要復習」に自動保存しました。</p>
+                      <p className="mt-2 text-[11px] font-bold text-indigo-500">
+                        {isAiOralSession
+                          ? "正答した問題は「覚えた」、弱かった問題は「要復習」に自動保存しました。"
+                          : "弱かった資料は「要復習」に自動保存しました。"}
+                      </p>
                     </section>
                   )}
                 </div>
